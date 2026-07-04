@@ -1,5 +1,5 @@
 
-// Ducks CRM profesional v2.3 - WhatsApp por jugador vencido + portal papás simplificado + portada
+// Ducks CRM profesional v2.4 - buscador inteligente de jugador con foto en portal papás
 const app = document.getElementById('app');
 let sb = null;
 let session = null;
@@ -68,7 +68,7 @@ async function init(){
   renderPage();
 }
 async function loadPublicPlayers(){
-  const {data,error}=await sb.from('public_players').select('*').order('name');
+  const {data,error}=await sb.from('players').select('id,name,category,uniform_number,monthly_fee,payment_day,status,photo_url').eq('status','Activo').order('name');
   if(error){toast('Error cargando jugadores: '+error.message); return;}
   players=data||[];
 }
@@ -197,6 +197,65 @@ function renderWhatsApp(){
   ${rows.map(p=>`<tr><td>${p.id}</td><td><b>${esc(p.name)}</b></td><td>${esc(p.tutor||'')}</td><td>${esc(p.phone||'')}</td><td>${p.c.months}</td><td class="amount">${money(p.c.amount)}</td><td>${whatsappButtons(p)}</td></tr>`).join('')||'<tr><td colspan="7">No hay jugadores vencidos con WhatsApp registrado.</td></tr>'}
   </tbody></table></div></div>`;
 }
+
+function playerPhotoUrl(p){
+  return p?.photo_url || 'assets/logo.png';
+}
+function portalMatchScore(p, term){
+  const t = String(term||'').toLowerCase().trim();
+  if(!t) return 0;
+  const name = String(p.name||'').toLowerCase();
+  const id = String(p.id||'').toLowerCase();
+  const category = String(p.category||'').toLowerCase();
+  const uniform = String(p.uniform_number||'').toLowerCase();
+  if(name === t) return 100;
+  if(name.startsWith(t)) return 90;
+  if(name.includes(t)) return 80;
+  if(id.includes(t) || uniform.includes(t)) return 70;
+  const words = t.split(/\s+/).filter(Boolean);
+  let score = 0;
+  for(const w of words){
+    if(name.includes(w)) score += 20;
+    if(category.includes(w)) score += 5;
+  }
+  return score;
+}
+function renderPortalPlayerOptions(term=''){
+  const box = document.getElementById('portalPlayerOptions');
+  if(!box) return;
+  const t = String(term||'').trim();
+  let list = [];
+  if(t.length >= 2){
+    list = players.map(p=>({...p,score:portalMatchScore(p,t)}))
+      .filter(p=>p.score>0)
+      .sort((a,b)=>b.score-a.score || a.name.localeCompare(b.name))
+      .slice(0,8);
+  } else {
+    list = players.slice().sort((a,b)=>a.name.localeCompare(b.name)).slice(0,6);
+  }
+  if(!list.length){
+    box.innerHTML = '<div class="player-option empty">No encontré coincidencias. Revisa el nombre o apellido.</div>';
+    return;
+  }
+  box.innerHTML = list.map(p=>`<button type="button" class="player-option" onclick="selectPortalPlayer('${p.id}')">
+    <img src="${playerPhotoUrl(p)}" alt="">
+    <span><b>${esc(p.name)}</b><small>${esc(p.id)} · ${esc(p.category||'Sin categoría')} · #${esc(p.uniform_number||'-')}</small></span>
+  </button>`).join('');
+}
+function selectPortalPlayer(id){
+  const p = players.find(x=>x.id===id);
+  if(!p) return;
+  document.getElementById('portalPlayer').value = p.id;
+  document.getElementById('portalSearch').value = p.name;
+  document.getElementById('portalAmount').value = p.monthly_fee || 0;
+  const selected = document.getElementById('portalSelected');
+  if(selected){
+    selected.innerHTML = `<div class="selected-player"><img src="${playerPhotoUrl(p)}" alt=""><div><b>${esc(p.name)}</b><small>${esc(p.id)} · ${esc(p.category||'')} · Uniforme #${esc(p.uniform_number||'-')}</small></div></div>`;
+  }
+  const box = document.getElementById('portalPlayerOptions');
+  if(box) box.innerHTML = '';
+}
+
 function renderPortal(){
   app.innerHTML=`<div class="parent-page"><div class="parent-wrap">
     <div class="parent-admin"><button class="btn secondary" onclick="renderLogin()">Soy administrador</button></div>
@@ -210,7 +269,7 @@ function renderPortal(){
       </div>
       <div class="notice success"><b>Muy fácil:</b> llena los datos, adjunta una foto o PDF del comprobante y presiona enviar. No necesitas usuario ni contraseña.</div>
       <form id="portalForm" class="parent-form">
-        <label class="label full">Jugador<select id="portalPlayer" class="select" required><option value="">Selecciona el nombre del jugador...</option>${players.map(p=>`<option value="${p.id}">${p.id} · ${esc(p.name)} · #${esc(p.uniform_number||'-')}</option>`).join('')}</select><span class="simple-help">Solo debes elegir el jugador correspondiente.</span></label>
+        <label class="label full">Buscar jugador<input id="portalSearch" class="input" autocomplete="off" placeholder="Escribe nombre o apellido del jugador..." required><input id="portalPlayer" type="hidden" required><span class="simple-help">Escribe mínimo 2 letras. Aparecerán los jugadores más cercanos con foto para evitar errores.</span><div id="portalPlayerOptions" class="player-options"></div><div id="portalSelected"></div></label>
         <label class="label">Fecha de pago<input id="portalDate" class="input" type="date" required value="${todayISO()}"></label>
         <label class="label">Monto pagado<input id="portalAmount" class="input" type="number" min="0" step="50" required placeholder="$"></label>
         <label class="label">Método<select id="portalMethod" class="select" required><option></option><option>Transferencia</option><option>Depósito</option><option>Efectivo</option><option>Otro</option></select></label>
@@ -222,7 +281,8 @@ function renderPortal(){
       </form>
     </div>
   </div></div>`;
-  document.getElementById('portalPlayer').onchange=()=>{const p=players.find(x=>x.id===document.getElementById('portalPlayer').value); if(p) document.getElementById('portalAmount').value=p.monthly_fee||0;};
+  renderPortalPlayerOptions('');
+  document.getElementById('portalSearch').oninput=(e)=>{document.getElementById('portalPlayer').value=''; document.getElementById('portalSelected').innerHTML=''; renderPortalPlayerOptions(e.target.value);};
   document.getElementById('portalDate').onchange=()=>{document.getElementById('portalPeriod').value=period(document.getElementById('portalDate').value);};
   document.getElementById('portalForm').onsubmit=submitPortalPayment;
 }
@@ -249,6 +309,7 @@ async function uploadFile(file, folder){
 async function submitPortalPayment(e){
   e.preventDefault();
   const player_id=document.getElementById('portalPlayer').value;
+  if(!player_id){toast('Selecciona un jugador de las opciones mostradas.'); return;}
   const player=players.find(p=>p.id===player_id);
   const file=document.getElementById('portalEvidence').files[0];
   try{
@@ -331,6 +392,6 @@ async function rejectPayment(id){const {error}=await sb.from('payments').update(
 async function deletePayment(id){if(!confirm('¿Eliminar pago?'))return; const {error}=await sb.from('payments').delete().eq('id',id); if(error)toast(error.message); else{toast('Pago eliminado'); await refresh();}}
 function goPage(p){page=p; renderPage();}
 
-window.renderLogin=renderLogin; window.openPlayerForm=openPlayerForm; window.deletePlayer=deletePlayer; window.openPaymentForm=openPaymentForm; window.confirmPayment=confirmPayment; window.rejectPayment=rejectPayment; window.deletePayment=deletePayment; window.closeModal=closeModal; window.copyReminder=copyReminder; window.goPage=goPage;
+window.selectPortalPlayer=selectPortalPlayer; window.renderLogin=renderLogin; window.openPlayerForm=openPlayerForm; window.deletePlayer=deletePlayer; window.openPaymentForm=openPaymentForm; window.confirmPayment=confirmPayment; window.rejectPayment=rejectPayment; window.deletePayment=deletePayment; window.closeModal=closeModal; window.copyReminder=copyReminder; window.goPage=goPage;
 
 init();

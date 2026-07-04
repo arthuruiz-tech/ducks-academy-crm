@@ -1,0 +1,11 @@
+Ducks CRM Profesional v2.4
+
+Mejora solicitada:
+- En Portal de Papás, el papá ya no selecciona de una lista larga.
+- Ahora escribe nombre o apellido.
+- El sistema muestra coincidencias cercanas.
+- Cada opción muestra foto del jugador, ID, categoría y número de uniforme.
+- El papá debe elegir una opción mostrada antes de enviar comprobante.
+- Esto reduce el riesgo de seleccionar al jugador equivocado.
+
+Sube todo lo de adentro de este ZIP a la raíz de GitHub y haz Commit changes.
