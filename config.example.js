@@ -1,4 +1,3 @@
-// Copia este archivo como config.js y pega tus llaves de Supabase.
-// En Supabase: Project Settings > API
-window.DUCKS_SUPABASE_URL = "https://TU-PROYECTO.supabase.co";
-window.DUCKS_SUPABASE_ANON_KEY = "TU_ANON_PUBLIC_KEY";
+window.DUCKS_SUPABASE_URL = "https://ppanuipduqcogtqamhrf.supabase.co";
+window.DUCKS_SUPABASE_ANON_KEY = "sb_publishable_k7zbjaZyQ8NkGVw_3WgDdA_330pcMRD";
+window.DUCKS_PORTAL_URL = "https://ducks-academy-crm.vercel.app";

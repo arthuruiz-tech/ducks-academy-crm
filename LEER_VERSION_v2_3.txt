@@ -1,0 +1,10 @@
+Ducks CRM Profesional v2.3
+
+Correcciones:
+- Botón WhatsApp en cada jugador con pago Vencido.
+- WhatsApp aparece en Dashboard, Jugadores y módulo WhatsApp vencidos.
+- Portal de papás simplificado: solo ven formulario e instrucciones necesarias.
+- Portada del portal actualizada con nueva imagen.
+- Se mantiene administración completa.
+
+Sube todo lo de adentro del ZIP a la raíz de GitHub.
