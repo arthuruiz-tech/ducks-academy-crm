@@ -1,4 +1,4 @@
-// version profesional v2 ducks
+
 const app = document.getElementById('app');
 let sb = null;
 let session = null;
