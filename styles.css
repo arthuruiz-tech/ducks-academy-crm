@@ -159,3 +159,94 @@ th{position:sticky;top:0;background:var(--blue);color:white;z-index:1;font-size:
   color:#166534;
   margin-top:4px;
 }
+
+
+/* v2.5 datos bancarios en portal de papás */
+.bank-card{
+  background:linear-gradient(135deg,#071629,#0B1F3A 65%,#123B70);
+  color:white;
+  border-radius:24px;
+  padding:18px;
+  margin:18px 0;
+  box-shadow:0 18px 45px rgba(8,24,52,.18);
+  border:1px solid rgba(255,255,255,.14);
+}
+.bank-head{
+  display:flex;
+  justify-content:space-between;
+  gap:14px;
+  align-items:center;
+  margin-bottom:14px;
+}
+.bank-head h2{
+  margin:8px 0 4px;
+  font-size:24px;
+}
+.bank-head p{
+  margin:0;
+  color:#D7E3F2;
+}
+.bank-head img{
+  width:88px;
+  height:88px;
+  object-fit:contain;
+  background:white;
+  border-radius:20px;
+  padding:6px;
+}
+.bank-chip{
+  display:inline-block;
+  background:#0D1EA8;
+  color:white;
+  border-radius:999px;
+  padding:6px 12px;
+  font-weight:900;
+  letter-spacing:.5px;
+}
+.bank-grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:12px;
+}
+.bank-item{
+  background:white;
+  color:var(--blue);
+  border-radius:18px;
+  padding:14px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.bank-item.full{
+  grid-column:1/-1;
+}
+.bank-item small{
+  color:var(--muted);
+  font-weight:900;
+  text-transform:uppercase;
+  font-size:12px;
+}
+.bank-item strong{
+  font-size:25px;
+  letter-spacing:1px;
+  line-height:1.15;
+  word-break:break-word;
+}
+@media(max-width:760px){
+  .bank-head{
+    align-items:flex-start;
+  }
+  .bank-head img{
+    width:68px;
+    height:68px;
+  }
+  .bank-grid{
+    grid-template-columns:1fr;
+  }
+  .bank-item.full{
+    grid-column:auto;
+  }
+  .bank-item strong{
+    font-size:22px;
+  }
+}

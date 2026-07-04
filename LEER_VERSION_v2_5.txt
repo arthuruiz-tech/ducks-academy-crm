@@ -1,0 +1,13 @@
+Ducks CRM Profesional v2.5
+
+Mejora solicitada:
+- En Portal de Papás se agregó información bancaria para pago.
+- Banco: BBVA MX
+- Cuenta: 157 889 8256
+- CLABE: 012 180 01578898256 3
+- Beneficiario / referencia: DUCKS BASKETBALL
+- Botón para copiar Cuenta.
+- Botón para copiar CLABE.
+- Botón para copiar Beneficiario.
+
+Sube todo lo de adentro de este ZIP a la raíz de GitHub y haz Commit changes.

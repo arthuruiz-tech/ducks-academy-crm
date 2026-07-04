@@ -1,5 +1,5 @@
 
-// Ducks CRM profesional v2.4 - buscador inteligente de jugador con foto en portal papás
+// Ducks CRM profesional v2.5 - datos bancarios BBVA con copiar cuenta y CLABE
 const app = document.getElementById('app');
 let sb = null;
 let session = null;
@@ -7,6 +7,11 @@ let page = 'portal';
 let players = [];
 let payments = [];
 let q = '';
+const BANK_ACCOUNT = '157 889 8256';
+const BANK_CLABE = '012 180 01578898256 3';
+const BANK_NAME = 'BBVA';
+const BANK_BENEFICIARY = 'DUCKS BASKETBALL';
+
 
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2600); }
 function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
@@ -256,6 +261,17 @@ function selectPortalPlayer(id){
   if(box) box.innerHTML = '';
 }
 
+
+async function copyBank(value, label){
+  const clean = String(value||'').replace(/\s+/g,' ');
+  try{
+    await navigator.clipboard.writeText(clean);
+    toast(label + ' copiada');
+  }catch(e){
+    toast('Copia manualmente: ' + clean);
+  }
+}
+
 function renderPortal(){
   app.innerHTML=`<div class="parent-page"><div class="parent-wrap">
     <div class="parent-admin"><button class="btn secondary" onclick="renderLogin()">Soy administrador</button></div>
@@ -267,7 +283,34 @@ function renderPortal(){
         <div class="step"><b>2</b><p>Adjunta comprobante</p></div>
         <div class="step"><b>3</b><p>Envía para confirmar</p></div>
       </div>
-      <div class="notice success"><b>Muy fácil:</b> llena los datos, adjunta una foto o PDF del comprobante y presiona enviar. No necesitas usuario ni contraseña.</div>
+      <div class="bank-card">
+        <div class="bank-head">
+          <div>
+            <span class="bank-chip">BBVA MX</span>
+            <h2>Datos para depósito o transferencia</h2>
+            <p>Realiza tu pago y después adjunta el comprobante en este portal.</p>
+          </div>
+          <img src="assets/logo.png" alt="Ducks">
+        </div>
+        <div class="bank-grid">
+          <div class="bank-item">
+            <small>Cuenta</small>
+            <strong>${BANK_ACCOUNT}</strong>
+            <button type="button" class="btn secondary" onclick="copyBank(BANK_ACCOUNT,'Cuenta')">Copiar cuenta</button>
+          </div>
+          <div class="bank-item">
+            <small>CLABE</small>
+            <strong>${BANK_CLABE}</strong>
+            <button type="button" class="btn secondary" onclick="copyBank(BANK_CLABE,'CLABE')">Copiar CLABE</button>
+          </div>
+          <div class="bank-item full">
+            <small>Beneficiario / Referencia</small>
+            <strong>${BANK_BENEFICIARY}</strong>
+            <button type="button" class="btn secondary" onclick="copyBank(BANK_BENEFICIARY,'Beneficiario')">Copiar beneficiario</button>
+          </div>
+        </div>
+      </div>
+      <div class="notice success"><b>Muy fácil:</b> copia la cuenta o CLABE, realiza tu pago, adjunta una foto o PDF del comprobante y presiona enviar. No necesitas usuario ni contraseña.</div>
       <form id="portalForm" class="parent-form">
         <label class="label full">Buscar jugador<input id="portalSearch" class="input" autocomplete="off" placeholder="Escribe nombre o apellido del jugador..." required><input id="portalPlayer" type="hidden" required><span class="simple-help">Escribe mínimo 2 letras. Aparecerán los jugadores más cercanos con foto para evitar errores.</span><div id="portalPlayerOptions" class="player-options"></div><div id="portalSelected"></div></label>
         <label class="label">Fecha de pago<input id="portalDate" class="input" type="date" required value="${todayISO()}"></label>
@@ -392,6 +435,6 @@ async function rejectPayment(id){const {error}=await sb.from('payments').update(
 async function deletePayment(id){if(!confirm('¿Eliminar pago?'))return; const {error}=await sb.from('payments').delete().eq('id',id); if(error)toast(error.message); else{toast('Pago eliminado'); await refresh();}}
 function goPage(p){page=p; renderPage();}
 
-window.selectPortalPlayer=selectPortalPlayer; window.renderLogin=renderLogin; window.openPlayerForm=openPlayerForm; window.deletePlayer=deletePlayer; window.openPaymentForm=openPaymentForm; window.confirmPayment=confirmPayment; window.rejectPayment=rejectPayment; window.deletePayment=deletePayment; window.closeModal=closeModal; window.copyReminder=copyReminder; window.goPage=goPage;
+window.copyBank=copyBank; window.selectPortalPlayer=selectPortalPlayer; window.renderLogin=renderLogin; window.openPlayerForm=openPlayerForm; window.deletePlayer=deletePlayer; window.openPaymentForm=openPaymentForm; window.confirmPayment=confirmPayment; window.rejectPayment=rejectPayment; window.deletePayment=deletePayment; window.closeModal=closeModal; window.copyReminder=copyReminder; window.goPage=goPage;
 
 init();
