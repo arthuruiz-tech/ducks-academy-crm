@@ -1,0 +1,16 @@
+Ducks CRM Profesional v2.7
+
+Base usada:
+- Ducks_CRM_PROFESIONAL_v2_5_DATOS_BANCARIOS_COPIAR_PUBLIC.zip
+
+Cambios solicitados:
+- Portal público con estilo de página web profesional, pero simple para papás.
+- Menú horizontal fijo:
+  Inicio, Calendario de Juegos, Iniciar Sesión, Academia, Contacto.
+- Se conserva botón “Soy administrador”.
+- Logo Ducks centrado debajo del menú.
+- Se eliminó la imagen de “portal de papás”.
+- Se agregó una cinta de portada (hero ribbon) profesional debajo del logo.
+- Se conserva portal de pagos, datos BBVA, botones copiar, buscador de jugador con foto y envío de comprobantes.
+
+Sube todo lo de adentro de este ZIP a la raíz de GitHub y haz Commit changes.

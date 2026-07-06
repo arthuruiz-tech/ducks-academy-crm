@@ -1,5 +1,5 @@
 
-// Ducks CRM profesional v2.5 - datos bancarios BBVA con copiar cuenta y CLABE
+// Ducks CRM profesional v2.7 - home profesional y simple para papás, sin imagen portal
 const app = document.getElementById('app');
 let sb = null;
 let session = null;
@@ -273,57 +273,130 @@ async function copyBank(value, label){
 }
 
 function renderPortal(){
-  app.innerHTML=`<div class="parent-page"><div class="parent-wrap">
-    <div class="parent-admin"><button class="btn secondary" onclick="renderLogin()">Soy administrador</button></div>
-    <img class="parent-cover" src="assets/portal_cover.png" alt="Portal de Papás Ducks">
-    <div class="parent-card">
-      <div class="parent-title"><img src="assets/logo.png"><div><h1>Sube tu comprobante</h1><div class="sub">Ducks Basketball Academy · Portal de papás</div></div></div>
-      <div class="parent-steps">
-        <div class="step"><b>1</b><p>Selecciona al jugador</p></div>
-        <div class="step"><b>2</b><p>Adjunta comprobante</p></div>
-        <div class="step"><b>3</b><p>Envía para confirmar</p></div>
+  app.innerHTML=`<div class="public-site">
+    <header class="public-nav">
+      <div class="public-nav-inner">
+        <nav class="public-menu">
+          <a href="#inicio">Inicio</a>
+          <a href="#calendario">Calendario de Juegos</a>
+          <button type="button" onclick="renderLogin()">Iniciar Sesión</button>
+          <a href="#academia">Academia</a>
+          <a href="#contacto">Contacto</a>
+        </nav>
+        <button class="btn secondary admin-btn" onclick="renderLogin()">Soy administrador</button>
       </div>
-      <div class="bank-card">
-        <div class="bank-head">
+    </header>
+
+    <main class="public-main">
+      <section id="inicio" class="public-top">
+        <img class="public-logo-main" src="assets/logo.png" alt="Ducks Basketball Academy">
+        <div class="hero-ribbon">
+          <div class="hero-ribbon-text">
+            <span class="hero-kicker">DUCKS BASKETBALL ACADEMY</span>
+            <h1>Formación deportiva, disciplina y comunicación simple para mamás y papás</h1>
+            <p>Consulta información de la academia, revisa el calendario y realiza tus pagos de manera clara y rápida desde este portal.</p>
+            <div class="hero-actions">
+              <a class="btn green" href="#pagos">Ir a portal de pagos</a>
+              <a class="btn secondary" href="#contacto">Contacto</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="pagos" class="parent-card payment-card">
+        <div class="parent-title">
+          <img src="assets/logo.png">
           <div>
-            <span class="bank-chip">BBVA MX</span>
-            <h2>Datos para depósito o transferencia</h2>
-            <p>Realiza tu pago y después adjunta el comprobante en este portal.</p>
-          </div>
-          <img src="assets/logo.png" alt="Ducks">
-        </div>
-        <div class="bank-grid">
-          <div class="bank-item">
-            <small>Cuenta</small>
-            <strong>${BANK_ACCOUNT}</strong>
-            <button type="button" class="btn secondary" onclick="copyBank(BANK_ACCOUNT,'Cuenta')">Copiar cuenta</button>
-          </div>
-          <div class="bank-item">
-            <small>CLABE</small>
-            <strong>${BANK_CLABE}</strong>
-            <button type="button" class="btn secondary" onclick="copyBank(BANK_CLABE,'CLABE')">Copiar CLABE</button>
-          </div>
-          <div class="bank-item full">
-            <small>Beneficiario / Referencia</small>
-            <strong>${BANK_BENEFICIARY}</strong>
-            <button type="button" class="btn secondary" onclick="copyBank(BANK_BENEFICIARY,'Beneficiario')">Copiar beneficiario</button>
+            <h1>Portal de Papás</h1>
+            <div class="sub">Paga, adjunta tu comprobante y envíalo para confirmación</div>
           </div>
         </div>
-      </div>
-      <div class="notice success"><b>Muy fácil:</b> copia la cuenta o CLABE, realiza tu pago, adjunta una foto o PDF del comprobante y presiona enviar. No necesitas usuario ni contraseña.</div>
-      <form id="portalForm" class="parent-form">
-        <label class="label full">Buscar jugador<input id="portalSearch" class="input" autocomplete="off" placeholder="Escribe nombre o apellido del jugador..." required><input id="portalPlayer" type="hidden" required><span class="simple-help">Escribe mínimo 2 letras. Aparecerán los jugadores más cercanos con foto para evitar errores.</span><div id="portalPlayerOptions" class="player-options"></div><div id="portalSelected"></div></label>
-        <label class="label">Fecha de pago<input id="portalDate" class="input" type="date" required value="${todayISO()}"></label>
-        <label class="label">Monto pagado<input id="portalAmount" class="input" type="number" min="0" step="50" required placeholder="$"></label>
-        <label class="label">Método<select id="portalMethod" class="select" required><option></option><option>Transferencia</option><option>Depósito</option><option>Efectivo</option><option>Otro</option></select></label>
-        <label class="label">Nombre de quien envía<input id="portalBy" class="input" placeholder="Papá / Mamá / Tutor"></label>
-        <label class="label full">Comprobante<input id="portalEvidence" class="input" type="file" accept="image/*,application/pdf" required><span class="simple-help">Puedes subir foto, captura de pantalla o PDF.</span></label>
-        <label class="label full">Comentario opcional<textarea id="portalNotes" class="input" placeholder="Referencia, banco o comentario..."></textarea></label>
-        <input id="portalPeriod" type="hidden" value="${period(todayISO())}">
-        <div class="full"><button class="btn green" style="width:100%;font-size:18px;padding:14px">Enviar comprobante de pago</button></div>
-      </form>
-    </div>
-  </div></div>`;
+
+        <div class="parent-steps">
+          <div class="step"><b>1</b><p>Busca al jugador</p></div>
+          <div class="step"><b>2</b><p>Copia cuenta o CLABE</p></div>
+          <div class="step"><b>3</b><p>Sube el comprobante</p></div>
+        </div>
+
+        <div class="bank-card">
+          <div class="bank-head">
+            <div>
+              <span class="bank-chip">BBVA MX</span>
+              <h2>Datos para depósito o transferencia</h2>
+              <p>Copia la cuenta o CLABE, realiza tu pago y después adjunta el comprobante.</p>
+            </div>
+            <img src="assets/logo.png" alt="Ducks">
+          </div>
+          <div class="bank-grid">
+            <div class="bank-item">
+              <small>Cuenta</small>
+              <strong>${BANK_ACCOUNT}</strong>
+              <button type="button" class="btn secondary" onclick="copyBank(BANK_ACCOUNT,'Cuenta')">Copiar cuenta</button>
+            </div>
+            <div class="bank-item">
+              <small>CLABE</small>
+              <strong>${BANK_CLABE}</strong>
+              <button type="button" class="btn secondary" onclick="copyBank(BANK_CLABE,'CLABE')">Copiar CLABE</button>
+            </div>
+            <div class="bank-item full">
+              <small>Beneficiario / referencia</small>
+              <strong>${BANK_BENEFICIARY}</strong>
+              <button type="button" class="btn secondary" onclick="copyBank(BANK_BENEFICIARY,'Beneficiario')">Copiar beneficiario</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="notice success"><b>Muy fácil:</b> escribe el nombre o apellido del jugador, elige la opción correcta con foto, realiza el pago y adjunta una foto o PDF del comprobante.</div>
+
+        <form id="portalForm" class="parent-form">
+          <label class="label full">Buscar jugador
+            <input id="portalSearch" class="input" autocomplete="off" placeholder="Escribe nombre o apellido del jugador..." required>
+            <input id="portalPlayer" type="hidden" required>
+            <span class="simple-help">Escribe mínimo 2 letras. Aparecerán las opciones más cercanas con foto para evitar errores.</span>
+            <div id="portalPlayerOptions" class="player-options"></div>
+            <div id="portalSelected"></div>
+          </label>
+          <label class="label">Fecha de pago<input id="portalDate" class="input" type="date" required value="${todayISO()}"></label>
+          <label class="label">Monto pagado<input id="portalAmount" class="input" type="number" min="0" step="50" required placeholder="$"></label>
+          <label class="label">Método<select id="portalMethod" class="select" required><option></option><option>Transferencia</option><option>Depósito</option><option>Efectivo</option><option>Otro</option></select></label>
+          <label class="label">Nombre de quien envía<input id="portalBy" class="input" placeholder="Papá / Mamá / Tutor"></label>
+          <label class="label full">Comprobante<input id="portalEvidence" class="input" type="file" accept="image/*,application/pdf" required><span class="simple-help">Puedes subir foto, captura de pantalla o PDF.</span></label>
+          <label class="label full">Comentario opcional<textarea id="portalNotes" class="input" placeholder="Referencia, banco o comentario..."></textarea></label>
+          <input id="portalPeriod" type="hidden" value="${period(todayISO())}">
+          <div class="full"><button class="btn green" style="width:100%;font-size:18px;padding:14px">Enviar comprobante de pago</button></div>
+        </form>
+      </section>
+
+      <section id="calendario" class="info-section">
+        <h2>Calendario de Juegos</h2>
+        <p>Aquí podrás publicar partidos, torneos, horarios, sedes y categorías. Por ahora, puedes usar esta sección como página principal informativa.</p>
+        <div class="calendar-placeholder">
+          <span>🏀</span>
+          <b>Calendario disponible próximamente</b>
+          <small>Una vez que lo decidas, también puedo dejar esta sección lista para capturar juegos reales.</small>
+        </div>
+      </section>
+
+      <section id="academia" class="info-section">
+        <h2>Academia</h2>
+        <p>Ducks Basketball Academy está enfocada en el desarrollo integral de niños y jóvenes a través del deporte, la disciplina, el trabajo en equipo y la mejora continua.</p>
+        <div class="academy-grid">
+          <div><b>Desarrollo técnico</b><small>Fundamentos, coordinación, defensa, tiro y lectura de juego.</small></div>
+          <div><b>Competencia formativa</b><small>Juegos, torneos y seguimiento por nivel y categoría.</small></div>
+          <div><b>Comunicación con papás</b><small>Portal claro para pagos, avisos y control administrativo.</small></div>
+        </div>
+      </section>
+
+      <section id="contacto" class="info-section contact-section">
+        <h2>Contacto</h2>
+        <p>Si tienes dudas sobre pagos, entrenamientos, torneos o comprobantes, comunícate con la administración de Ducks Basketball Academy.</p>
+        <div class="contact-actions">
+          <a class="btn green" href="#pagos">Ir al portal de pagos</a>
+          <button type="button" class="btn secondary" onclick="renderLogin()">Iniciar sesión</button>
+        </div>
+      </section>
+    </main>
+  </div>`;
   renderPortalPlayerOptions('');
   document.getElementById('portalSearch').oninput=(e)=>{document.getElementById('portalPlayer').value=''; document.getElementById('portalSelected').innerHTML=''; renderPortalPlayerOptions(e.target.value);};
   document.getElementById('portalDate').onchange=()=>{document.getElementById('portalPeriod').value=period(document.getElementById('portalDate').value);};
