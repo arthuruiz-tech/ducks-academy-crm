@@ -1,0 +1,88 @@
+-- Ducks CRM v2.8 - Portal privado de papás
+-- Ejecutar en Supabase SQL Editor DESPUÉS de tener las tablas base players/payments.
+
+create table if not exists public.parent_player_links (
+  id uuid primary key default gen_random_uuid(),
+  parent_email text not null,
+  parent_name text,
+  player_id text not null references public.players(id) on delete cascade,
+  active boolean not null default true,
+  created_at timestamptz not null default now(),
+  unique(parent_email, player_id)
+);
+
+alter table public.parent_player_links enable row level security;
+
+-- Limpieza para poder volver a correr este archivo sin duplicar políticas
+drop policy if exists "admin all parent links" on public.parent_player_links;
+drop policy if exists "parents read own links" on public.parent_player_links;
+drop policy if exists "parents read linked players" on public.players;
+drop policy if exists "parents read linked payments" on public.payments;
+drop policy if exists "parents insert own linked payments" on public.payments;
+
+-- NOTA:
+-- Estas políticas asumen que el administrador usa una cuenta autenticada.
+-- Si ya tienes políticas admin más específicas, puedes conservarlas y ajustar estas.
+
+create policy "admin all parent links"
+on public.parent_player_links
+for all
+to authenticated
+using (true)
+with check (true);
+
+create policy "parents read own links"
+on public.parent_player_links
+for select
+to authenticated
+using (lower(parent_email) = lower(auth.email()) and active = true);
+
+create policy "parents read linked players"
+on public.players
+for select
+to authenticated
+using (
+  exists (
+    select 1
+    from public.parent_player_links l
+    where l.player_id = players.id
+      and lower(l.parent_email) = lower(auth.email())
+      and l.active = true
+  )
+);
+
+create policy "parents read linked payments"
+on public.payments
+for select
+to authenticated
+using (
+  exists (
+    select 1
+    from public.parent_player_links l
+    where l.player_id = payments.player_id
+      and lower(l.parent_email) = lower(auth.email())
+      and l.active = true
+  )
+);
+
+create policy "parents insert own linked payments"
+on public.payments
+for insert
+to authenticated
+with check (
+  confirmation_status = 'Pendiente de confirmación'
+  and exists (
+    select 1
+    from public.parent_player_links l
+    where l.player_id = payments.player_id
+      and lower(l.parent_email) = lower(auth.email())
+      and l.active = true
+  )
+);
+
+-- Instrucciones:
+-- 1. Crea el usuario del papá en Authentication > Users.
+-- 2. En el CRM, entra como administrador.
+-- 3. Ve a Papás.
+-- 4. Escribe el correo exacto del papá y asígnale uno o varios jugadores.
+-- 5. El papá entra con ese correo y contraseña al Portal de Papás.

@@ -1,0 +1,30 @@
+Ducks CRM Profesional v2.8
+
+Base: versión estable con datos BBVA.
+
+Cambios principales:
+- Página pública profesional para la academia.
+- Menú simple para papás:
+  Inicio, Portal de Papás, Calendario, Academia, Contacto.
+- Botón principal: Entrar al Portal de Papás.
+- Cinta de portada profesional en alta calidad, sin la imagen blanca anterior.
+- Portal de Papás ya no es público: requiere usuario y contraseña.
+- Cada papá solo ve sus hijos asignados.
+- Si un papá tiene varios hijos, los ve en la misma cuenta.
+- El papá puede ver:
+  foto, categoría, número de uniforme, estado de pago, adeudo, historial, comprobantes, datos BBVA.
+- El papá puede subir comprobante, pero no puede modificar datos del jugador.
+- Admin puede asignar papás a jugadores en módulo “Papás”.
+
+IMPORTANTE:
+Antes de usar el portal privado, ejecuta en Supabase SQL Editor:
+PASO_3_SQL_PORTAL_PRIVADO_PAPAS_v2_8.txt
+
+Después:
+1. Crea usuario del papá en Supabase > Authentication > Users.
+2. Entra al CRM como administrador.
+3. Abre módulo Papás.
+4. Asigna el correo del papá a uno o varios jugadores.
+5. El papá entra desde “Portal de Papás”.
+
+Sube todo lo de adentro del ZIP a la raíz de GitHub y haz Commit changes.
