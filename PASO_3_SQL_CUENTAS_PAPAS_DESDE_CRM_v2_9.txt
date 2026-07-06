@@ -1,0 +1,252 @@
+-- Ducks CRM v2.9 - Cuentas de papás creadas desde el CRM
+-- Ejecutar en Supabase SQL Editor.
+
+create extension if not exists pgcrypto;
+
+create table if not exists public.parent_accounts (
+  id uuid primary key default gen_random_uuid(),
+  login text not null unique,
+  display_name text not null,
+  phone text,
+  password_hash text not null,
+  active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.parent_player_links (
+  id uuid primary key default gen_random_uuid(),
+  parent_account_id uuid not null references public.parent_accounts(id) on delete cascade,
+  player_id text not null references public.players(id) on delete cascade,
+  active boolean not null default true,
+  created_at timestamptz not null default now(),
+  unique(parent_account_id, player_id)
+);
+
+create table if not exists public.parent_sessions (
+  token uuid primary key default gen_random_uuid(),
+  parent_account_id uuid not null references public.parent_accounts(id) on delete cascade,
+  expires_at timestamptz not null default now() + interval '30 days',
+  created_at timestamptz not null default now()
+);
+
+alter table public.parent_accounts enable row level security;
+alter table public.parent_player_links enable row level security;
+alter table public.parent_sessions enable row level security;
+
+drop policy if exists "admin manage parent accounts" on public.parent_accounts;
+drop policy if exists "admin manage parent links" on public.parent_player_links;
+drop policy if exists "admin manage parent sessions" on public.parent_sessions;
+
+create policy "admin manage parent accounts"
+on public.parent_accounts
+for all
+to authenticated
+using (true)
+with check (true);
+
+create policy "admin manage parent links"
+on public.parent_player_links
+for all
+to authenticated
+using (true)
+with check (true);
+
+create policy "admin manage parent sessions"
+on public.parent_sessions
+for all
+to authenticated
+using (true)
+with check (true);
+
+-- Crear cuenta de papá desde el CRM admin.
+create or replace function public.ducks_admin_create_parent_account(
+  p_login text,
+  p_display_name text,
+  p_phone text,
+  p_password text
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_id uuid;
+begin
+  if auth.role() <> 'authenticated' then
+    return jsonb_build_object('ok', false, 'message', 'No autorizado.');
+  end if;
+
+  if length(trim(coalesce(p_login,''))) < 3 then
+    return jsonb_build_object('ok', false, 'message', 'Usuario inválido.');
+  end if;
+
+  if length(coalesce(p_password,'')) < 4 then
+    return jsonb_build_object('ok', false, 'message', 'La contraseña debe tener al menos 4 caracteres.');
+  end if;
+
+  insert into public.parent_accounts(login, display_name, phone, password_hash, active)
+  values (
+    lower(trim(p_login)),
+    trim(p_display_name),
+    nullif(trim(coalesce(p_phone,'')), ''),
+    crypt(p_password, gen_salt('bf')),
+    true
+  )
+  on conflict (login) do update set
+    display_name = excluded.display_name,
+    phone = excluded.phone,
+    password_hash = excluded.password_hash,
+    active = true
+  returning id into v_id;
+
+  return jsonb_build_object('ok', true, 'id', v_id);
+end;
+$$;
+
+-- Login de papás, no usa Supabase Auth.
+create or replace function public.ducks_parent_login(
+  p_login text,
+  p_password text
+)
+returns table(ok boolean, message text, token uuid)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_account public.parent_accounts%rowtype;
+  v_token uuid;
+begin
+  select * into v_account
+  from public.parent_accounts
+  where lower(login) = lower(trim(p_login))
+    and active = true
+  limit 1;
+
+  if not found then
+    return query select false, 'Usuario o contraseña incorrectos.', null::uuid;
+    return;
+  end if;
+
+  if v_account.password_hash <> crypt(p_password, v_account.password_hash) then
+    return query select false, 'Usuario o contraseña incorrectos.', null::uuid;
+    return;
+  end if;
+
+  insert into public.parent_sessions(parent_account_id)
+  values (v_account.id)
+  returning parent_sessions.token into v_token;
+
+  return query select true, 'OK', v_token;
+end;
+$$;
+
+-- Datos del portal privado de papás.
+create or replace function public.ducks_parent_portal(p_token uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_account_id uuid;
+  v_account jsonb;
+  v_players jsonb;
+  v_payments jsonb;
+begin
+  select s.parent_account_id into v_account_id
+  from public.parent_sessions s
+  where s.token = p_token and s.expires_at > now();
+
+  if v_account_id is null then
+    return jsonb_build_object('ok', false, 'message', 'Sesión inválida.');
+  end if;
+
+  select jsonb_build_object('id', id, 'login', login, 'display_name', display_name, 'phone', phone)
+  into v_account
+  from public.parent_accounts
+  where id = v_account_id;
+
+  select coalesce(jsonb_agg(to_jsonb(p) order by p.name), '[]'::jsonb)
+  into v_players
+  from public.players p
+  join public.parent_player_links l on l.player_id = p.id
+  where l.parent_account_id = v_account_id and l.active = true;
+
+  select coalesce(jsonb_agg(to_jsonb(pay) order by pay.created_at desc), '[]'::jsonb)
+  into v_payments
+  from public.payments pay
+  join public.parent_player_links l on l.player_id = pay.player_id
+  where l.parent_account_id = v_account_id and l.active = true;
+
+  return jsonb_build_object('ok', true, 'account', v_account, 'players', v_players, 'payments', v_payments);
+end;
+$$;
+
+-- Enviar comprobante desde portal privado de papás.
+create or replace function public.ducks_parent_submit_payment(
+  p_token uuid,
+  p_player_id text,
+  p_payment_date date,
+  p_period text,
+  p_amount numeric,
+  p_method text,
+  p_notes text,
+  p_evidence_url text,
+  p_evidence_name text
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_account_id uuid;
+  v_player_name text;
+  v_login text;
+begin
+  select s.parent_account_id into v_account_id
+  from public.parent_sessions s
+  where s.token = p_token and s.expires_at > now();
+
+  if v_account_id is null then
+    return jsonb_build_object('ok', false, 'message', 'Sesión inválida.');
+  end if;
+
+  if not exists (
+    select 1 from public.parent_player_links
+    where parent_account_id = v_account_id and player_id = p_player_id and active = true
+  ) then
+    return jsonb_build_object('ok', false, 'message', 'Jugador no autorizado para esta cuenta.');
+  end if;
+
+  select name into v_player_name from public.players where id = p_player_id;
+  select login into v_login from public.parent_accounts where id = v_account_id;
+
+  insert into public.payments(
+    player_id, student_name, payment_date, period, amount, method, submitted_by,
+    notes, confirmation_status, evidence_url, evidence_name
+  )
+  values (
+    p_player_id, coalesce(v_player_name,''), p_payment_date, p_period, p_amount, p_method, v_login,
+    p_notes, 'Pendiente de confirmación', p_evidence_url, p_evidence_name
+  );
+
+  return jsonb_build_object('ok', true);
+end;
+$$;
+
+grant execute on function public.ducks_admin_create_parent_account(text,text,text,text) to authenticated;
+grant execute on function public.ducks_parent_login(text,text) to anon, authenticated;
+grant execute on function public.ducks_parent_portal(uuid) to anon, authenticated;
+grant execute on function public.ducks_parent_submit_payment(uuid,text,date,text,numeric,text,text,text,text) to anon, authenticated;
+
+-- Uso:
+-- 1. Ejecuta este SQL.
+-- 2. Sube el CRM v2.9.
+-- 3. Entra como administrador.
+-- 4. Ve a Papás.
+-- 5. Crea cuenta de papá con usuario y contraseña.
+-- 6. Liga uno o varios jugadores a esa cuenta.
+-- 7. El papá entra al Portal de Papás y solo ve sus hijos.

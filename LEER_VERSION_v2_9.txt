@@ -1,0 +1,23 @@
+Ducks CRM Profesional v2.9
+
+Base: v2.5 estable con datos BBVA.
+
+Corrección principal:
+- Ya no se depende de crear usuarios de papás manualmente en Supabase Authentication.
+- El administrador crea cuentas de papás directamente desde el CRM.
+- El módulo Papás permite:
+  crear usuarios para papás/tutores,
+  ligar uno o varios jugadores,
+  usar sugerencias con base en los datos existentes de tutor/WhatsApp,
+  eliminar relaciones papá-jugador.
+- El papá entra al Portal de Papás con usuario y contraseña creados en el CRM.
+- El papá solo ve sus hijos asignados.
+- El papá puede ver datos del jugador, estado, adeudo, historial, comprobantes y datos BBVA.
+- El papá puede subir comprobantes.
+- El papá no puede modificar datos del jugador.
+
+IMPORTANTE:
+Antes de usar esta versión, ejecuta en Supabase SQL Editor:
+PASO_3_SQL_CUENTAS_PAPAS_DESDE_CRM_v2_9.txt
+
+Después sube todo el contenido del ZIP a GitHub raíz y haz Commit changes.

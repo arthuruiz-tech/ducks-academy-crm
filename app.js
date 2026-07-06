@@ -1,11 +1,14 @@
-// Ducks CRM profesional v2.8 - página pública + portal privado de papás
+// Ducks CRM profesional v2.9 - portal privado con cuentas de papás creadas desde CRM
 const app = document.getElementById('app');
 let sb = null;
 let session = null;
-let mode = 'public'; // public | parentLogin | parentPortal | adminLogin | admin
+let parentToken = localStorage.getItem('ducks_parent_token') || '';
+let parentProfile = null;
+let mode = 'public';
 let page = 'dashboard';
 let players = [];
 let payments = [];
+let parentAccounts = [];
 let parentLinks = [];
 let parentPlayers = [];
 let parentPayments = [];
@@ -23,10 +26,10 @@ function todayISO(){return new Date().toISOString().slice(0,10);}
 function period(date){return String(date||'').slice(0,7);}
 function statusClass(s){return String(s||'').replace(/\s+/g,'');}
 function thumb(url){return url?`<div class="thumb"><img src="${url}"></div>`:`<div class="thumb"><div class="emptythumb">Sin foto</div></div>`;}
+function playerPhotoUrl(p){ return p?.photo_url || 'assets/logo.png'; }
 function isConfigured(){ return window.DUCKS_SUPABASE_URL && window.DUCKS_SUPABASE_ANON_KEY; }
 function normalizePhone(v){ const d=String(v||'').replace(/\D/g,''); if(!d)return ''; if(d.startsWith('52')&&d.length===12)return '+'+d; if(d.length===10)return '+52'+d; if(d.length>=11&&d.length<=15)return '+'+d; return String(v||'').trim(); }
 function nextId(){ const max=players.reduce((m,p)=>Math.max(m,Number(String(p.id||'').replace(/\D/g,''))||0),0); return 'D'+String(max+1).padStart(3,'0'); }
-function playerPhotoUrl(p){ return p?.photo_url || 'assets/logo.png'; }
 
 function calc(player, payList=payments){
   const confirmed = payList.filter(p=>p.player_id===player.id && p.confirmation_status==='Confirmado').sort((a,b)=>String(b.payment_date).localeCompare(String(a.payment_date)));
@@ -50,27 +53,14 @@ function reminderMessage(player){
   const monthsText = c.months > 1 ? `, correspondiente a ${c.months} meses de adeudo.` : '.';
   return `Hola, buen día. Les recordamos amablemente que está pendiente el pago de la mensualidad de Ducks Basketball Academy por ${money(c.amount)}${monthsText}\n\nPara facilitar el proceso, pueden ingresar al Portal de Papás:\n${window.DUCKS_PORTAL_URL || location.origin}\n\nAgradecemos mucho su apoyo para mantener el control administrativo. 🏀🦆`;
 }
-function whatsappUrl(player){
-  const phone = String(player.phone||'').replace(/\D/g,'');
-  if(!phone) return '';
-  return `https://wa.me/${phone}?text=${encodeURIComponent(reminderMessage(player))}`;
-}
+function whatsappUrl(player){ const phone = String(player.phone||'').replace(/\D/g,''); return phone ? `https://wa.me/${phone}?text=${encodeURIComponent(reminderMessage(player))}` : ''; }
 function whatsappButtons(player){
   const c = calc(player);
   if(c.status !== 'Vencido' || !player.phone) return '';
   return `<button class="btn secondary" onclick="copyReminder('${player.id}')">Copiar</button><a class="btn green" target="_blank" rel="noopener" href="${whatsappUrl(player)}">WhatsApp</a>`;
 }
-async function copyReminder(id){
-  const p=players.find(x=>x.id===id);
-  if(!p) return;
-  await navigator.clipboard.writeText(reminderMessage(p));
-  toast('Mensaje de WhatsApp copiado');
-}
-async function copyBank(value, label){
-  const clean = String(value||'').replace(/\s+/g,' ');
-  try{ await navigator.clipboard.writeText(clean); toast(label + ' copiada'); }
-  catch(e){ toast('Copia manualmente: ' + clean); }
-}
+async function copyReminder(id){ const p=players.find(x=>x.id===id); if(!p) return; await navigator.clipboard.writeText(reminderMessage(p)); toast('Mensaje de WhatsApp copiado'); }
+async function copyBank(value, label){ try{ await navigator.clipboard.writeText(String(value||'').replace(/\s+/g,' ')); toast(label + ' copiada'); }catch(e){ toast('Copia manualmente: ' + value); } }
 
 async function init(){
   if(!isConfigured()){ renderSetup(); return; }
@@ -79,34 +69,28 @@ async function init(){
   session = data.session;
   renderPublicHome();
 }
-function renderSetup(){
-  app.innerHTML=`<div class="public-site"><div class="academy-main"><div class="parent-card"><h1>Configurar Supabase</h1><div class="notice warning">Falta configurar config.js.</div></div></div></div>`;
-}
+function renderSetup(){ app.innerHTML=`<div class="public-site"><div class="academy-main"><div class="parent-card"><h1>Configurar Supabase</h1><div class="notice warning">Falta configurar config.js.</div></div></div></div>`; }
 
 /* Página pública */
 function renderPublicHome(){
   mode='public';
   app.innerHTML=`<div class="public-site">
-    <header class="academy-menu">
-      <div class="academy-menu-inner">
-        <a class="academy-brand" href="#inicio"><img src="assets/logo.png" alt="Ducks"><span>Ducks Basketball Academy</span></a>
-        <nav class="academy-links">
-          <a href="#inicio">Inicio</a>
-          <button type="button" class="primary-menu-btn" onclick="renderParentLogin()">Portal de Papás</button>
-          <a href="#calendario">Calendario</a>
-          <a href="#academia">Academia</a>
-          <a href="#contacto">Contacto</a>
-        </nav>
-        <button class="btn secondary academy-admin" onclick="renderAdminLogin()">Soy administrador</button>
-      </div>
-    </header>
-
+    <header class="academy-menu"><div class="academy-menu-inner">
+      <a class="academy-brand" href="#inicio"><img src="assets/logo.png"><span>Ducks Basketball Academy</span></a>
+      <nav class="academy-links">
+        <a href="#inicio">Inicio</a>
+        <button type="button" class="primary-menu-btn" onclick="renderParentLogin()">Portal de Papás</button>
+        <a href="#calendario">Calendario</a>
+        <a href="#academia">Academia</a>
+        <a href="#contacto">Contacto</a>
+      </nav>
+      <button class="btn secondary academy-admin" onclick="renderAdminLogin()">Soy administrador</button>
+    </div></header>
     <main class="academy-main">
       <section id="inicio" class="academy-ribbon ribbon-hq">
-        <div class="court-lines"></div>
-        <div class="ribbon-ball"></div>
+        <div class="court-lines"></div><div class="ribbon-ball"></div>
         <div class="ribbon-content">
-          <img class="ribbon-logo" src="assets/logo.png" alt="Ducks Basketball Academy">
+          <img class="ribbon-logo" src="assets/logo.png">
           <div class="ribbon-text">
             <span class="ribbon-kicker">Portal oficial de la academia</span>
             <h1>Ducks Basketball Academy</h1>
@@ -118,41 +102,18 @@ function renderPublicHome(){
           </div>
         </div>
       </section>
-
       <section class="quick-parent-card">
-        <div>
-          <h2>Pagos y comprobantes</h2>
-          <p>El Portal de Papás es privado. Cada familia entra con usuario y contraseña para ver únicamente la información de sus hijos.</p>
-        </div>
+        <div><h2>Pagos y comprobantes</h2><p>El Portal de Papás es privado. Cada familia entra con usuario y contraseña para ver únicamente la información de sus hijos.</p></div>
         <button class="btn green" onclick="renderParentLogin()">Entrar al Portal de Papás</button>
       </section>
-
-      <section id="calendario" class="academy-section">
-        <h2>Calendario de Juegos</h2>
-        <p>Próximamente aquí podrás consultar juegos, torneos, horarios, sedes y categorías.</p>
-        <div class="coming-soon"><span>🏀</span><b>Calendario en preparación</b><small>Consulta avisos oficiales de la academia mientras se activa este módulo.</small></div>
-      </section>
-
-      <section id="academia" class="academy-section">
-        <h2>Academia</h2>
-        <p>Ducks Basketball Academy impulsa la disciplina, el trabajo en equipo y el desarrollo deportivo de niños y jóvenes.</p>
-        <div class="academy-grid">
-          <div><b>Entrenamiento</b><small>Fundamentos, técnica y desarrollo físico.</small></div>
-          <div><b>Competencia</b><small>Juegos, torneos y seguimiento por categoría.</small></div>
-          <div><b>Comunidad</b><small>Comunicación clara con papás y control administrativo.</small></div>
-        </div>
-      </section>
-
-      <section id="contacto" class="academy-section contact-section">
-        <h2>Contacto</h2>
-        <p>Para dudas sobre pagos, entrenamientos, calendario o comprobantes, comunícate con la administración de Ducks Basketball Academy.</p>
-        <button class="btn green" onclick="renderParentLogin()">Ir al Portal de Papás</button>
-      </section>
+      <section id="calendario" class="academy-section"><h2>Calendario de Juegos</h2><p>Próximamente aquí podrás consultar juegos, torneos, horarios, sedes y categorías.</p><div class="coming-soon"><span>🏀</span><b>Calendario en preparación</b><small>Consulta avisos oficiales de la academia mientras se activa este módulo.</small></div></section>
+      <section id="academia" class="academy-section"><h2>Academia</h2><p>Ducks Basketball Academy impulsa la disciplina, el trabajo en equipo y el desarrollo deportivo de niños y jóvenes.</p><div class="academy-grid"><div><b>Entrenamiento</b><small>Fundamentos, técnica y desarrollo físico.</small></div><div><b>Competencia</b><small>Juegos, torneos y seguimiento por categoría.</small></div><div><b>Comunidad</b><small>Comunicación clara con papás y control administrativo.</small></div></div></section>
+      <section id="contacto" class="academy-section contact-section"><h2>Contacto</h2><p>Para dudas sobre pagos, entrenamientos, calendario o comprobantes, comunícate con la administración.</p><button class="btn green" onclick="renderParentLogin()">Ir al Portal de Papás</button></section>
     </main>
   </div>`;
 }
 
-/* Login papás */
+/* Portal papás con cuenta interna */
 function renderParentLogin(){
   mode='parentLogin';
   app.innerHTML=`<div class="public-site">
@@ -165,7 +126,7 @@ function renderParentLogin(){
         <div class="parent-title"><img src="assets/logo.png"><div><h1>Portal de Papás</h1><div class="sub">Acceso privado por familia</div></div></div>
         <div class="notice success"><b>Protección de información:</b> al iniciar sesión solo podrás ver a tus hijos asignados.</div>
         <form id="parentLoginForm" class="parent-form">
-          <label class="label full">Correo del papá / tutor<input id="parentEmail" class="input" type="email" required placeholder="correo@ejemplo.com"></label>
+          <label class="label full">Usuario<input id="parentUser" class="input" required placeholder="Correo, teléfono o usuario"></label>
           <label class="label full">Contraseña<input id="parentPassword" class="input" type="password" required placeholder="Contraseña"></label>
           <div class="full"><button class="btn green" style="width:100%;font-size:18px;padding:14px">Entrar al Portal de Papás</button></div>
         </form>
@@ -177,52 +138,34 @@ function renderParentLogin(){
 }
 async function parentLogin(e){
   e.preventDefault();
-  const email=document.getElementById('parentEmail').value.trim();
+  const user=document.getElementById('parentUser').value.trim();
   const password=document.getElementById('parentPassword').value;
-  const {data,error}=await sb.auth.signInWithPassword({email,password});
+  const {data,error}=await sb.rpc('ducks_parent_login',{p_login:user,p_password:password});
   if(error){toast('No se pudo iniciar sesión: '+error.message); return;}
-  session=data.session;
+  if(!data || !data[0]?.ok){toast(data?.[0]?.message || 'Usuario o contraseña incorrectos'); return;}
+  parentToken=data[0].token;
+  localStorage.setItem('ducks_parent_token',parentToken);
   await loadParentData();
   renderParentPortal();
 }
 async function loadParentData(){
-  const email=session?.user?.email;
-  parentPlayers=[]; parentPayments=[]; parentLinks=[];
-  const links=await sb.from('parent_player_links').select('*').eq('parent_email',email).eq('active',true);
-  if(links.error){toast('Error cargando relación de jugadores: '+links.error.message); return;}
-  parentLinks=links.data||[];
-  const ids=parentLinks.map(x=>x.player_id);
-  if(!ids.length) return;
-  const pr=await sb.from('players').select('id,name,category,uniform_number,monthly_fee,payment_day,status,photo_url').in('id',ids).order('name');
-  if(pr.error){toast('Error cargando jugadores: '+pr.error.message); return;}
-  parentPlayers=pr.data||[];
-  const py=await sb.from('payments').select('*').in('player_id',ids).order('created_at',{ascending:false});
-  if(py.error){toast('Error cargando pagos: '+py.error.message); return;}
-  parentPayments=py.data||[];
+  parentPlayers=[]; parentPayments=[]; parentProfile=null;
+  const {data,error}=await sb.rpc('ducks_parent_portal',{p_token:parentToken});
+  if(error){toast('Error cargando portal: '+error.message); return;}
+  if(!data || !data.ok){toast(data?.message || 'Sesión inválida'); parentToken=''; localStorage.removeItem('ducks_parent_token'); renderParentLogin(); return;}
+  parentProfile=data.account;
+  parentPlayers=data.players||[];
+  parentPayments=data.payments||[];
 }
 function renderParentPortal(){
   mode='parentPortal';
   const cards = parentPlayers.map(p=>{
     const c=calc(p,parentPayments);
-    const history=parentPayments.filter(x=>x.player_id===p.id).slice(0,6);
+    const history=parentPayments.filter(x=>x.player_id===p.id).slice(0,8);
     return `<div class="family-player-card">
-      <div class="family-head">
-        <img src="${playerPhotoUrl(p)}" alt="">
-        <div>
-          <h2>${esc(p.name)}</h2>
-          <p>${esc(p.category||'')} · Uniforme #${esc(p.uniform_number||'-')}</p>
-          <span class="status ${c.status}">${c.status}</span>
-        </div>
-      </div>
-      <div class="family-kpis">
-        <div><small>Último pago</small><b>${esc(c.last||'Sin registro')}</b></div>
-        <div><small>Meses pendientes</small><b>${c.months}</b></div>
-        <div><small>Adeudo actual</small><b class="amount">${money(c.amount)}</b></div>
-      </div>
-      <details class="history-box">
-        <summary>Ver historial y comprobantes</summary>
-        ${history.length?`<table class="mini-table"><thead><tr><th>Fecha</th><th>Monto</th><th>Estatus</th><th>Evidencia</th></tr></thead><tbody>${history.map(h=>`<tr><td>${esc(h.payment_date)}</td><td>${money(h.amount)}</td><td><span class="status ${statusClass(h.confirmation_status)}">${esc(h.confirmation_status)}</span></td><td>${h.evidence_url?`<a target="_blank" href="${h.evidence_url}">Ver</a>`:'-'}</td></tr>`).join('')}</tbody></table>`:'<p class="sub">Sin pagos registrados.</p>'}
-      </details>
+      <div class="family-head"><img src="${playerPhotoUrl(p)}"><div><h2>${esc(p.name)}</h2><p>${esc(p.category||'')} · Uniforme #${esc(p.uniform_number||'-')}</p><span class="status ${c.status}">${c.status}</span></div></div>
+      <div class="family-kpis"><div><small>Último pago</small><b>${esc(c.last||'Sin registro')}</b></div><div><small>Meses pendientes</small><b>${c.months}</b></div><div><small>Adeudo actual</small><b class="amount">${money(c.amount)}</b></div></div>
+      <details class="history-box"><summary>Ver historial y comprobantes</summary>${history.length?`<table class="mini-table"><thead><tr><th>Fecha</th><th>Monto</th><th>Estatus</th><th>Evidencia</th></tr></thead><tbody>${history.map(h=>`<tr><td>${esc(h.payment_date)}</td><td>${money(h.amount)}</td><td><span class="status ${statusClass(h.confirmation_status)}">${esc(h.confirmation_status)}</span></td><td>${h.evidence_url?`<a target="_blank" href="${h.evidence_url}">Ver</a>`:'-'}</td></tr>`).join('')}</tbody></table>`:'<p class="sub">Sin pagos registrados.</p>'}</details>
       <button class="btn green" onclick="openParentPayment('${p.id}')">Subir comprobante de este jugador</button>
     </div>`;
   }).join('');
@@ -230,37 +173,16 @@ function renderParentPortal(){
     <header class="academy-menu"><div class="academy-menu-inner">
       <a class="academy-brand" href="#" onclick="renderParentPortal()"><img src="assets/logo.png"><span>Portal de Papás</span></a>
       <nav class="academy-links"><button onclick="renderParentPortal()">Mis hijos</button><button onclick="openParentPayment()">Subir comprobante</button></nav>
-      <button class="btn secondary academy-admin" onclick="logoutToHome()">Cerrar sesión</button>
+      <button class="btn secondary academy-admin" onclick="parentLogout()">Cerrar sesión</button>
     </div></header>
     <main class="academy-main">
-      <section class="academy-ribbon private-ribbon">
-        <div class="court-lines"></div>
-        <div class="ribbon-content">
-          <img class="ribbon-logo small" src="assets/logo.png" alt="Ducks">
-          <div class="ribbon-text">
-            <span class="ribbon-kicker">Acceso privado</span>
-            <h1>Bienvenido al Portal de Papás</h1>
-            <p>Solo se muestra la información de los jugadores asignados a tu familia.</p>
-          </div>
-        </div>
-      </section>
-
-      <section class="parent-card">
-        <div class="parent-title"><img src="assets/logo.png"><div><h1>Mis jugadores</h1><div class="sub">${esc(session?.user?.email||'')}</div></div></div>
-        ${parentPlayers.length?`<div class="family-grid">${cards}</div>`:`<div class="notice warning">Tu cuenta aún no tiene jugadores asignados. Contacta a administración.</div>`}
-      </section>
-
-      <section class="bank-card">
-        <div class="bank-head"><div><span class="bank-chip">BBVA MX</span><h2>Datos para depósito o transferencia</h2><p>Copia la cuenta o CLABE, realiza tu pago y después adjunta el comprobante.</p></div><img src="assets/logo.png" alt="Ducks"></div>
-        <div class="bank-grid">
-          <div class="bank-item"><small>Cuenta</small><strong>${BANK_ACCOUNT}</strong><button type="button" class="btn secondary" onclick="copyBank(BANK_ACCOUNT,'Cuenta')">Copiar cuenta</button></div>
-          <div class="bank-item"><small>CLABE</small><strong>${BANK_CLABE}</strong><button type="button" class="btn secondary" onclick="copyBank(BANK_CLABE,'CLABE')">Copiar CLABE</button></div>
-          <div class="bank-item full"><small>Beneficiario / referencia</small><strong>${BANK_BENEFICIARY}</strong><button type="button" class="btn secondary" onclick="copyBank(BANK_BENEFICIARY,'Beneficiario')">Copiar beneficiario</button></div>
-        </div>
-      </section>
+      <section class="academy-ribbon private-ribbon"><div class="court-lines"></div><div class="ribbon-content"><img class="ribbon-logo small" src="assets/logo.png"><div class="ribbon-text"><span class="ribbon-kicker">Acceso privado</span><h1>Bienvenido al Portal de Papás</h1><p>${esc(parentProfile?.display_name||parentProfile?.login||'')}</p></div></div></section>
+      <section class="parent-card"><div class="parent-title"><img src="assets/logo.png"><div><h1>Mis jugadores</h1><div class="sub">Solo información asignada a tu familia</div></div></div>${parentPlayers.length?`<div class="family-grid">${cards}</div>`:`<div class="notice warning">Tu cuenta aún no tiene jugadores asignados. Contacta a administración.</div>`}</section>
+      <section class="bank-card"><div class="bank-head"><div><span class="bank-chip">BBVA MX</span><h2>Datos para depósito o transferencia</h2><p>Copia la cuenta o CLABE, realiza tu pago y después adjunta el comprobante.</p></div><img src="assets/logo.png"></div><div class="bank-grid"><div class="bank-item"><small>Cuenta</small><strong>${BANK_ACCOUNT}</strong><button type="button" class="btn secondary" onclick="copyBank(BANK_ACCOUNT,'Cuenta')">Copiar cuenta</button></div><div class="bank-item"><small>CLABE</small><strong>${BANK_CLABE}</strong><button type="button" class="btn secondary" onclick="copyBank(BANK_CLABE,'CLABE')">Copiar CLABE</button></div><div class="bank-item full"><small>Beneficiario / referencia</small><strong>${BANK_BENEFICIARY}</strong><button type="button" class="btn secondary" onclick="copyBank(BANK_BENEFICIARY,'Beneficiario')">Copiar beneficiario</button></div></div></section>
     </main>
   </div>`;
 }
+function parentLogout(){ parentToken=''; parentProfile=null; parentPlayers=[]; parentPayments=[]; localStorage.removeItem('ducks_parent_token'); renderPublicHome(); }
 function openParentPayment(playerId=''){
   if(!parentPlayers.length){toast('No tienes jugadores asignados.'); return;}
   const selected = playerId ? parentPlayers.find(p=>p.id===playerId) : parentPlayers[0];
@@ -285,15 +207,15 @@ function openParentPayment(playerId=''){
 async function submitParentPayment(e){
   e.preventDefault();
   const player_id=document.getElementById('parentPayPlayer').value;
-  if(!parentPlayers.some(p=>p.id===player_id)){toast('Jugador no autorizado para esta cuenta.'); return;}
   const player=parentPlayers.find(p=>p.id===player_id);
   const file=document.getElementById('parentPayEvidence').files[0];
   try{
     const evidence_url=await uploadFile(file,'evidencias');
     const payDate=document.getElementById('parentPayDate').value;
-    const row={player_id,student_name:player?.name||'',payment_date:payDate,period:period(payDate),amount:Number(document.getElementById('parentPayAmount').value||0),method:document.getElementById('parentPayMethod').value,submitted_by:session?.user?.email||'Papá',notes:document.getElementById('parentPayNotes').value,confirmation_status:'Pendiente de confirmación',evidence_url,evidence_name:file.name};
-    const {error}=await sb.from('payments').insert(row);
+    const row={p_token:parentToken,p_player_id:player_id,p_payment_date:payDate,p_period:period(payDate),p_amount:Number(document.getElementById('parentPayAmount').value||0),p_method:document.getElementById('parentPayMethod').value,p_notes:document.getElementById('parentPayNotes').value,p_evidence_url:evidence_url,p_evidence_name:file.name};
+    const {data,error}=await sb.rpc('ducks_parent_submit_payment',row);
     if(error) throw error;
+    if(!data?.ok) throw new Error(data?.message||'No se pudo enviar');
     closeModal('parentPayModal');
     toast('Comprobante enviado. Queda pendiente de confirmación.');
     await loadParentData();
@@ -301,18 +223,11 @@ async function submitParentPayment(e){
   }catch(err){toast('Error: '+err.message);}
 }
 
-/* Login admin */
+/* Admin login y shell */
 function renderAdminLogin(){
   mode='adminLogin';
-  app.innerHTML = `<div class="public-site"><header class="academy-menu"><div class="academy-menu-inner"><a class="academy-brand" href="#" onclick="renderPublicHome()"><img src="assets/logo.png"><span>Ducks Basketball Academy</span></a><nav class="academy-links"><button onclick="renderPublicHome()">Inicio</button><button onclick="renderParentLogin()">Portal de Papás</button></nav></div></header>
-  <main class="academy-main"><div class="login-card">
-    <div class="parent-title"><img src="assets/logo.png"><div><h1>Administrador</h1><div class="sub">Acceso interno Ducks</div></div></div>
-    <form id="loginForm" class="parent-form">
-      <label class="label full">Email<input id="loginEmail" class="input" type="email" required></label>
-      <label class="label full">Password<input id="loginPassword" class="input" type="password" required></label>
-      <div class="full"><button class="btn green">Entrar como administrador</button></div>
-    </form>
-  </div></main></div>`;
+  app.innerHTML=`<div class="public-site"><header class="academy-menu"><div class="academy-menu-inner"><a class="academy-brand" href="#" onclick="renderPublicHome()"><img src="assets/logo.png"><span>Ducks Basketball Academy</span></a><nav class="academy-links"><button onclick="renderPublicHome()">Inicio</button><button onclick="renderParentLogin()">Portal de Papás</button></nav></div></header>
+  <main class="academy-main"><div class="login-card"><div class="parent-title"><img src="assets/logo.png"><div><h1>Administrador</h1><div class="sub">Acceso interno Ducks</div></div></div><form id="loginForm" class="parent-form"><label class="label full">Email<input id="loginEmail" class="input" type="email" required></label><label class="label full">Password<input id="loginPassword" class="input" type="password" required></label><div class="full"><button class="btn green">Entrar como administrador</button></div></form></div></main></div>`;
   document.getElementById('loginForm').onsubmit=login;
 }
 async function login(e){
@@ -321,154 +236,101 @@ async function login(e){
   if(error){toast(error.message);return;}
   session=data.session; mode='admin'; page='dashboard'; renderShell(); await loadAdminData(); renderPage();
 }
-async function logoutToHome(){ await sb.auth.signOut(); session=null; renderPublicHome(); }
-async function logout(){ await logoutToHome(); }
-
-/* Data admin */
+async function logout(){ await sb.auth.signOut(); session=null; renderPublicHome(); }
 async function loadAdminData(){
-  const pr=await sb.from('players').select('*').order('id');
-  if(pr.error){toast('Error cargando jugadores: '+pr.error.message); return;}
-  players=pr.data||[];
-  const py=await sb.from('payments').select('*').order('created_at',{ascending:false});
-  if(py.error){toast('Error cargando pagos: '+py.error.message); return;}
-  payments=py.data||[];
-  const ln=await sb.from('parent_player_links').select('*').order('parent_email');
-  parentLinks=ln.error?[]:(ln.data||[]);
+  const pr=await sb.from('players').select('*').order('id'); if(pr.error){toast('Error jugadores: '+pr.error.message); return;} players=pr.data||[];
+  const py=await sb.from('payments').select('*').order('created_at',{ascending:false}); if(py.error){toast('Error pagos: '+py.error.message); return;} payments=py.data||[];
+  const ac=await sb.from('parent_accounts').select('*').order('display_name'); parentAccounts=ac.error?[]:(ac.data||[]);
+  const ln=await sb.from('parent_player_links').select('*').order('created_at',{ascending:false}); parentLinks=ln.error?[]:(ln.data||[]);
 }
 async function refresh(){ if(mode==='admin'){await loadAdminData(); renderShell(); renderPage();} }
-
 function renderShell(){
-  app.innerHTML = `<div class="shell">
-  <aside class="side">
-    <div class="brand"><img class="brand-logo" src="assets/logo.png" alt="Ducks"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div>
-    <div class="nav">
-      <button data-page="dashboard">📊 Dashboard</button>
-      <button data-page="players">🏀 Jugadores</button>
-      <button data-page="parents">👨‍👩‍👧 Papás</button>
-      <button data-page="payments">💳 Pagos</button>
-      <button data-page="evidence">📎 Evidencias</button>
-      <button data-page="whatsapp">📲 WhatsApp vencidos</button>
-      <button data-page="public">🌐 Ver página pública</button>
-      <button data-page="settings">⚙️ Configuración</button>
-    </div>
-    <div class="help">v2.8: portal privado de papás por familia.</div>
-  </aside>
-  <main class="main">
-    <div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div>
-    <div id="content"></div>
-  </main></div>`;
+  app.innerHTML=`<div class="shell"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.9: cuentas de papás creadas desde el CRM.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
   document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page=b.dataset.page; if(page==='public'){renderPublicHome(); return;} renderPage();});
   document.getElementById('search').oninput=e=>{q=e.target.value; renderPage();};
   document.getElementById('authBtn').onclick=logout;
 }
-function setTitle(t){ 
-  const el=document.getElementById('title'); if(el) el.textContent=t;
-  document.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===page));
-}
-function renderPage(){
-  if(mode!=='admin'){ renderPublicHome(); return; }
-  if(page==='dashboard') renderDashboard();
-  if(page==='players') renderPlayers();
-  if(page==='parents') renderParents();
-  if(page==='payments') renderPayments();
-  if(page==='evidence') renderEvidence();
-  if(page==='whatsapp') renderWhatsApp();
-  if(page==='settings') renderSettings();
-}
-function filteredPlayers(){
-  const s=q.toLowerCase().trim();
-  return players.filter(p=>!s || [p.id,p.name,p.tutor,p.phone,p.category,p.uniform_number].join(' ').toLowerCase().includes(s));
-}
+function setTitle(t){ const el=document.getElementById('title'); if(el) el.textContent=t; document.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===page)); }
+function renderPage(){ if(page==='dashboard') renderDashboard(); if(page==='players') renderPlayers(); if(page==='parents') renderParents(); if(page==='payments') renderPayments(); if(page==='evidence') renderEvidence(); if(page==='whatsapp') renderWhatsApp(); if(page==='settings') renderSettings(); }
+function filteredPlayers(){ const s=q.toLowerCase().trim(); return players.filter(p=>!s || [p.id,p.name,p.tutor,p.phone,p.category,p.uniform_number].join(' ').toLowerCase().includes(s)); }
 
 /* Admin pages */
 function renderDashboard(){
   setTitle('Dashboard ejecutivo');
-  const rows=players.map(p=>({...p,c:calc(p)}));
-  const active=rows.filter(p=>p.status==='Activo').length;
-  const debtors=rows.filter(p=>p.c.amount>0);
-  const overdue=rows.filter(p=>p.c.status==='Vencido').length;
-  const pendingEvidence=payments.filter(p=>p.confirmation_status==='Pendiente de confirmación').length;
-  const totalDebt=debtors.reduce((a,p)=>a+p.c.amount,0);
-  document.getElementById('content').innerHTML=`<div class="kpis">
-    <div class="kpi"><small>Jugadores</small><strong>${players.length}</strong></div>
-    <div class="kpi green"><small>Activos</small><strong>${active}</strong></div>
-    <div class="kpi orange"><small>Con adeudo</small><strong>${debtors.length}</strong></div>
-    <div class="kpi red"><small>Vencidos</small><strong>${overdue}</strong></div>
-    <div class="kpi orange"><small>Por confirmar</small><strong>${pendingEvidence}</strong></div>
-    <div class="kpi red"><small>Adeudo total</small><strong>${money(totalDebt)}</strong></div>
-  </div>
-  <div class="panel"><div class="panel-head"><h3>Jugadores con adeudo</h3></div><div class="tablewrap"><table><thead><tr><th>Foto</th><th>ID</th><th>Jugador</th><th>Núm.</th><th>Tutor</th><th>Último pago</th><th>Meses</th><th>Adeudo</th><th>Estado</th><th>WhatsApp</th></tr></thead><tbody>
-  ${debtors.sort((a,b)=>b.c.amount-a.c.amount).map(p=>`<tr><td>${thumb(p.photo_url)}</td><td>${p.id}</td><td><b>${esc(p.name)}</b><br><small>${esc(p.category||'')}</small></td><td><span class="uniform">#${esc(p.uniform_number||'-')}</span></td><td>${esc(p.tutor||'')}</td><td>${esc(p.c.last||'')}</td><td>${p.c.months}</td><td class="amount">${money(p.c.amount)}</td><td><span class="status ${p.c.status}">${p.c.status}</span></td><td>${whatsappButtons(p)}</td></tr>`).join('')||'<tr><td colspan="10">Sin adeudos</td></tr>'}
-  </tbody></table></div></div>`;
+  const rows=players.map(p=>({...p,c:calc(p)})); const active=rows.filter(p=>p.status==='Activo').length; const debtors=rows.filter(p=>p.c.amount>0); const overdue=rows.filter(p=>p.c.status==='Vencido').length; const pendingEvidence=payments.filter(p=>p.confirmation_status==='Pendiente de confirmación').length; const totalDebt=debtors.reduce((a,p)=>a+p.c.amount,0);
+  document.getElementById('content').innerHTML=`<div class="kpis"><div class="kpi"><small>Jugadores</small><strong>${players.length}</strong></div><div class="kpi green"><small>Activos</small><strong>${active}</strong></div><div class="kpi orange"><small>Con adeudo</small><strong>${debtors.length}</strong></div><div class="kpi red"><small>Vencidos</small><strong>${overdue}</strong></div><div class="kpi orange"><small>Por confirmar</small><strong>${pendingEvidence}</strong></div><div class="kpi red"><small>Adeudo total</small><strong>${money(totalDebt)}</strong></div></div>
+  <div class="panel"><div class="panel-head"><h3>Jugadores con adeudo</h3></div><div class="tablewrap"><table><thead><tr><th>Foto</th><th>ID</th><th>Jugador</th><th>Núm.</th><th>Tutor</th><th>Último pago</th><th>Meses</th><th>Adeudo</th><th>Estado</th><th>WhatsApp</th></tr></thead><tbody>${debtors.sort((a,b)=>b.c.amount-a.c.amount).map(p=>`<tr><td>${thumb(p.photo_url)}</td><td>${p.id}</td><td><b>${esc(p.name)}</b><br><small>${esc(p.category||'')}</small></td><td><span class="uniform">#${esc(p.uniform_number||'-')}</span></td><td>${esc(p.tutor||'')}</td><td>${esc(p.c.last||'')}</td><td>${p.c.months}</td><td class="amount">${money(p.c.amount)}</td><td><span class="status ${p.c.status}">${p.c.status}</span></td><td>${whatsappButtons(p)}</td></tr>`).join('')||'<tr><td colspan="10">Sin adeudos</td></tr>'}</tbody></table></div></div>`;
 }
 function renderPlayers(){
   setTitle('Jugadores');
   const list=filteredPlayers();
-  document.getElementById('content').innerHTML=`<div class="panel"><div class="panel-head"><h3>Base de jugadores</h3><button class="btn green" onclick="openPlayerForm()">+ Nuevo jugador</button></div><div class="cards">
-  ${list.map(p=>{const c=calc(p);return `<div class="card">${thumb(p.photo_url)}<h4>${esc(p.name)}</h4><p><span class="uniform">#${esc(p.uniform_number||'-')}</span></p><p><b>ID:</b> ${p.id} · <b>Categoría:</b> ${esc(p.category||'')}</p><p><b>Tutor:</b> ${esc(p.tutor||'')}</p><p><b>WhatsApp:</b> ${esc(p.phone||'')}</p><p><b>Adeudo:</b> <span class="amount">${money(c.amount)}</span> · <span class="status ${c.status}">${c.status}</span></p><div class="actions"><button class="btn secondary" onclick="openPlayerForm('${p.id}')">Editar</button><button class="btn green" onclick="openPaymentForm('${p.id}')">Pago</button>${whatsappButtons(p)}<button class="btn red" onclick="deletePlayer('${p.id}')">Eliminar</button></div></div>`}).join('')||'<div class="card">Sin jugadores</div>'}
-  </div></div>`;
+  document.getElementById('content').innerHTML=`<div class="panel"><div class="panel-head"><h3>Base de jugadores</h3><button class="btn green" onclick="openPlayerForm()">+ Nuevo jugador</button></div><div class="cards">${list.map(p=>{const c=calc(p);return `<div class="card">${thumb(p.photo_url)}<h4>${esc(p.name)}</h4><p><span class="uniform">#${esc(p.uniform_number||'-')}</span></p><p><b>ID:</b> ${p.id} · <b>Categoría:</b> ${esc(p.category||'')}</p><p><b>Tutor:</b> ${esc(p.tutor||'')}</p><p><b>WhatsApp:</b> ${esc(p.phone||'')}</p><p><b>Adeudo:</b> <span class="amount">${money(c.amount)}</span> · <span class="status ${c.status}">${c.status}</span></p><div class="actions"><button class="btn secondary" onclick="openPlayerForm('${p.id}')">Editar</button><button class="btn green" onclick="openPaymentForm('${p.id}')">Pago</button>${whatsappButtons(p)}<button class="btn red" onclick="deletePlayer('${p.id}')">Eliminar</button></div></div>`}).join('')||'<div class="card">Sin jugadores</div>'}</div></div>`;
+}
+function suggestedFamilies(){
+  const m = new Map();
+  players.forEach(p=>{
+    const key=(p.phone||p.tutor||'Sin tutor').trim() || 'Sin tutor';
+    if(!m.has(key)) m.set(key,{key,tutor:p.tutor||'',phone:p.phone||'',players:[]});
+    m.get(key).players.push(p);
+  });
+  return [...m.values()].filter(f=>f.players.length);
 }
 function renderParents(){
   setTitle('Papás / Accesos privados');
-  const emailSet=[...new Set(parentLinks.map(x=>x.parent_email))].sort();
-  document.getElementById('content').innerHTML=`<div class="notice warning"><b>Importante:</b> primero crea el usuario del papá en Supabase Authentication. Después asígnale aquí uno o varios jugadores usando el mismo correo.</div>
-  <div class="panel"><div class="panel-head"><h3>Asignar jugador a papá</h3></div><div class="modal-body">
-    <form id="parentLinkForm" class="form-grid">
-      <label class="label">Correo del papá<input id="linkEmail" class="input" type="email" required placeholder="papá@correo.com"></label>
-      <label class="label">Jugador<select id="linkPlayer" class="select" required><option value="">Selecciona...</option>${players.map(p=>`<option value="${p.id}">${p.id} · ${esc(p.name)}</option>`).join('')}</select></label>
-      <label class="label full">Nombre visible / relación<input id="linkName" class="input" placeholder="Mamá, Papá, Tutor..."></label>
-      <div class="full"><button class="btn green">Asignar jugador</button></div>
-    </form>
-  </div></div>
-  <div class="panel"><div class="panel-head"><h3>Familias asignadas</h3></div><div class="tablewrap"><table><thead><tr><th>Correo papá</th><th>Jugador</th><th>Relación</th><th>Activo</th><th>Acción</th></tr></thead><tbody>
-  ${parentLinks.map(l=>{const p=players.find(x=>x.id===l.player_id); return `<tr><td><b>${esc(l.parent_email)}</b></td><td>${esc(l.player_id)} · ${esc(p?.name||'')}</td><td>${esc(l.parent_name||'')}</td><td>${l.active?'Sí':'No'}</td><td><button class="btn red" onclick="deleteParentLink('${l.id}')">Eliminar</button></td></tr>`}).join('')||'<tr><td colspan="5">Sin asignaciones</td></tr>'}
-  </tbody></table></div></div>`;
+  const fams=suggestedFamilies();
+  document.getElementById('content').innerHTML=`<div class="notice success"><b>Nuevo enfoque:</b> aquí creas el usuario del papá desde el CRM y lo ligas a uno o varios jugadores usando los datos existentes de tutor/WhatsApp.</div>
+  <div class="panel"><div class="panel-head"><h3>Crear cuenta de papá/tutor</h3></div><div class="modal-body"><form id="parentAccountForm" class="form-grid">
+    <label class="label">Nombre visible<input id="accName" class="input" required placeholder="Nombre del papá, mamá o tutor"></label>
+    <label class="label">Usuario<input id="accLogin" class="input" required placeholder="Correo, teléfono o usuario"></label>
+    <label class="label">WhatsApp<input id="accPhone" class="input" placeholder="WhatsApp"></label>
+    <label class="label">Contraseña temporal<input id="accPassword" class="input" required placeholder="Ej. Ducks2026"></label>
+    <div class="full"><button class="btn green">Crear cuenta</button></div>
+  </form></div></div>
+  <div class="panel"><div class="panel-head"><h3>Asignar jugador a papá</h3></div><div class="modal-body"><form id="parentLinkForm" class="form-grid">
+    <label class="label">Cuenta del papá<select id="linkAccount" class="select" required><option value="">Selecciona cuenta...</option>${parentAccounts.map(a=>`<option value="${a.id}">${esc(a.display_name)} · ${esc(a.login)}</option>`).join('')}</select></label>
+    <label class="label">Jugador<select id="linkPlayer" class="select" required><option value="">Selecciona jugador...</option>${players.map(p=>`<option value="${p.id}">${p.id} · ${esc(p.name)} · Tutor: ${esc(p.tutor||'')}</option>`).join('')}</select></label>
+    <div class="full"><button class="btn green">Ligar jugador</button></div>
+  </form></div></div>
+  <div class="panel"><div class="panel-head"><h3>Sugerencias con base en tutor / WhatsApp existentes</h3></div><div class="cards">${fams.map(f=>`<div class="card"><h4>${esc(f.tutor||'Tutor sin nombre')}</h4><p><b>WhatsApp:</b> ${esc(f.phone||'-')}</p><p><b>Jugadores:</b> ${f.players.map(p=>esc(p.name)).join(', ')}</p><div class="actions"><button class="btn secondary" onclick="prefillParent('${esc(String(f.tutor).replace(/'/g,"\\'"))}','${esc(String(f.phone).replace(/'/g,"\\'"))}')">Usar para crear cuenta</button></div></div>`).join('')}</div></div>
+  <div class="panel"><div class="panel-head"><h3>Cuentas y jugadores ligados</h3></div><div class="tablewrap"><table><thead><tr><th>Cuenta</th><th>Usuario</th><th>Jugador</th><th>Activo</th><th>Acción</th></tr></thead><tbody>${parentLinks.map(l=>{const a=parentAccounts.find(x=>x.id===l.parent_account_id); const p=players.find(x=>x.id===l.player_id); return `<tr><td><b>${esc(a?.display_name||'')}</b></td><td>${esc(a?.login||'')}</td><td>${esc(l.player_id)} · ${esc(p?.name||'')}</td><td>${l.active?'Sí':'No'}</td><td><button class="btn red" onclick="deleteParentLink('${l.id}')">Eliminar</button></td></tr>`}).join('')||'<tr><td colspan="5">Sin asignaciones</td></tr>'}</tbody></table></div></div>`;
+  document.getElementById('parentAccountForm').onsubmit=saveParentAccount;
   document.getElementById('parentLinkForm').onsubmit=saveParentLink;
+}
+function prefillParent(name, phone){ page='parents'; renderParents(); document.getElementById('accName').value=name||''; document.getElementById('accLogin').value=phone||''; document.getElementById('accPhone').value=phone||''; document.getElementById('accPassword').value='Ducks2026'; toast('Datos sugeridos cargados');}
+async function saveParentAccount(e){
+  e.preventDefault();
+  const {data,error}=await sb.rpc('ducks_admin_create_parent_account',{p_login:document.getElementById('accLogin').value.trim(),p_display_name:document.getElementById('accName').value.trim(),p_phone:normalizePhone(document.getElementById('accPhone').value),p_password:document.getElementById('accPassword').value});
+  if(error){toast(error.message);return;}
+  if(!data?.ok){toast(data?.message||'No se pudo crear');return;}
+  toast('Cuenta de papá creada'); await refresh(); page='parents'; renderPage();
 }
 async function saveParentLink(e){
   e.preventDefault();
-  const row={parent_email:document.getElementById('linkEmail').value.trim().toLowerCase(),player_id:document.getElementById('linkPlayer').value,parent_name:document.getElementById('linkName').value.trim(),active:true};
+  const row={parent_account_id:document.getElementById('linkAccount').value,player_id:document.getElementById('linkPlayer').value,active:true};
   const {error}=await sb.from('parent_player_links').insert(row);
-  if(error) toast(error.message); else {toast('Jugador asignado al papá'); await refresh(); page='parents'; renderPage();}
+  if(error) toast(error.message); else {toast('Jugador ligado al papá'); await refresh(); page='parents'; renderPage();}
 }
-async function deleteParentLink(id){
-  if(!confirm('¿Eliminar asignación?')) return;
-  const {error}=await sb.from('parent_player_links').delete().eq('id',id);
-  if(error) toast(error.message); else {toast('Asignación eliminada'); await refresh(); page='parents'; renderPage();}
-}
+async function deleteParentLink(id){ if(!confirm('¿Eliminar relación papá-jugador?')) return; const {error}=await sb.from('parent_player_links').delete().eq('id',id); if(error) toast(error.message); else {toast('Relación eliminada'); await refresh(); page='parents'; renderPage();} }
 function renderPayments(){
   setTitle('Pagos');
-  document.getElementById('content').innerHTML=`<div class="panel"><div class="panel-head"><h3>Historial de pagos</h3><button class="btn green" onclick="openPaymentForm()">+ Registrar pago</button></div><div class="tablewrap"><table><thead><tr><th>ID</th><th>Alumno</th><th>Fecha</th><th>Periodo</th><th>Monto</th><th>Método</th><th>Estatus</th><th>Evidencia</th><th>Acción</th></tr></thead><tbody>
-  ${payments.map(p=>`<tr><td>${String(p.id).slice(0,8)}</td><td><b>${esc(p.student_name||'')}</b><br><small>${esc(p.player_id)}</small></td><td>${esc(p.payment_date)}</td><td>${esc(p.period||'')}</td><td class="amount">${money(p.amount)}</td><td>${esc(p.method||'')}</td><td><span class="status ${statusClass(p.confirmation_status)}">${esc(p.confirmation_status)}</span></td><td>${p.evidence_url?`<a class="btn secondary" target="_blank" href="${p.evidence_url}">Ver</a>`:'-'}</td><td><button class="btn red" onclick="deletePayment('${p.id}')">Eliminar</button></td></tr>`).join('')||'<tr><td colspan="9">Sin pagos</td></tr>'}
-  </tbody></table></div></div>`;
+  document.getElementById('content').innerHTML=`<div class="panel"><div class="panel-head"><h3>Historial de pagos</h3><button class="btn green" onclick="openPaymentForm()">+ Registrar pago</button></div><div class="tablewrap"><table><thead><tr><th>ID</th><th>Alumno</th><th>Fecha</th><th>Periodo</th><th>Monto</th><th>Método</th><th>Estatus</th><th>Evidencia</th><th>Acción</th></tr></thead><tbody>${payments.map(p=>`<tr><td>${String(p.id).slice(0,8)}</td><td><b>${esc(p.student_name||'')}</b><br><small>${esc(p.player_id)}</small></td><td>${esc(p.payment_date)}</td><td>${esc(p.period||'')}</td><td class="amount">${money(p.amount)}</td><td>${esc(p.method||'')}</td><td><span class="status ${statusClass(p.confirmation_status)}">${esc(p.confirmation_status)}</span></td><td>${p.evidence_url?`<a class="btn secondary" target="_blank" href="${p.evidence_url}">Ver</a>`:'-'}</td><td><button class="btn red" onclick="deletePayment('${p.id}')">Eliminar</button></td></tr>`).join('')||'<tr><td colspan="9">Sin pagos</td></tr>'}</tbody></table></div></div>`;
 }
 function renderEvidence(){
   setTitle('Evidencias por confirmar');
   const pend=payments.filter(p=>p.confirmation_status==='Pendiente de confirmación');
-  document.getElementById('content').innerHTML=`<div class="notice warning">Al confirmar un pago, se reflejará automáticamente en el dashboard y adeudos.</div><div class="panel"><div class="panel-head"><h3>Pendientes</h3></div><div class="tablewrap"><table><thead><tr><th>Alumno</th><th>Fecha</th><th>Periodo</th><th>Monto</th><th>Enviado por</th><th>Evidencia</th><th>Acción</th></tr></thead><tbody>
-  ${pend.map(p=>`<tr><td><b>${esc(p.student_name)}</b><br><small>${esc(p.player_id)}</small></td><td>${p.payment_date}</td><td>${esc(p.period||'')}</td><td class="amount">${money(p.amount)}</td><td>${esc(p.submitted_by||'')}</td><td>${p.evidence_url?`<a class="btn secondary" target="_blank" href="${p.evidence_url}">Ver evidencia</a>`:'-'}</td><td><button class="btn green" onclick="confirmPayment('${p.id}')">Confirmar</button> <button class="btn red" onclick="rejectPayment('${p.id}')">Rechazar</button></td></tr>`).join('')||'<tr><td colspan="7">No hay evidencias pendientes.</td></tr>'}
-  </tbody></table></div></div>`;
+  document.getElementById('content').innerHTML=`<div class="notice warning">Al confirmar un pago, se reflejará automáticamente en el dashboard y adeudos.</div><div class="panel"><div class="panel-head"><h3>Pendientes</h3></div><div class="tablewrap"><table><thead><tr><th>Alumno</th><th>Fecha</th><th>Periodo</th><th>Monto</th><th>Enviado por</th><th>Evidencia</th><th>Acción</th></tr></thead><tbody>${pend.map(p=>`<tr><td><b>${esc(p.student_name)}</b><br><small>${esc(p.player_id)}</small></td><td>${p.payment_date}</td><td>${esc(p.period||'')}</td><td class="amount">${money(p.amount)}</td><td>${esc(p.submitted_by||'')}</td><td>${p.evidence_url?`<a class="btn secondary" target="_blank" href="${p.evidence_url}">Ver evidencia</a>`:'-'}</td><td><button class="btn green" onclick="confirmPayment('${p.id}')">Confirmar</button> <button class="btn red" onclick="rejectPayment('${p.id}')">Rechazar</button></td></tr>`).join('')||'<tr><td colspan="7">No hay evidencias pendientes.</td></tr>'}</tbody></table></div></div>`;
 }
 function renderWhatsApp(){
   setTitle('WhatsApp vencidos');
   const rows=players.map(p=>({...p,c:calc(p)})).filter(p=>p.c.status==='Vencido'&&p.phone).sort((a,b)=>b.c.amount-a.c.amount);
-  document.getElementById('content').innerHTML=`<div class="notice warning"><b>Enviar recordatorios:</b> cada botón abre WhatsApp con el mensaje listo.</div>
-  <div class="panel"><div class="panel-head"><h3>Jugadores vencidos con WhatsApp</h3></div><div class="tablewrap"><table><thead><tr><th>ID</th><th>Jugador</th><th>Tutor</th><th>WhatsApp</th><th>Meses</th><th>Adeudo</th><th>Acción</th></tr></thead><tbody>
-  ${rows.map(p=>`<tr><td>${p.id}</td><td><b>${esc(p.name)}</b></td><td>${esc(p.tutor||'')}</td><td>${esc(p.phone||'')}</td><td>${p.c.months}</td><td class="amount">${money(p.c.amount)}</td><td>${whatsappButtons(p)}</td></tr>`).join('')||'<tr><td colspan="7">No hay jugadores vencidos con WhatsApp registrado.</td></tr>'}
-  </tbody></table></div></div>`;
+  document.getElementById('content').innerHTML=`<div class="notice warning"><b>Enviar recordatorios:</b> cada botón abre WhatsApp con el mensaje listo.</div><div class="panel"><div class="panel-head"><h3>Jugadores vencidos con WhatsApp</h3></div><div class="tablewrap"><table><thead><tr><th>ID</th><th>Jugador</th><th>Tutor</th><th>WhatsApp</th><th>Meses</th><th>Adeudo</th><th>Acción</th></tr></thead><tbody>${rows.map(p=>`<tr><td>${p.id}</td><td><b>${esc(p.name)}</b></td><td>${esc(p.tutor||'')}</td><td>${esc(p.phone||'')}</td><td>${p.c.months}</td><td class="amount">${money(p.c.amount)}</td><td>${whatsappButtons(p)}</td></tr>`).join('')||'<tr><td colspan="7">No hay jugadores vencidos con WhatsApp registrado.</td></tr>'}</tbody></table></div></div>`;
 }
 function renderSettings(){
   setTitle('Configuración');
-  const msg=`Hola, buen día. 🏀\n\nPara proteger la información de cada familia, ahora los pagos y comprobantes se registran desde el Portal de Papás privado.\n\nLiga:\n${window.DUCKS_PORTAL_URL||location.origin}\n\nCada papá debe entrar con su usuario y contraseña asignados por la academia.\n\nGracias por su apoyo y compromiso. 🦆🏀`;
-  document.getElementById('content').innerHTML=`<div class="panel"><div class="panel-head"><h3>Configuración profesional</h3></div><div class="modal-body">
-    <p><b>Usuario:</b> ${session?.user?.email||'Sin sesión'}</p>
-    <div class="notice"><b>Link público:</b><br><a href="${window.DUCKS_PORTAL_URL||location.origin}" target="_blank">${window.DUCKS_PORTAL_URL||location.origin}</a></div>
-    <label class="label full">Mensaje sugerido para WhatsApp<textarea id="parentMsg" class="input" rows="10">${msg}</textarea></label>
-    <div class="tools" style="margin-top:12px"><button class="btn" onclick="navigator.clipboard.writeText(document.getElementById('parentMsg').value); toast('Mensaje copiado')">Copiar mensaje</button></div>
-  </div></div>`;
+  document.getElementById('content').innerHTML=`<div class="panel"><div class="panel-head"><h3>Configuración</h3></div><div class="modal-body"><div class="notice"><b>Link público:</b><br><a href="${window.DUCKS_PORTAL_URL||location.origin}" target="_blank">${window.DUCKS_PORTAL_URL||location.origin}</a></div><p>El acceso de papás se crea desde el módulo Papás.</p></div></div>`;
 }
 
-/* Common uploads and CRUD */
+/* CRUD */
 async function uploadFile(file, folder){
   if(!file) return '';
   const clean=file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
@@ -483,19 +345,7 @@ function openPlayerForm(id=''){
   const p=id?players.find(x=>x.id===id):null;
   const modal=document.createElement('div'); modal.className='modalbg open'; modal.id='playerModal';
   modal.innerHTML=`<div class="modal"><div class="modal-head"><h3>${p?'Editar jugador':'Nuevo jugador'}</h3><button class="btn secondary" onclick="closeModal('playerModal')">Cerrar</button></div><div class="modal-body"><form id="playerForm" class="form-grid">
-    <label class="label">ID jugador<input id="pId" class="input" value="${esc(p?.id||nextId())}" ${p?'readonly':''} required></label>
-    <label class="label">Nombre<input id="pName" class="input" value="${esc(p?.name||'')}" required></label>
-    <label class="label">Tutor<input id="pTutor" class="input" value="${esc(p?.tutor||'')}"></label>
-    <label class="label">WhatsApp<input id="pPhone" class="input" value="${esc(p?.phone||'')}"></label>
-    <label class="label">Categoría<input id="pCategory" class="input" value="${esc(p?.category||'')}"></label>
-    <label class="label">Estado<select id="pStatus" class="select"><option ${p?.status==='Activo'?'selected':''}>Activo</option><option ${p?.status==='Inactivo'?'selected':''}>Inactivo</option><option ${p?.status==='Baja'?'selected':''}>Baja</option></select></label>
-    <label class="label">Mensualidad<input id="pFee" class="input" type="number" min="0" step="50" value="${esc(p?.monthly_fee||300)}"></label>
-    <label class="label">Día de pago<input id="pDay" class="input" type="number" min="1" max="31" value="${esc(p?.payment_day||5)}"></label>
-    <label class="label">Número uniforme<input id="pUniform" class="input" value="${esc(p?.uniform_number||'')}"></label>
-    <label class="label">Foto<input id="pPhoto" class="input" type="file" accept="image/*"></label>
-    <label class="label full">Notas<textarea id="pNotes" class="input">${esc(p?.notes||'')}</textarea></label>
-    <div class="full actions"><button class="btn green">Guardar jugador</button></div>
-  </form></div></div>`;
+    <label class="label">ID jugador<input id="pId" class="input" value="${esc(p?.id||nextId())}" ${p?'readonly':''} required></label><label class="label">Nombre<input id="pName" class="input" value="${esc(p?.name||'')}" required></label><label class="label">Tutor<input id="pTutor" class="input" value="${esc(p?.tutor||'')}"></label><label class="label">WhatsApp<input id="pPhone" class="input" value="${esc(p?.phone||'')}"></label><label class="label">Categoría<input id="pCategory" class="input" value="${esc(p?.category||'')}"></label><label class="label">Estado<select id="pStatus" class="select"><option ${p?.status==='Activo'?'selected':''}>Activo</option><option ${p?.status==='Inactivo'?'selected':''}>Inactivo</option><option ${p?.status==='Baja'?'selected':''}>Baja</option></select></label><label class="label">Mensualidad<input id="pFee" class="input" type="number" min="0" step="50" value="${esc(p?.monthly_fee||300)}"></label><label class="label">Día de pago<input id="pDay" class="input" type="number" min="1" max="31" value="${esc(p?.payment_day||5)}"></label><label class="label">Número uniforme<input id="pUniform" class="input" value="${esc(p?.uniform_number||'')}"></label><label class="label">Foto<input id="pPhoto" class="input" type="file" accept="image/*"></label><label class="label full">Notas<textarea id="pNotes" class="input">${esc(p?.notes||'')}</textarea></label><div class="full actions"><button class="btn green">Guardar jugador</button></div></form></div></div>`;
   document.body.appendChild(modal);
   document.getElementById('playerForm').onsubmit=(e)=>savePlayerForm(e,p);
 }
@@ -516,52 +366,20 @@ async function deletePlayer(id){const p=players.find(x=>x.id===id); if(!p)return
 function openPaymentForm(playerId=''){
   const selected=playerId?players.find(p=>p.id===playerId):null;
   const modal=document.createElement('div'); modal.className='modalbg open'; modal.id='paymentModal';
-  modal.innerHTML=`<div class="modal"><div class="modal-head"><h3>Registrar pago confirmado</h3><button class="btn secondary" onclick="closeModal('paymentModal')">Cerrar</button></div><div class="modal-body"><form id="paymentForm" class="form-grid">
-    <label class="label full">Jugador<select id="payPlayer" class="select" required><option value="">Selecciona...</option>${players.map(p=>`<option value="${p.id}" ${p.id===playerId?'selected':''}>${p.id} · ${esc(p.name)}</option>`).join('')}</select></label>
-    <label class="label">Fecha<input id="payDate" class="input" type="date" value="${todayISO()}" required></label>
-    <label class="label">Periodo<input id="payPeriod" class="input" value="${period(todayISO())}"></label>
-    <label class="label">Monto<input id="payAmount" class="input" type="number" min="0" step="50" value="${esc(selected?.monthly_fee||300)}" required></label>
-    <label class="label">Método<select id="payMethod" class="select"><option></option><option>Transferencia</option><option>Depósito</option><option>Efectivo</option><option>Tarjeta</option><option>Otro</option></select></label>
-    <label class="label">Evidencia opcional<input id="payEvidence" class="input" type="file" accept="image/*,application/pdf"></label>
-    <label class="label full">Notas<textarea id="payNotes" class="input"></textarea></label>
-    <div class="full actions"><button class="btn green">Guardar pago confirmado</button></div>
-  </form></div></div>`;
+  modal.innerHTML=`<div class="modal"><div class="modal-head"><h3>Registrar pago confirmado</h3><button class="btn secondary" onclick="closeModal('paymentModal')">Cerrar</button></div><div class="modal-body"><form id="paymentForm" class="form-grid"><label class="label full">Jugador<select id="payPlayer" class="select" required><option value="">Selecciona...</option>${players.map(p=>`<option value="${p.id}" ${p.id===playerId?'selected':''}>${p.id} · ${esc(p.name)}</option>`).join('')}</select></label><label class="label">Fecha<input id="payDate" class="input" type="date" value="${todayISO()}" required></label><label class="label">Periodo<input id="payPeriod" class="input" value="${period(todayISO())}"></label><label class="label">Monto<input id="payAmount" class="input" type="number" min="0" step="50" value="${esc(selected?.monthly_fee||300)}" required></label><label class="label">Método<select id="payMethod" class="select"><option></option><option>Transferencia</option><option>Depósito</option><option>Efectivo</option><option>Tarjeta</option><option>Otro</option></select></label><label class="label">Evidencia opcional<input id="payEvidence" class="input" type="file" accept="image/*,application/pdf"></label><label class="label full">Notas<textarea id="payNotes" class="input"></textarea></label><div class="full actions"><button class="btn green">Guardar pago confirmado</button></div></form></div></div>`;
   document.body.appendChild(modal);
   document.getElementById('payPlayer').onchange=()=>{const p=players.find(x=>x.id===document.getElementById('payPlayer').value); if(p) document.getElementById('payAmount').value=p.monthly_fee||0;};
   document.getElementById('paymentForm').onsubmit=savePaymentForm;
 }
 async function savePaymentForm(e){
   e.preventDefault();
-  const player_id=document.getElementById('payPlayer').value;
-  const player=players.find(p=>p.id===player_id);
-  const file=document.getElementById('payEvidence').files[0];
-  try{
-    const evidence_url=file?await uploadFile(file,'evidencias'):'';
-    const row={player_id,student_name:player?.name||'',payment_date:document.getElementById('payDate').value,period:document.getElementById('payPeriod').value||period(document.getElementById('payDate').value),amount:Number(document.getElementById('payAmount').value||0),method:document.getElementById('payMethod').value,notes:document.getElementById('payNotes').value,confirmation_status:'Confirmado',evidence_url,evidence_name:file?.name||'',submitted_by:'Admin',confirmed_at:new Date().toISOString()};
-    const {error}=await sb.from('payments').insert(row);
-    if(error) throw error;
-    toast('Pago guardado y confirmado'); closeModal('paymentModal'); await refresh(); page='payments'; renderPage();
-  }catch(err){toast('Error: '+err.message);}
+  const player_id=document.getElementById('payPlayer').value; const player=players.find(p=>p.id===player_id); const file=document.getElementById('payEvidence').files[0];
+  try{ const evidence_url=file?await uploadFile(file,'evidencias'):''; const row={player_id,student_name:player?.name||'',payment_date:document.getElementById('payDate').value,period:document.getElementById('payPeriod').value||period(document.getElementById('payDate').value),amount:Number(document.getElementById('payAmount').value||0),method:document.getElementById('payMethod').value,notes:document.getElementById('payNotes').value,confirmation_status:'Confirmado',evidence_url,evidence_name:file?.name||'',submitted_by:'Admin',confirmed_at:new Date().toISOString()}; const {error}=await sb.from('payments').insert(row); if(error) throw error; toast('Pago guardado y confirmado'); closeModal('paymentModal'); await refresh(); page='payments'; renderPage(); }catch(err){toast('Error: '+err.message);}
 }
 async function confirmPayment(id){const {error}=await sb.from('payments').update({confirmation_status:'Confirmado',confirmed_at:new Date().toISOString()}).eq('id',id); if(error)toast(error.message); else{toast('Pago confirmado'); await refresh();}}
 async function rejectPayment(id){const {error}=await sb.from('payments').update({confirmation_status:'Rechazado'}).eq('id',id); if(error)toast(error.message); else{toast('Pago rechazado'); await refresh();}}
 async function deletePayment(id){if(!confirm('¿Eliminar pago?'))return; const {error}=await sb.from('payments').delete().eq('id',id); if(error)toast(error.message); else{toast('Pago eliminado'); await refresh();}}
 
-window.renderPublicHome=renderPublicHome;
-window.renderParentLogin=renderParentLogin;
-window.renderAdminLogin=renderAdminLogin;
-window.renderLogin=renderAdminLogin;
-window.logoutToHome=logoutToHome;
-window.copyBank=copyBank;
-window.openParentPayment=openParentPayment;
-window.openPlayerForm=openPlayerForm;
-window.deletePlayer=deletePlayer;
-window.openPaymentForm=openPaymentForm;
-window.confirmPayment=confirmPayment;
-window.rejectPayment=rejectPayment;
-window.deletePayment=deletePayment;
-window.closeModal=closeModal;
-window.copyReminder=copyReminder;
-window.deleteParentLink=deleteParentLink;
+window.renderPublicHome=renderPublicHome; window.renderParentLogin=renderParentLogin; window.renderAdminLogin=renderAdminLogin; window.renderLogin=renderAdminLogin; window.parentLogout=parentLogout; window.copyBank=copyBank; window.openParentPayment=openParentPayment; window.openPlayerForm=openPlayerForm; window.deletePlayer=deletePlayer; window.openPaymentForm=openPaymentForm; window.confirmPayment=confirmPayment; window.rejectPayment=rejectPayment; window.deletePayment=deletePayment; window.closeModal=closeModal; window.copyReminder=copyReminder; window.deleteParentLink=deleteParentLink; window.prefillParent=prefillParent;
 
 init();
