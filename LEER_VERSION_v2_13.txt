@@ -1,0 +1,25 @@
+Ducks CRM Profesional v2.13
+
+Corrección:
+- Usuario con letras como Araceli debe funcionar.
+- Acceso de papás ahora usa usuario + clave temporal simple.
+- El administrador puede ver la clave temporal en Cuentas creadas.
+- El administrador puede resetear contraseña.
+- Usa tablas nuevas con sufijo _v213.
+- No borra jugadores, pagos ni versiones anteriores.
+
+Orden:
+1. Ejecuta en Supabase SQL Editor:
+   PASO_3_SQL_PORTAL_PAPAS_SIMPLE_v2_13.txt
+2. Sube todo el contenido del ZIP a GitHub raíz.
+3. Commit changes.
+4. Espera Vercel.
+5. Entra como administrador.
+6. Ve a Papás.
+7. Crea cuenta:
+   Usuario: Araceli
+   Contraseña temporal: Ducks2026
+8. Liga jugador.
+9. En Portal de Papás entra con:
+   Usuario: Araceli
+   Contraseña: Ducks2026
