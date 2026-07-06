@@ -1,0 +1,24 @@
+Ducks CRM Profesional v2.10
+
+Corrección:
+- Esta versión usa tablas nuevas con sufijo _v210 para evitar conflictos con versiones anteriores.
+- No borra jugadores ni pagos.
+- Corrige:
+  crear cuentas de papás,
+  mostrar lista de jugadores,
+  ligar jugadores a cada papá,
+  acceso privado de papás.
+
+Orden obligatorio:
+1. Ejecutar en Supabase SQL Editor:
+   PASO_3_SQL_PORTAL_PAPAS_LIMPIO_v2_10.txt
+2. Subir todo el contenido de este ZIP a GitHub raíz.
+3. Commit changes.
+4. Esperar Vercel.
+5. Entrar como administrador.
+6. Ir a Papás.
+7. Crear cuenta.
+8. Ligar jugador.
+9. Probar Portal de Papás.
+
+Si en Papás no aparecen jugadores, revisa primero la sección Jugadores. Si ahí tampoco aparecen, el problema está en permisos/consulta de la tabla players, no en las cuentas de papás.

@@ -1,0 +1,25 @@
+Ducks CRM Profesional v2.11
+
+Corrección:
+- Usa tablas nuevas con sufijo _v211.
+- No borra jugadores ni pagos.
+- La cuenta del papá se crea directamente desde el CRM admin.
+- Ya no depende de RPC para crear cuenta.
+- El login de papá sigue siendo privado con contraseña protegida por hash.
+- El módulo Papás debe mostrar:
+  cuentas de papás,
+  lista de jugadores,
+  sugerencias por tutor/WhatsApp,
+  relaciones papá-jugador.
+
+Orden obligatorio:
+1. Ejecutar en Supabase SQL Editor:
+   PASO_3_SQL_PORTAL_PAPAS_DIRECTO_v2_11.txt
+2. Subir todo el contenido del ZIP a GitHub raíz.
+3. Commit changes.
+4. Esperar Vercel.
+5. Entrar como administrador.
+6. Ir a Papás.
+7. Crear cuenta.
+8. Ligar jugador.
+9. Probar Portal de Papás.

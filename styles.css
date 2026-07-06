@@ -252,7 +252,7 @@ th{position:sticky;top:0;background:var(--blue);color:white;z-index:1;font-size:
 }
 
 
-/* v2.9 página pública profesional + cuentas internas de papás */
+/* v2.10 página pública profesional + tablas limpias para papás */
 html{scroll-behavior:smooth}
 .public-site{min-height:100vh;background:#F4F7FB}
 .academy-menu{position:sticky;top:0;z-index:100;background:rgba(7,22,41,.97);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,.12)}
@@ -275,3 +275,5 @@ html{scroll-behavior:smooth}
 .family-grid{display:grid;grid-template-columns:repeat(2,minmax(280px,1fr));gap:14px;margin-top:14px}.family-player-card{border:1px solid var(--line);border-radius:20px;padding:16px;background:#FBFDFF;box-shadow:0 10px 24px rgba(8,24,52,.05)}.family-head{display:flex;gap:14px;align-items:center}.family-head img{width:88px;height:88px;object-fit:cover;border-radius:20px;background:#EEF2F7}.family-head h2{margin:0;color:var(--blue);font-size:22px}.family-head p{margin:5px 0 8px;color:var(--muted)}.family-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}.family-kpis div{background:#F8FAFC;border:1px solid var(--line);border-radius:14px;padding:10px}.family-kpis small{display:block;color:var(--muted);font-size:11px;font-weight:900;text-transform:uppercase}.family-kpis b{display:block;color:var(--blue);margin-top:4px}.history-box{border:1px solid var(--line);border-radius:14px;padding:10px;margin:12px 0;background:white}.history-box summary{font-weight:900;color:var(--blue);cursor:pointer}.mini-table{min-width:auto;width:100%;margin-top:10px}.mini-table th,.mini-table td{font-size:12px;padding:8px}
 @media(max-width:920px){.academy-menu-inner{grid-template-columns:1fr;text-align:center}.academy-brand{justify-content:center}.academy-admin{justify-self:center}.ribbon-content{flex-direction:column;text-align:center}.ribbon-text h1{font-size:34px}.academy-grid,.family-grid{grid-template-columns:1fr}.quick-parent-card{flex-direction:column;text-align:center}}
 @media(max-width:640px){.academy-main{padding:12px 10px 44px}.academy-links{gap:4px}.academy-links a,.academy-links button{font-size:12px;padding:8px 7px}.academy-brand span{font-size:13px}.ribbon-logo{width:145px;height:145px;border-radius:30px}.ribbon-text h1{font-size:29px}.ribbon-content{padding:24px 14px}.family-kpis{grid-template-columns:1fr}}
+
+/* v2.11 mantiene estilos v2.10 y cambia lógica de cuentas de papás */

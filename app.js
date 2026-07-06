@@ -1,8 +1,8 @@
-// Ducks CRM profesional v2.9 - portal privado con cuentas de papás creadas desde CRM
+// Ducks CRM profesional v2.11 - cuentas de papás directas desde CRM
 const app = document.getElementById('app');
 let sb = null;
 let session = null;
-let parentToken = localStorage.getItem('ducks_parent_token') || '';
+let parentToken = localStorage.getItem('ducks_parent_token_v211') || '';
 let parentProfile = null;
 let mode = 'public';
 let page = 'dashboard';
@@ -19,7 +19,7 @@ const BANK_CLABE = '012 180 01578898256 3';
 const BANK_NAME = 'BBVA';
 const BANK_BENEFICIARY = 'DUCKS BASKETBALL';
 
-function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000); }
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),4000); }
 function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
 function money(n){return Number(n||0).toLocaleString('es-MX',{style:'currency',currency:'MXN'});}
 function todayISO(){return new Date().toISOString().slice(0,10);}
@@ -62,6 +62,16 @@ function whatsappButtons(player){
 async function copyReminder(id){ const p=players.find(x=>x.id===id); if(!p) return; await navigator.clipboard.writeText(reminderMessage(p)); toast('Mensaje de WhatsApp copiado'); }
 async function copyBank(value, label){ try{ await navigator.clipboard.writeText(String(value||'').replace(/\s+/g,' ')); toast(label + ' copiada'); }catch(e){ toast('Copia manualmente: ' + value); } }
 
+async function sha256Hex(text){
+  const enc = new TextEncoder().encode(text);
+  const buf = await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function makeSalt(){
+  if(crypto.randomUUID) return crypto.randomUUID();
+  return String(Date.now()) + '-' + Math.random().toString(16).slice(2);
+}
+
 async function init(){
   if(!isConfigured()){ renderSetup(); return; }
   sb = window.supabase.createClient(window.DUCKS_SUPABASE_URL, window.DUCKS_SUPABASE_ANON_KEY);
@@ -71,7 +81,6 @@ async function init(){
 }
 function renderSetup(){ app.innerHTML=`<div class="public-site"><div class="academy-main"><div class="parent-card"><h1>Configurar Supabase</h1><div class="notice warning">Falta configurar config.js.</div></div></div></div>`; }
 
-/* Página pública */
 function renderPublicHome(){
   mode='public';
   app.innerHTML=`<div class="public-site">
@@ -113,7 +122,7 @@ function renderPublicHome(){
   </div>`;
 }
 
-/* Portal papás con cuenta interna */
+/* Portal papás limpio v210 */
 function renderParentLogin(){
   mode='parentLogin';
   app.innerHTML=`<div class="public-site">
@@ -130,7 +139,6 @@ function renderParentLogin(){
           <label class="label full">Contraseña<input id="parentPassword" class="input" type="password" required placeholder="Contraseña"></label>
           <div class="full"><button class="btn green" style="width:100%;font-size:18px;padding:14px">Entrar al Portal de Papás</button></div>
         </form>
-        <div class="sub" style="margin-top:12px">Las cuentas son creadas por administración. Si no tienes acceso, solicita tu usuario.</div>
       </div>
     </main>
   </div>`;
@@ -140,19 +148,19 @@ async function parentLogin(e){
   e.preventDefault();
   const user=document.getElementById('parentUser').value.trim();
   const password=document.getElementById('parentPassword').value;
-  const {data,error}=await sb.rpc('ducks_parent_login',{p_login:user,p_password:password});
+  const {data,error}=await sb.rpc('ducks_parent_login_v211',{p_login:user,p_password:password});
   if(error){toast('No se pudo iniciar sesión: '+error.message); return;}
   if(!data || !data[0]?.ok){toast(data?.[0]?.message || 'Usuario o contraseña incorrectos'); return;}
   parentToken=data[0].token;
-  localStorage.setItem('ducks_parent_token',parentToken);
+  localStorage.setItem('ducks_parent_token_v211',parentToken);
   await loadParentData();
   renderParentPortal();
 }
 async function loadParentData(){
   parentPlayers=[]; parentPayments=[]; parentProfile=null;
-  const {data,error}=await sb.rpc('ducks_parent_portal',{p_token:parentToken});
+  const {data,error}=await sb.rpc('ducks_parent_portal_v211',{p_token:parentToken});
   if(error){toast('Error cargando portal: '+error.message); return;}
-  if(!data || !data.ok){toast(data?.message || 'Sesión inválida'); parentToken=''; localStorage.removeItem('ducks_parent_token'); renderParentLogin(); return;}
+  if(!data || !data.ok){toast(data?.message || 'Sesión inválida'); parentToken=''; localStorage.removeItem('ducks_parent_token_v211'); renderParentLogin(); return;}
   parentProfile=data.account;
   parentPlayers=data.players||[];
   parentPayments=data.payments||[];
@@ -182,14 +190,13 @@ function renderParentPortal(){
     </main>
   </div>`;
 }
-function parentLogout(){ parentToken=''; parentProfile=null; parentPlayers=[]; parentPayments=[]; localStorage.removeItem('ducks_parent_token'); renderPublicHome(); }
+function parentLogout(){ parentToken=''; parentProfile=null; parentPlayers=[]; parentPayments=[]; localStorage.removeItem('ducks_parent_token_v211'); renderPublicHome(); }
 function openParentPayment(playerId=''){
   if(!parentPlayers.length){toast('No tienes jugadores asignados.'); return;}
   const selected = playerId ? parentPlayers.find(p=>p.id===playerId) : parentPlayers[0];
   const options = parentPlayers.map(p=>`<option value="${p.id}" ${p.id===selected.id?'selected':''}>${esc(p.name)} · #${esc(p.uniform_number||'-')}</option>`).join('');
   const modal=document.createElement('div'); modal.className='modalbg open'; modal.id='parentPayModal';
   modal.innerHTML=`<div class="modal"><div class="modal-head"><h3>Subir comprobante</h3><button class="btn secondary" onclick="closeModal('parentPayModal')">Cerrar</button></div><div class="modal-body">
-    <div class="notice success"><b>Pago seguro:</b> confirma que el jugador seleccionado sea correcto antes de enviar.</div>
     <form id="parentPayForm" class="form-grid">
       <label class="label full">Jugador<select id="parentPayPlayer" class="select" required>${options}</select></label>
       <label class="label">Fecha de pago<input id="parentPayDate" class="input" type="date" value="${todayISO()}" required></label>
@@ -213,7 +220,7 @@ async function submitParentPayment(e){
     const evidence_url=await uploadFile(file,'evidencias');
     const payDate=document.getElementById('parentPayDate').value;
     const row={p_token:parentToken,p_player_id:player_id,p_payment_date:payDate,p_period:period(payDate),p_amount:Number(document.getElementById('parentPayAmount').value||0),p_method:document.getElementById('parentPayMethod').value,p_notes:document.getElementById('parentPayNotes').value,p_evidence_url:evidence_url,p_evidence_name:file.name};
-    const {data,error}=await sb.rpc('ducks_parent_submit_payment',row);
+    const {data,error}=await sb.rpc('ducks_parent_submit_payment_v211',row);
     if(error) throw error;
     if(!data?.ok) throw new Error(data?.message||'No se pudo enviar');
     closeModal('parentPayModal');
@@ -223,7 +230,7 @@ async function submitParentPayment(e){
   }catch(err){toast('Error: '+err.message);}
 }
 
-/* Admin login y shell */
+/* Admin */
 function renderAdminLogin(){
   mode='adminLogin';
   app.innerHTML=`<div class="public-site"><header class="academy-menu"><div class="academy-menu-inner"><a class="academy-brand" href="#" onclick="renderPublicHome()"><img src="assets/logo.png"><span>Ducks Basketball Academy</span></a><nav class="academy-links"><button onclick="renderPublicHome()">Inicio</button><button onclick="renderParentLogin()">Portal de Papás</button></nav></div></header>
@@ -238,14 +245,18 @@ async function login(e){
 }
 async function logout(){ await sb.auth.signOut(); session=null; renderPublicHome(); }
 async function loadAdminData(){
-  const pr=await sb.from('players').select('*').order('id'); if(pr.error){toast('Error jugadores: '+pr.error.message); return;} players=pr.data||[];
-  const py=await sb.from('payments').select('*').order('created_at',{ascending:false}); if(py.error){toast('Error pagos: '+py.error.message); return;} payments=py.data||[];
-  const ac=await sb.from('parent_accounts').select('*').order('display_name'); parentAccounts=ac.error?[]:(ac.data||[]);
-  const ln=await sb.from('parent_player_links').select('*').order('created_at',{ascending:false}); parentLinks=ln.error?[]:(ln.data||[]);
+  const pr=await sb.from('players').select('*').order('id');
+  if(pr.error){toast('Error cargando jugadores: '+pr.error.message); players=[];} else players=pr.data||[];
+  const py=await sb.from('payments').select('*').order('created_at',{ascending:false});
+  if(py.error){toast('Error cargando pagos: '+py.error.message); payments=[];} else payments=py.data||[];
+  const ac=await sb.from('parent_accounts_v211').select('*').order('display_name');
+  if(ac.error){toast('Ejecuta el SQL v2.11: '+ac.error.message); parentAccounts=[];} else parentAccounts=ac.data||[];
+  const ln=await sb.from('parent_player_links_v211').select('*').order('created_at',{ascending:false});
+  if(ln.error){parentLinks=[];} else parentLinks=ln.data||[];
 }
 async function refresh(){ if(mode==='admin'){await loadAdminData(); renderShell(); renderPage();} }
 function renderShell(){
-  app.innerHTML=`<div class="shell"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.9: cuentas de papás creadas desde el CRM.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
+  app.innerHTML=`<div class="shell"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.11: cuentas de papás directas desde CRM.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
   document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page=b.dataset.page; if(page==='public'){renderPublicHome(); return;} renderPage();});
   document.getElementById('search').oninput=e=>{q=e.target.value; renderPage();};
   document.getElementById('authBtn').onclick=logout;
@@ -254,7 +265,6 @@ function setTitle(t){ const el=document.getElementById('title'); if(el) el.textC
 function renderPage(){ if(page==='dashboard') renderDashboard(); if(page==='players') renderPlayers(); if(page==='parents') renderParents(); if(page==='payments') renderPayments(); if(page==='evidence') renderEvidence(); if(page==='whatsapp') renderWhatsApp(); if(page==='settings') renderSettings(); }
 function filteredPlayers(){ const s=q.toLowerCase().trim(); return players.filter(p=>!s || [p.id,p.name,p.tutor,p.phone,p.category,p.uniform_number].join(' ').toLowerCase().includes(s)); }
 
-/* Admin pages */
 function renderDashboard(){
   setTitle('Dashboard ejecutivo');
   const rows=players.map(p=>({...p,c:calc(p)})); const active=rows.filter(p=>p.status==='Activo').length; const debtors=rows.filter(p=>p.c.amount>0); const overdue=rows.filter(p=>p.c.status==='Vencido').length; const pendingEvidence=payments.filter(p=>p.confirmation_status==='Pendiente de confirmación').length; const totalDebt=debtors.reduce((a,p)=>a+p.c.amount,0);
@@ -264,7 +274,7 @@ function renderDashboard(){
 function renderPlayers(){
   setTitle('Jugadores');
   const list=filteredPlayers();
-  document.getElementById('content').innerHTML=`<div class="panel"><div class="panel-head"><h3>Base de jugadores</h3><button class="btn green" onclick="openPlayerForm()">+ Nuevo jugador</button></div><div class="cards">${list.map(p=>{const c=calc(p);return `<div class="card">${thumb(p.photo_url)}<h4>${esc(p.name)}</h4><p><span class="uniform">#${esc(p.uniform_number||'-')}</span></p><p><b>ID:</b> ${p.id} · <b>Categoría:</b> ${esc(p.category||'')}</p><p><b>Tutor:</b> ${esc(p.tutor||'')}</p><p><b>WhatsApp:</b> ${esc(p.phone||'')}</p><p><b>Adeudo:</b> <span class="amount">${money(c.amount)}</span> · <span class="status ${c.status}">${c.status}</span></p><div class="actions"><button class="btn secondary" onclick="openPlayerForm('${p.id}')">Editar</button><button class="btn green" onclick="openPaymentForm('${p.id}')">Pago</button>${whatsappButtons(p)}<button class="btn red" onclick="deletePlayer('${p.id}')">Eliminar</button></div></div>`}).join('')||'<div class="card">Sin jugadores</div>'}</div></div>`;
+  document.getElementById('content').innerHTML=`<div class="panel"><div class="panel-head"><h3>Base de jugadores</h3><button class="btn green" onclick="openPlayerForm()">+ Nuevo jugador</button></div><div class="cards">${list.map(p=>{const c=calc(p);return `<div class="card">${thumb(p.photo_url)}<h4>${esc(p.name)}</h4><p><span class="uniform">#${esc(p.uniform_number||'-')}</span></p><p><b>ID:</b> ${p.id} · <b>Categoría:</b> ${esc(p.category||'')}</p><p><b>Tutor:</b> ${esc(p.tutor||'')}</p><p><b>WhatsApp:</b> ${esc(p.phone||'')}</p><p><b>Adeudo:</b> <span class="amount">${money(c.amount)}</span> · <span class="status ${c.status}">${c.status}</span></p><div class="actions"><button class="btn secondary" onclick="openPlayerForm('${p.id}')">Editar</button><button class="btn green" onclick="openPaymentForm('${p.id}')">Pago</button>${whatsappButtons(p)}<button class="btn red" onclick="deletePlayer('${p.id}')">Eliminar</button></div></div>`}).join('')||'<div class="card">Sin jugadores. Si aquí no aparecen, revisa que estés logueado como administrador y que la tabla players tenga permisos.'}</div></div>`;
 }
 function suggestedFamilies(){
   const m = new Map();
@@ -278,7 +288,9 @@ function suggestedFamilies(){
 function renderParents(){
   setTitle('Papás / Accesos privados');
   const fams=suggestedFamilies();
-  document.getElementById('content').innerHTML=`<div class="notice success"><b>Nuevo enfoque:</b> aquí creas el usuario del papá desde el CRM y lo ligas a uno o varios jugadores usando los datos existentes de tutor/WhatsApp.</div>
+  const playersOptions = players.map(p=>`<option value="${p.id}">${p.id} · ${esc(p.name)} · Tutor: ${esc(p.tutor||'')}</option>`).join('');
+  const accountsOptions = parentAccounts.map(a=>`<option value="${a.id}">${esc(a.display_name)} · ${esc(a.login)}</option>`).join('');
+  document.getElementById('content').innerHTML=`<div class="notice success"><b>v2.11:</b> esta sección crea cuentas directamente desde el CRM. Si no ves jugadores, entra a la sección Jugadores para validar que carguen correctamente.</div>
   <div class="panel"><div class="panel-head"><h3>Crear cuenta de papá/tutor</h3></div><div class="modal-body"><form id="parentAccountForm" class="form-grid">
     <label class="label">Nombre visible<input id="accName" class="input" required placeholder="Nombre del papá, mamá o tutor"></label>
     <label class="label">Usuario<input id="accLogin" class="input" required placeholder="Correo, teléfono o usuario"></label>
@@ -287,30 +299,47 @@ function renderParents(){
     <div class="full"><button class="btn green">Crear cuenta</button></div>
   </form></div></div>
   <div class="panel"><div class="panel-head"><h3>Asignar jugador a papá</h3></div><div class="modal-body"><form id="parentLinkForm" class="form-grid">
-    <label class="label">Cuenta del papá<select id="linkAccount" class="select" required><option value="">Selecciona cuenta...</option>${parentAccounts.map(a=>`<option value="${a.id}">${esc(a.display_name)} · ${esc(a.login)}</option>`).join('')}</select></label>
-    <label class="label">Jugador<select id="linkPlayer" class="select" required><option value="">Selecciona jugador...</option>${players.map(p=>`<option value="${p.id}">${p.id} · ${esc(p.name)} · Tutor: ${esc(p.tutor||'')}</option>`).join('')}</select></label>
+    <label class="label">Cuenta del papá<select id="linkAccount" class="select" required><option value="">Selecciona cuenta...</option>${accountsOptions}</select></label>
+    <label class="label">Jugador<select id="linkPlayer" class="select" required><option value="">Selecciona jugador...</option>${playersOptions}</select></label>
     <div class="full"><button class="btn green">Ligar jugador</button></div>
   </form></div></div>
-  <div class="panel"><div class="panel-head"><h3>Sugerencias con base en tutor / WhatsApp existentes</h3></div><div class="cards">${fams.map(f=>`<div class="card"><h4>${esc(f.tutor||'Tutor sin nombre')}</h4><p><b>WhatsApp:</b> ${esc(f.phone||'-')}</p><p><b>Jugadores:</b> ${f.players.map(p=>esc(p.name)).join(', ')}</p><div class="actions"><button class="btn secondary" onclick="prefillParent('${esc(String(f.tutor).replace(/'/g,"\\'"))}','${esc(String(f.phone).replace(/'/g,"\\'"))}')">Usar para crear cuenta</button></div></div>`).join('')}</div></div>
+  <div class="panel"><div class="panel-head"><h3>Sugerencias desde tutor / WhatsApp existentes</h3></div><div class="cards">${fams.map(f=>`<div class="card"><h4>${esc(f.tutor||'Tutor sin nombre')}</h4><p><b>WhatsApp:</b> ${esc(f.phone||'-')}</p><p><b>Jugadores:</b> ${f.players.map(p=>esc(p.name)).join(', ')}</p><div class="actions"><button class="btn secondary" onclick="prefillParent('${String(f.tutor||'').replace(/'/g,"\\'")}','${String(f.phone||'').replace(/'/g,"\\'")}')">Usar para crear cuenta</button></div></div>`).join('')||'<div class="card">No hay sugerencias porque no cargaron jugadores.</div>'}</div></div>
   <div class="panel"><div class="panel-head"><h3>Cuentas y jugadores ligados</h3></div><div class="tablewrap"><table><thead><tr><th>Cuenta</th><th>Usuario</th><th>Jugador</th><th>Activo</th><th>Acción</th></tr></thead><tbody>${parentLinks.map(l=>{const a=parentAccounts.find(x=>x.id===l.parent_account_id); const p=players.find(x=>x.id===l.player_id); return `<tr><td><b>${esc(a?.display_name||'')}</b></td><td>${esc(a?.login||'')}</td><td>${esc(l.player_id)} · ${esc(p?.name||'')}</td><td>${l.active?'Sí':'No'}</td><td><button class="btn red" onclick="deleteParentLink('${l.id}')">Eliminar</button></td></tr>`}).join('')||'<tr><td colspan="5">Sin asignaciones</td></tr>'}</tbody></table></div></div>`;
   document.getElementById('parentAccountForm').onsubmit=saveParentAccount;
   document.getElementById('parentLinkForm').onsubmit=saveParentLink;
 }
-function prefillParent(name, phone){ page='parents'; renderParents(); document.getElementById('accName').value=name||''; document.getElementById('accLogin').value=phone||''; document.getElementById('accPhone').value=phone||''; document.getElementById('accPassword').value='Ducks2026'; toast('Datos sugeridos cargados');}
+function prefillParent(name, phone){ document.getElementById('accName').value=name||''; document.getElementById('accLogin').value=phone||''; document.getElementById('accPhone').value=phone||''; document.getElementById('accPassword').value='Ducks2026'; toast('Datos sugeridos cargados');}
 async function saveParentAccount(e){
   e.preventDefault();
-  const {data,error}=await sb.rpc('ducks_admin_create_parent_account',{p_login:document.getElementById('accLogin').value.trim(),p_display_name:document.getElementById('accName').value.trim(),p_phone:normalizePhone(document.getElementById('accPhone').value),p_password:document.getElementById('accPassword').value});
-  if(error){toast(error.message);return;}
-  if(!data?.ok){toast(data?.message||'No se pudo crear');return;}
-  toast('Cuenta de papá creada'); await refresh(); page='parents'; renderPage();
+  const login = document.getElementById('accLogin').value.trim().toLowerCase();
+  const display_name = document.getElementById('accName').value.trim();
+  const phone = normalizePhone(document.getElementById('accPhone').value);
+  const password = document.getElementById('accPassword').value;
+  if(login.length < 3){ toast('El usuario debe tener al menos 3 caracteres'); return; }
+  if(display_name.length < 2){ toast('Captura el nombre del papá/tutor'); return; }
+  if(password.length < 4){ toast('La contraseña debe tener al menos 4 caracteres'); return; }
+  try{
+    const password_salt = makeSalt();
+    const password_hash = await sha256Hex(password_salt + password);
+    const row = {login, display_name, phone, password_salt, password_hash, active:true};
+    const {error} = await sb.from('parent_accounts_v211').upsert(row, {onConflict:'login'});
+    if(error) throw error;
+    toast('Cuenta de papá creada');
+    await refresh();
+    page='parents';
+    renderPage();
+  }catch(err){
+    toast('Error creando cuenta: ' + err.message);
+  }
 }
 async function saveParentLink(e){
   e.preventDefault();
   const row={parent_account_id:document.getElementById('linkAccount').value,player_id:document.getElementById('linkPlayer').value,active:true};
-  const {error}=await sb.from('parent_player_links').insert(row);
-  if(error) toast(error.message); else {toast('Jugador ligado al papá'); await refresh(); page='parents'; renderPage();}
+  const {error}=await sb.from('parent_player_links_v211').insert(row);
+  if(error) toast('Error ligando jugador: '+error.message); else {toast('Jugador ligado al papá'); await refresh(); page='parents'; renderPage();}
 }
-async function deleteParentLink(id){ if(!confirm('¿Eliminar relación papá-jugador?')) return; const {error}=await sb.from('parent_player_links').delete().eq('id',id); if(error) toast(error.message); else {toast('Relación eliminada'); await refresh(); page='parents'; renderPage();} }
+async function deleteParentLink(id){ if(!confirm('¿Eliminar relación papá-jugador?')) return; const {error}=await sb.from('parent_player_links_v211').delete().eq('id',id); if(error) toast(error.message); else {toast('Relación eliminada'); await refresh(); page='parents'; renderPage();} }
+
 function renderPayments(){
   setTitle('Pagos');
   document.getElementById('content').innerHTML=`<div class="panel"><div class="panel-head"><h3>Historial de pagos</h3><button class="btn green" onclick="openPaymentForm()">+ Registrar pago</button></div><div class="tablewrap"><table><thead><tr><th>ID</th><th>Alumno</th><th>Fecha</th><th>Periodo</th><th>Monto</th><th>Método</th><th>Estatus</th><th>Evidencia</th><th>Acción</th></tr></thead><tbody>${payments.map(p=>`<tr><td>${String(p.id).slice(0,8)}</td><td><b>${esc(p.student_name||'')}</b><br><small>${esc(p.player_id)}</small></td><td>${esc(p.payment_date)}</td><td>${esc(p.period||'')}</td><td class="amount">${money(p.amount)}</td><td>${esc(p.method||'')}</td><td><span class="status ${statusClass(p.confirmation_status)}">${esc(p.confirmation_status)}</span></td><td>${p.evidence_url?`<a class="btn secondary" target="_blank" href="${p.evidence_url}">Ver</a>`:'-'}</td><td><button class="btn red" onclick="deletePayment('${p.id}')">Eliminar</button></td></tr>`).join('')||'<tr><td colspan="9">Sin pagos</td></tr>'}</tbody></table></div></div>`;
@@ -325,10 +354,7 @@ function renderWhatsApp(){
   const rows=players.map(p=>({...p,c:calc(p)})).filter(p=>p.c.status==='Vencido'&&p.phone).sort((a,b)=>b.c.amount-a.c.amount);
   document.getElementById('content').innerHTML=`<div class="notice warning"><b>Enviar recordatorios:</b> cada botón abre WhatsApp con el mensaje listo.</div><div class="panel"><div class="panel-head"><h3>Jugadores vencidos con WhatsApp</h3></div><div class="tablewrap"><table><thead><tr><th>ID</th><th>Jugador</th><th>Tutor</th><th>WhatsApp</th><th>Meses</th><th>Adeudo</th><th>Acción</th></tr></thead><tbody>${rows.map(p=>`<tr><td>${p.id}</td><td><b>${esc(p.name)}</b></td><td>${esc(p.tutor||'')}</td><td>${esc(p.phone||'')}</td><td>${p.c.months}</td><td class="amount">${money(p.c.amount)}</td><td>${whatsappButtons(p)}</td></tr>`).join('')||'<tr><td colspan="7">No hay jugadores vencidos con WhatsApp registrado.</td></tr>'}</tbody></table></div></div>`;
 }
-function renderSettings(){
-  setTitle('Configuración');
-  document.getElementById('content').innerHTML=`<div class="panel"><div class="panel-head"><h3>Configuración</h3></div><div class="modal-body"><div class="notice"><b>Link público:</b><br><a href="${window.DUCKS_PORTAL_URL||location.origin}" target="_blank">${window.DUCKS_PORTAL_URL||location.origin}</a></div><p>El acceso de papás se crea desde el módulo Papás.</p></div></div>`;
-}
+function renderSettings(){ setTitle('Configuración'); document.getElementById('content').innerHTML=`<div class="panel"><div class="panel-head"><h3>Configuración</h3></div><div class="modal-body"><div class="notice"><b>Link público:</b><br><a href="${window.DUCKS_PORTAL_URL||location.origin}" target="_blank">${window.DUCKS_PORTAL_URL||location.origin}</a></div><p>El acceso de papás se crea desde el módulo Papás.</p></div></div>`; }
 
 /* CRUD */
 async function uploadFile(file, folder){
