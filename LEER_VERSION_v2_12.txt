@@ -1,0 +1,28 @@
+Ducks CRM Profesional v2.12
+
+Base: v2.11.
+
+Correcciones:
+- Login de papás más robusto:
+  intenta entrar con el usuario escrito,
+  usuario en minúsculas,
+  teléfono normalizado +52,
+  solo dígitos.
+- Agrega botón Reset contraseña en módulo Papás.
+- Puedes resetear contraseña desde:
+  Cuentas creadas,
+  Cuentas y jugadores ligados.
+- No requiere crear tablas nuevas si ya ejecutaste SQL v2.11.
+- No borra jugadores, pagos, cuentas ni relaciones.
+
+Uso:
+1. Sube el contenido del ZIP v2.12 a GitHub raíz.
+2. Commit changes.
+3. Espera Vercel.
+4. Entra como administrador.
+5. Ve a Papás.
+6. Usa Reset contraseña para poner una clave temporal, ejemplo Ducks2026.
+7. Prueba Portal de Papás con el usuario mostrado en Cuentas creadas y esa nueva contraseña.
+
+Si NO ejecutaste SQL v2.11, primero ejecuta:
+PASO_3_SQL_PORTAL_PAPAS_DIRECTO_v2_11.txt
