@@ -1,5 +1,5 @@
 
-// Ducks CRM profesional v2.7 - home profesional y simple para papás, sin imagen portal
+// Ducks CRM profesional v2.7 - página web profesional simple para papás
 const app = document.getElementById('app');
 let sb = null;
 let session = null;
@@ -274,31 +274,33 @@ async function copyBank(value, label){
 
 function renderPortal(){
   app.innerHTML=`<div class="public-site">
-    <header class="public-nav">
-      <div class="public-nav-inner">
-        <nav class="public-menu">
+    <header class="academy-menu">
+      <div class="academy-menu-inner">
+        <a class="academy-brand" href="#inicio">
+          <img src="assets/logo.png" alt="Ducks">
+          <span>Ducks Basketball Academy</span>
+        </a>
+        <nav class="academy-links">
           <a href="#inicio">Inicio</a>
           <a href="#calendario">Calendario de Juegos</a>
           <button type="button" onclick="renderLogin()">Iniciar Sesión</button>
           <a href="#academia">Academia</a>
           <a href="#contacto">Contacto</a>
         </nav>
-        <button class="btn secondary admin-btn" onclick="renderLogin()">Soy administrador</button>
+        <button class="btn secondary academy-admin" onclick="renderLogin()">Soy administrador</button>
       </div>
     </header>
 
-    <main class="public-main">
-      <section id="inicio" class="public-top">
-        <img class="public-logo-main" src="assets/logo.png" alt="Ducks Basketball Academy">
-        <div class="hero-ribbon">
-          <div class="hero-ribbon-text">
-            <span class="hero-kicker">DUCKS BASKETBALL ACADEMY</span>
-            <h1>Formación deportiva, disciplina y comunicación simple para mamás y papás</h1>
-            <p>Consulta información de la academia, revisa el calendario y realiza tus pagos de manera clara y rápida desde este portal.</p>
-            <div class="hero-actions">
-              <a class="btn green" href="#pagos">Ir a portal de pagos</a>
-              <a class="btn secondary" href="#contacto">Contacto</a>
-            </div>
+    <main class="academy-main">
+      <section id="inicio" class="academy-ribbon">
+        <div class="ribbon-bg-ball"></div>
+        <div class="ribbon-content">
+          <img class="ribbon-logo" src="assets/logo.png" alt="Ducks Basketball Academy">
+          <div class="ribbon-text">
+            <span class="ribbon-kicker">Portal oficial</span>
+            <h1>Ducks Basketball Academy</h1>
+            <p>Pagos, comprobantes y comunicación clara para papás.</p>
+            <a href="#pagos" class="btn green ribbon-btn">Subir comprobante</a>
           </div>
         </div>
       </section>
@@ -308,7 +310,7 @@ function renderPortal(){
           <img src="assets/logo.png">
           <div>
             <h1>Portal de Papás</h1>
-            <div class="sub">Paga, adjunta tu comprobante y envíalo para confirmación</div>
+            <div class="sub">Rápido, claro y fácil de usar</div>
           </div>
         </div>
 
@@ -346,7 +348,7 @@ function renderPortal(){
           </div>
         </div>
 
-        <div class="notice success"><b>Muy fácil:</b> escribe el nombre o apellido del jugador, elige la opción correcta con foto, realiza el pago y adjunta una foto o PDF del comprobante.</div>
+        <div class="notice success"><b>Muy fácil:</b> busca al jugador por nombre o apellido, realiza el pago y adjunta una foto o PDF del comprobante.</div>
 
         <form id="portalForm" class="parent-form">
           <label class="label full">Buscar jugador
@@ -356,6 +358,7 @@ function renderPortal(){
             <div id="portalPlayerOptions" class="player-options"></div>
             <div id="portalSelected"></div>
           </label>
+
           <label class="label">Fecha de pago<input id="portalDate" class="input" type="date" required value="${todayISO()}"></label>
           <label class="label">Monto pagado<input id="portalAmount" class="input" type="number" min="0" step="50" required placeholder="$"></label>
           <label class="label">Método<select id="portalMethod" class="select" required><option></option><option>Transferencia</option><option>Depósito</option><option>Efectivo</option><option>Otro</option></select></label>
@@ -367,33 +370,30 @@ function renderPortal(){
         </form>
       </section>
 
-      <section id="calendario" class="info-section">
+      <section id="calendario" class="academy-section">
         <h2>Calendario de Juegos</h2>
-        <p>Aquí podrás publicar partidos, torneos, horarios, sedes y categorías. Por ahora, puedes usar esta sección como página principal informativa.</p>
-        <div class="calendar-placeholder">
+        <p>Próximamente aquí podrás consultar juegos, torneos, horarios, sedes y categorías.</p>
+        <div class="coming-soon">
           <span>🏀</span>
-          <b>Calendario disponible próximamente</b>
-          <small>Una vez que lo decidas, también puedo dejar esta sección lista para capturar juegos reales.</small>
+          <b>Calendario en preparación</b>
+          <small>Mientras tanto, consulta los avisos oficiales de la academia.</small>
         </div>
       </section>
 
-      <section id="academia" class="info-section">
+      <section id="academia" class="academy-section">
         <h2>Academia</h2>
-        <p>Ducks Basketball Academy está enfocada en el desarrollo integral de niños y jóvenes a través del deporte, la disciplina, el trabajo en equipo y la mejora continua.</p>
+        <p>Ducks Basketball Academy impulsa la disciplina, el trabajo en equipo y el desarrollo deportivo de niños y jóvenes.</p>
         <div class="academy-grid">
-          <div><b>Desarrollo técnico</b><small>Fundamentos, coordinación, defensa, tiro y lectura de juego.</small></div>
-          <div><b>Competencia formativa</b><small>Juegos, torneos y seguimiento por nivel y categoría.</small></div>
-          <div><b>Comunicación con papás</b><small>Portal claro para pagos, avisos y control administrativo.</small></div>
+          <div><b>Entrenamiento</b><small>Fundamentos, técnica y desarrollo físico.</small></div>
+          <div><b>Competencia</b><small>Juegos, torneos y seguimiento por categoría.</small></div>
+          <div><b>Comunidad</b><small>Comunicación clara con papás y control administrativo.</small></div>
         </div>
       </section>
 
-      <section id="contacto" class="info-section contact-section">
+      <section id="contacto" class="academy-section contact-section">
         <h2>Contacto</h2>
-        <p>Si tienes dudas sobre pagos, entrenamientos, torneos o comprobantes, comunícate con la administración de Ducks Basketball Academy.</p>
-        <div class="contact-actions">
-          <a class="btn green" href="#pagos">Ir al portal de pagos</a>
-          <button type="button" class="btn secondary" onclick="renderLogin()">Iniciar sesión</button>
-        </div>
+        <p>Para dudas sobre pagos, entrenamientos, calendario o comprobantes, comunícate con la administración de Ducks Basketball Academy.</p>
+        <a href="#pagos" class="btn green">Ir al portal de pagos</a>
       </section>
     </main>
   </div>`;
