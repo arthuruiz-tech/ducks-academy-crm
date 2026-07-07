@@ -14,7 +14,7 @@ async function forceFreshAssetsOnce(){
 }
 forceFreshAssetsOnce();
 
-// Ducks CRM profesional v2.26 - admin visible y menus ampliados
+// Ducks CRM profesional v2.28 - menu siempre visible
 const app = document.getElementById('app');
 let sb = null;
 let session = null;
@@ -55,6 +55,30 @@ function thumb(url){return url?`<div class="thumb"><img src="${url}"></div>`:`<d
 function playerPhotoUrl(p){ return p?.photo_url || 'assets/logo.png'; }
 function isConfigured(){ return window.DUCKS_SUPABASE_URL && window.DUCKS_SUPABASE_ANON_KEY; }
 function normalizePhone(v){ const d=String(v||'').replace(/\D/g,''); if(!d)return ''; if(d.startsWith('52')&&d.length===12)return '+'+d; if(d.length===10)return '+52'+d; if(d.length>=11&&d.length<=15)return '+'+d; return String(v||'').trim(); }
+
+function onlyDigits(v){ return String(v||'').replace(/\D/g,''); }
+function cleanName(v){ return String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim(); }
+function playerTutorPhones(p){ return [p.phone, p.tutor_phone_2].map(onlyDigits).filter(Boolean); }
+function playerTutorNames(p){ return [p.tutor, p.tutor_2].map(cleanName).filter(Boolean); }
+function accountMatchesPlayer(acc, p){
+  const accPhone = onlyDigits(acc.phone || acc.login);
+  const accName = cleanName(acc.display_name || acc.login);
+  const phoneMatch = accPhone && playerTutorPhones(p).some(ph => ph.endsWith(accPhone) || accPhone.endsWith(ph));
+  const nameMatch = accName && playerTutorNames(p).some(n => n === accName || n.includes(accName) || accName.includes(n));
+  return phoneMatch || nameMatch;
+}
+async function autoLinkPlayersToAccount(account){
+  const matches = players.filter(p => accountMatchesPlayer(account, p));
+  let linked = 0;
+  for(const p of matches){
+    const exists = parentLinks.some(l => l.parent_account_id === account.id && l.player_id === p.id);
+    if(exists) continue;
+    const {error} = await sb.from('parent_player_links_v213').insert({parent_account_id:account.id, player_id:p.id, active:true});
+    if(!error) linked++;
+  }
+  return {matches: matches.length, linked};
+}
+
 function nextId(){ const max=players.reduce((m,p)=>Math.max(m,Number(String(p.id||'').replace(/\D/g,''))||0),0); return 'D'+String(max+1).padStart(3,'0'); }
 
 function calc(player, payList=payments){
@@ -293,11 +317,44 @@ function showInstallHelp(){
   document.body.appendChild(modal);
 }
 
-function renderSetup(){ app.innerHTML=`<div class="public-site"><div class="academy-main"><div class="parent-card"><h1>Configurar Supabase</h1><div class="notice warning">Falta configurar config.js.</div></div></div></div>`; }
+
+function publicQuickMenu(){
+  return `<header class="global-top-menu">
+    <div class="global-menu-inner">
+      <button class="global-brand-btn" onclick="renderPublicHome()">
+        <img src="assets/logo.png" alt="Ducks">
+        <span>Ducks Academy</span>
+      </button>
+      <nav class="global-links">
+        <button onclick="renderPublicHome()">Inicio</button>
+        <button onclick="renderParentLogin()">Portal de Papás</button>
+        <a href="#calendario" onclick="setTimeout(()=>document.getElementById('calendario')?.scrollIntoView({behavior:'smooth'}),50)">Calendario</a>
+        <a href="#academia" onclick="setTimeout(()=>document.getElementById('academia')?.scrollIntoView({behavior:'smooth'}),50)">Academia</a>
+        <a href="#contacto" onclick="setTimeout(()=>document.getElementById('contacto')?.scrollIntoView({behavior:'smooth'}),50)">Contacto</a>
+      </nav>
+      <button class="admin-image-btn global-admin" title="Administrador" aria-label="Administrador" onclick="renderAdminLogin()"><img src="assets/ducks-admin-header.png" alt="Administrador"></button>
+    </div>
+  </header>`;
+}
+function adminQuickMenu(){
+  return `<header class="admin-top-fixed">
+    <div class="admin-top-inner">
+      <button onclick="renderPublicHome()" class="admin-home-btn">🏠 Inicio público</button>
+      <button onclick="page='dashboard';renderPage()">Dashboard</button>
+      <button onclick="page='players';renderPage()">Jugadores</button>
+      <button onclick="page='parents';renderPage()">Papás</button>
+      <button onclick="page='payments';renderPage()">Pagos</button>
+      <button onclick="page='documents';renderPage()">Documentos</button>
+      <button onclick="page='backups';renderPage()">Respaldos</button>
+    </div>
+  </header>`;
+}
+
+function renderSetup(){ app.innerHTML=`${publicQuickMenu()}<div class="public-site with-global-menu"><div class="academy-main"><div class="parent-card"><h1>Configurar Supabase</h1><div class="notice warning">Falta configurar config.js.</div></div></div></div>`; }
 
 function renderPublicHome(){
   mode='public'; rememberScreen('public:');
-  app.innerHTML=`<div class="public-site">
+  app.innerHTML=`${publicQuickMenu()}<div class="public-site with-global-menu">
     <header class="academy-menu"><div class="academy-menu-inner">
       <a class="academy-brand" href="#inicio"><img src="assets/logo.png"><span>Ducks Basketball Academy</span></a>
       <nav class="academy-links">
@@ -420,7 +477,7 @@ function renderPublicHome(){
 /* Portal papás limpio v210 */
 function renderParentLogin(){
   mode='parentLogin'; rememberScreen('parentLogin:');
-  app.innerHTML=`<div class="public-site">
+  app.innerHTML=`${publicQuickMenu()}<div class="public-site with-global-menu">
     <header class="academy-menu"><div class="academy-menu-inner">
       <a class="academy-brand" href="#" onclick="renderPublicHome()"><img src="assets/logo.png"><span>Ducks Basketball Academy</span></a>
       <nav class="academy-links"><button onclick="renderPublicHome()">Inicio</button><button class="primary-menu-btn" onclick="renderParentLogin()">Portal de Papás</button><button class="admin-image-btn" title="Administrador" aria-label="Administrador" onclick="renderAdminLogin()"><img src="assets/ducks-admin-header.png" alt="Administrador"></button></nav>
@@ -601,7 +658,7 @@ async function submitParentPayment(e){
 /* Admin */
 function renderAdminLogin(){
   mode='adminLogin'; rememberScreen('adminLogin:');
-  app.innerHTML=`<div class="public-site"><header class="academy-menu"><div class="academy-menu-inner"><a class="academy-brand" href="#" onclick="renderPublicHome()"><img src="assets/logo.png"><span>Ducks Basketball Academy</span></a><nav class="academy-links"><button onclick="renderPublicHome()">Inicio</button><button onclick="renderParentLogin()">Portal de Papás</button></nav></div></header>
+  app.innerHTML=`${publicQuickMenu()}<div class="public-site with-global-menu"><header class="academy-menu"><div class="academy-menu-inner"><a class="academy-brand" href="#" onclick="renderPublicHome()"><img src="assets/logo.png"><span>Ducks Basketball Academy</span></a><nav class="academy-links"><button onclick="renderPublicHome()">Inicio</button><button onclick="renderParentLogin()">Portal de Papás</button></nav></div></header>
   <main class="academy-main"><div class="login-card"><div class="parent-title"><img src="assets/logo.png"><div><h1>Administrador</h1><div class="sub">Acceso interno Ducks</div></div></div><form id="loginForm" class="parent-form"><label class="label full">Email<input id="loginEmail" class="input" type="email" required></label><label class="label full">Password<input id="loginPassword" class="input" type="password" required></label><div class="full"><button class="btn green">Entrar como administrador</button></div></form></div></main></div>`;
   document.getElementById('loginForm').onsubmit=login;
 }
@@ -618,7 +675,7 @@ async function loadAdminData(){
   const py=await sb.from('payments').select('*').order('created_at',{ascending:false});
   if(py.error){toast('Error cargando pagos: '+py.error.message); payments=[];} else payments=py.data||[];
   const ac=await sb.from('parent_accounts_v213').select('*').order('display_name');
-  if(ac.error){toast('Ejecuta el SQL v2.26: '+ac.error.message); parentAccounts=[];} else parentAccounts=ac.data||[];
+  if(ac.error){toast('Ejecuta el SQL v2.28: '+ac.error.message); parentAccounts=[];} else parentAccounts=ac.data||[];
   const ln=await sb.from('parent_player_links_v213').select('*').order('created_at',{ascending:false});
   if(ln.error){parentLinks=[];} else parentLinks=ln.data||[];
   const dc=await sb.from('player_documents_v218').select('*').order('created_at',{ascending:false});
@@ -626,7 +683,7 @@ async function loadAdminData(){
 }
 async function refresh(){ if(mode==='admin'){await loadAdminData(); renderShell(); renderPage();} }
 function renderShell(){
-  app.innerHTML=`<div class="shell"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.26: administrador discreto + WhatsApp.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
+  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.28: administrador discreto + WhatsApp.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
   document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page=b.dataset.page; if(page==='public'){renderPublicHome(); return;} renderPage();});
   document.getElementById('search').oninput=e=>{q=e.target.value; renderPage();};
   document.getElementById('authBtn').onclick=logout;
@@ -644,14 +701,19 @@ function renderDashboard(){
 function renderPlayers(){
   setTitle('Jugadores');
   const list=filteredPlayers();
-  document.getElementById('content').innerHTML=`<div class="panel"><div class="panel-head"><h3>Base de jugadores</h3><button class="btn green" onclick="openPlayerForm()">+ Nuevo jugador</button></div><div class="cards">${list.map(p=>{const c=calc(p);return `<div class="card">${thumb(p.photo_url)}<h4>${esc(p.name)}</h4><p><span class="uniform">#${esc(p.uniform_number||'-')}</span></p><p><b>ID:</b> ${p.id} · <b>Categoría:</b> ${esc(p.category||'')}</p><p><b>Tutor:</b> ${esc(p.tutor||'')}</p><p><b>WhatsApp:</b> ${esc(p.phone||'')}</p><p><b>Adeudo:</b> <span class="amount">${money(c.amount)}</span> · <span class="status ${c.status}">${c.status}</span></p><div class="actions"><button class="btn secondary" onclick="openPlayerForm('${p.id}')">Editar</button><button class="btn green" onclick="openPaymentForm('${p.id}')">Pago</button>${whatsappButtons(p)}<button class="btn red" onclick="deletePlayer('${p.id}')">Eliminar</button></div></div>`}).join('')||'<div class="card">Sin jugadores. Si aquí no aparecen, revisa que estés logueado como administrador y que la tabla players tenga permisos.'}</div></div>`;
+  document.getElementById('content').innerHTML=`<div class="panel"><div class="panel-head"><h3>Base de jugadores</h3><button class="btn green" onclick="openPlayerForm()">+ Nuevo jugador</button></div><div class="cards">${list.map(p=>{const c=calc(p);return `<div class="card">${thumb(p.photo_url)}<h4>${esc(p.name)}</h4><p><span class="uniform">#${esc(p.uniform_number||'-')}</span></p><p><b>ID:</b> ${p.id} · <b>Categoría:</b> ${esc(p.category||'')}</p><p><b>Tutor principal:</b> ${esc(p.tutor||'')}</p><p><b>WhatsApp principal:</b> ${esc(p.phone||'')}</p>${p.tutor_2||p.tutor_phone_2?`<p><b>Tutor secundario:</b> ${esc(p.tutor_2||'')} · ${esc(p.tutor_phone_2||'')}</p>`:''}<p><b>Adeudo:</b> <span class="amount">${money(c.amount)}</span> · <span class="status ${c.status}">${c.status}</span></p><div class="actions"><button class="btn secondary" onclick="openPlayerForm('${p.id}')">Editar</button><button class="btn green" onclick="openPaymentForm('${p.id}')">Pago</button>${whatsappButtons(p)}<button class="btn red" onclick="deletePlayer('${p.id}')">Eliminar</button></div></div>`}).join('')||'<div class="card">Sin jugadores. Si aquí no aparecen, revisa que estés logueado como administrador y que la tabla players tenga permisos.'}</div></div>`;
 }
 function suggestedFamilies(){
   const m = new Map();
   players.forEach(p=>{
-    const key=(p.phone||p.tutor||'Sin tutor').trim() || 'Sin tutor';
-    if(!m.has(key)) m.set(key,{key,tutor:p.tutor||'',phone:p.phone||'',players:[]});
-    m.get(key).players.push(p);
+    [
+      {tutor:p.tutor||'', phone:p.phone||''},
+      {tutor:p.tutor_2||'', phone:p.tutor_phone_2||''}
+    ].filter(e=>e.tutor||e.phone).forEach(e=>{
+      const key=(e.phone||e.tutor||'Sin tutor').trim();
+      if(!m.has(key)) m.set(key,{key,tutor:e.tutor||'',phone:e.phone||'',players:[]});
+      if(!m.get(key).players.some(x=>x.id===p.id)) m.get(key).players.push(p);
+    });
   });
   return [...m.values()].filter(f=>f.players.length);
 }
@@ -660,7 +722,7 @@ function renderParents(){
   const fams=suggestedFamilies();
   const playersOptions = players.map(p=>`<option value="${p.id}">${p.id} · ${esc(p.name)} · Tutor: ${esc(p.tutor||'')}</option>`).join('');
   const accountsOptions = parentAccounts.map(a=>`<option value="${a.id}">${esc(a.display_name)} · ${esc(a.login)}</option>`).join('');
-  document.getElementById('content').innerHTML=`<div class="notice success"><b>v2.26:</b> esta sección usa usuario y clave temporal simple para papás. Si no ves jugadores, entra a la sección Jugadores para validar que carguen correctamente.</div>
+  document.getElementById('content').innerHTML=`<div class="notice success"><b>v2.28:</b> al crear una cuenta se ligan automáticamente los jugadores que coincidan por teléfono o tutor. Si no ves jugadores, entra a la sección Jugadores para validar que carguen correctamente.</div>
   <div class="panel"><div class="panel-head"><h3>Crear cuenta de papá/tutor</h3></div><div class="modal-body"><form id="parentAccountForm" class="form-grid">
     <label class="label">Nombre visible<input id="accName" class="input" required placeholder="Nombre del papá, mamá o tutor"></label>
     <label class="label">Usuario<input id="accLogin" class="input" required placeholder="Correo, teléfono o usuario"></label>
@@ -673,7 +735,7 @@ function renderParents(){
     <label class="label">Jugador<select id="linkPlayer" class="select" required><option value="">Selecciona jugador...</option>${playersOptions}</select></label>
     <div class="full"><button class="btn green">Ligar jugador</button></div>
   </form></div></div>
-  <div class="panel"><div class="panel-head"><h3>Cuentas creadas</h3></div><div class="tablewrap"><table><thead><tr><th>Nombre</th><th>Usuario</th><th>Clave temporal</th><th>WhatsApp</th><th>Activo</th><th>Acción</th></tr></thead><tbody>${parentAccounts.map(a=>`<tr><td><b>${esc(a.display_name)}</b></td><td>${esc(a.login)}</td><td><code>${esc(a.access_code||'')}</code></td><td>${esc(a.phone||'-')}</td><td>${a.active?'Sí':'No'}</td><td><button class="btn secondary" onclick="resetParentPassword('${a.id}')">Reset contraseña</button></td></tr>`).join('')||'<tr><td colspan="6">Sin cuentas creadas</td></tr>'}</tbody></table></div></div>
+  <div class="panel"><div class="panel-head"><h3>Cuentas creadas</h3></div><div class="tablewrap"><table><thead><tr><th>Nombre</th><th>Usuario</th><th>Clave temporal</th><th>WhatsApp</th><th>Activo</th><th>Acción</th></tr></thead><tbody>${parentAccounts.map(a=>`<tr><td><b>${esc(a.display_name)}</b></td><td>${esc(a.login)}</td><td><code>${esc(a.access_code||'')}</code></td><td>${esc(a.phone||'-')}</td><td>${a.active?'Sí':'No'}</td><td><button class="btn secondary" onclick="autoLinkAccountFromButton('${a.id}')">Auto ligar</button> <button class="btn secondary" onclick="resetParentPassword('${a.id}')">Reset contraseña</button></td></tr>`).join('')||'<tr><td colspan="6">Sin cuentas creadas</td></tr>'}</tbody></table></div></div>
   <div class="panel"><div class="panel-head"><h3>Sugerencias desde tutor / WhatsApp existentes</h3></div><div class="cards">${fams.map(f=>`<div class="card"><h4>${esc(f.tutor||'Tutor sin nombre')}</h4><p><b>WhatsApp:</b> ${esc(f.phone||'-')}</p><p><b>Jugadores:</b> ${f.players.map(p=>esc(p.name)).join(', ')}</p><div class="actions"><button class="btn secondary" onclick="prefillParent('${String(f.tutor||'').replace(/'/g,"\\'")}','${String(f.phone||'').replace(/'/g,"\\'")}')">Usar para crear cuenta</button></div></div>`).join('')||'<div class="card">No hay sugerencias porque no cargaron jugadores.</div>'}</div></div>
   <div class="panel"><div class="panel-head"><h3>Cuentas y jugadores ligados</h3></div><div class="tablewrap"><table><thead><tr><th>Cuenta</th><th>Usuario</th><th>Jugador</th><th>Activo</th><th>Acción</th></tr></thead><tbody>${parentLinks.map(l=>{const a=parentAccounts.find(x=>x.id===l.parent_account_id); const p=players.find(x=>x.id===l.player_id); return `<tr><td><b>${esc(a?.display_name||'')}</b></td><td>${esc(a?.login||'')}</td><td>${esc(l.player_id)} · ${esc(p?.name||'')}</td><td>${l.active?'Sí':'No'}</td><td><button class="btn secondary" onclick="resetParentPassword('${a?.id||''}')">Reset contraseña</button> <button class="btn red" onclick="deleteParentLink('${l.id}')">Eliminar</button></td></tr>`}).join('')||'<tr><td colspan="5">Sin asignaciones</td></tr>'}</tbody></table></div></div>`;
   document.getElementById('parentAccountForm').onsubmit=saveParentAccount;
@@ -693,9 +755,19 @@ async function saveParentAccount(e){
     const row = {login, display_name, phone, access_code, active:true};
     const {error} = await sb.from('parent_accounts_v213').upsert(row, {onConflict:'login'});
     if(error) throw error;
-    toast('Cuenta de papá creada');
-    await refresh();
+
+    await loadAdminData();
+    const account = parentAccounts.find(a => String(a.login).toLowerCase() === login);
+    let msg = 'Cuenta de papá creada';
+    if(account){
+      const result = await autoLinkPlayersToAccount(account);
+      await loadAdminData();
+      msg += `. Jugadores ligados automáticamente: ${result.linked}`;
+      if(result.matches === 0) msg += '. No se encontraron coincidencias; usa ligar manual si aplica.';
+    }
+    toast(msg);
     page='parents';
+    renderShell();
     renderPage();
   }catch(err){
     toast('Error creando cuenta: ' + err.message);
@@ -706,6 +778,22 @@ async function saveParentLink(e){
   const row={parent_account_id:document.getElementById('linkAccount').value,player_id:document.getElementById('linkPlayer').value,active:true};
   const {error}=await sb.from('parent_player_links_v213').insert(row);
   if(error) toast('Error ligando jugador: '+error.message); else {toast('Jugador ligado al papá'); await refresh(); page='parents'; renderPage();}
+}
+
+
+async function autoLinkAccountFromButton(accountId){
+  const acc = parentAccounts.find(a=>a.id===accountId);
+  if(!acc){ toast('Cuenta no encontrada'); return; }
+  try{
+    const result = await autoLinkPlayersToAccount(acc);
+    await loadAdminData();
+    toast(`Auto ligado completado. Nuevos ligados: ${result.linked}`);
+    page='parents';
+    renderShell();
+    renderPage();
+  }catch(err){
+    toast('Error en auto ligado: ' + err.message);
+  }
 }
 
 async function resetParentPassword(accountId){
@@ -854,7 +942,7 @@ function openPlayerForm(id=''){
   const p=id?players.find(x=>x.id===id):null;
   const modal=document.createElement('div'); modal.className='modalbg open'; modal.id='playerModal';
   modal.innerHTML=`<div class="modal"><div class="modal-head"><h3>${p?'Editar jugador':'Nuevo jugador'}</h3><button class="btn secondary" onclick="closeModal('playerModal')">Cerrar</button></div><div class="modal-body"><form id="playerForm" class="form-grid">
-    <label class="label">ID jugador<input id="pId" class="input" value="${esc(p?.id||nextId())}" ${p?'readonly':''} required></label><label class="label">Nombre<input id="pName" class="input" value="${esc(p?.name||'')}" required></label><label class="label">Tutor<input id="pTutor" class="input" value="${esc(p?.tutor||'')}"></label><label class="label">WhatsApp<input id="pPhone" class="input" value="${esc(p?.phone||'')}"></label><label class="label">Categoría<input id="pCategory" class="input" value="${esc(p?.category||'')}"></label><label class="label">Estado<select id="pStatus" class="select"><option ${p?.status==='Activo'?'selected':''}>Activo</option><option ${p?.status==='Inactivo'?'selected':''}>Inactivo</option><option ${p?.status==='Baja'?'selected':''}>Baja</option></select></label><label class="label">Mensualidad<input id="pFee" class="input" type="number" min="0" step="50" value="${esc(p?.monthly_fee||300)}"></label><label class="label">Día de pago<input id="pDay" class="input" type="number" min="1" max="31" value="${esc(p?.payment_day||5)}"></label><label class="label">Número uniforme<input id="pUniform" class="input" value="${esc(p?.uniform_number||'')}"></label><label class="label">Foto<input id="pPhoto" class="input" type="file" accept="image/*"></label><label class="label full">Notas<textarea id="pNotes" class="input">${esc(p?.notes||'')}</textarea></label><div class="full actions"><button class="btn green">Guardar jugador</button></div></form></div></div>`;
+    <label class="label">ID jugador<input id="pId" class="input" value="${esc(p?.id||nextId())}" ${p?'readonly':''} required></label><label class="label">Nombre<input id="pName" class="input" value="${esc(p?.name||'')}" required></label><label class="label">Tutor principal<input id="pTutor" class="input" value="${esc(p?.tutor||'')}"></label><label class="label">WhatsApp principal<input id="pPhone" class="input" value="${esc(p?.phone||'')}"></label><label class="label">Tutor secundario<input id="pTutor2" class="input" value="${esc(p?.tutor_2||'')}" placeholder="Opcional"></label><label class="label">WhatsApp secundario<input id="pPhone2" class="input" value="${esc(p?.tutor_phone_2||'')}" placeholder="Opcional"></label><label class="label">Categoría<input id="pCategory" class="input" value="${esc(p?.category||'')}"></label><label class="label">Estado<select id="pStatus" class="select"><option ${p?.status==='Activo'?'selected':''}>Activo</option><option ${p?.status==='Inactivo'?'selected':''}>Inactivo</option><option ${p?.status==='Baja'?'selected':''}>Baja</option></select></label><label class="label">Mensualidad<input id="pFee" class="input" type="number" min="0" step="50" value="${esc(p?.monthly_fee||300)}"></label><label class="label">Día de pago<input id="pDay" class="input" type="number" min="1" max="31" value="${esc(p?.payment_day||5)}"></label><label class="label">Número uniforme<input id="pUniform" class="input" value="${esc(p?.uniform_number||'')}"></label><label class="label">Foto<input id="pPhoto" class="input" type="file" accept="image/*"></label><label class="label full">Notas<textarea id="pNotes" class="input">${esc(p?.notes||'')}</textarea></label><div class="full actions"><button class="btn green">Guardar jugador</button></div></form></div></div>`;
   document.body.appendChild(modal);
   document.getElementById('playerForm').onsubmit=(e)=>savePlayerForm(e,p);
 }
@@ -865,7 +953,7 @@ async function savePlayerForm(e, oldPlayer){
   let photo_url=oldPlayer?.photo_url||'';
   try{
     if(file) photo_url=await uploadFile(file,'fotos');
-    const row={id,name:document.getElementById('pName').value.trim(),tutor:document.getElementById('pTutor').value.trim(),phone:normalizePhone(document.getElementById('pPhone').value),category:document.getElementById('pCategory').value.trim(),status:document.getElementById('pStatus').value,monthly_fee:Number(document.getElementById('pFee').value||0),payment_day:Number(document.getElementById('pDay').value||1),uniform_number:document.getElementById('pUniform').value.trim(),photo_url,notes:document.getElementById('pNotes').value.trim()};
+    const row={id,name:document.getElementById('pName').value.trim(),tutor:document.getElementById('pTutor').value.trim(),phone:normalizePhone(document.getElementById('pPhone').value),tutor_2:document.getElementById('pTutor2')?.value.trim()||'',tutor_phone_2:normalizePhone(document.getElementById('pPhone2')?.value||''),category:document.getElementById('pCategory').value.trim(),status:document.getElementById('pStatus').value,monthly_fee:Number(document.getElementById('pFee').value||0),payment_day:Number(document.getElementById('pDay').value||1),uniform_number:document.getElementById('pUniform').value.trim(),photo_url,notes:document.getElementById('pNotes').value.trim()};
     const result=oldPlayer?await sb.from('players').update(row).eq('id',oldPlayer.id):await sb.from('players').insert(row);
     if(result.error) throw result.error;
     toast(oldPlayer?'Jugador actualizado':'Jugador agregado'); closeModal('playerModal'); await refresh();
@@ -889,6 +977,6 @@ async function confirmPayment(id){const {error}=await sb.from('payments').update
 async function rejectPayment(id){const {error}=await sb.from('payments').update({confirmation_status:'Rechazado'}).eq('id',id); if(error)toast(error.message); else{toast('Pago rechazado'); await refresh();}}
 async function deletePayment(id){if(!confirm('¿Eliminar pago?'))return; const {error}=await sb.from('payments').delete().eq('id',id); if(error)toast(error.message); else{toast('Pago eliminado'); await refresh();}}
 
-window.renderPublicHome=renderPublicHome; window.renderParentLogin=renderParentLogin; window.renderAdminLogin=renderAdminLogin; window.renderLogin=renderAdminLogin; window.parentLogout=parentLogout; window.copyBank=copyBank; window.openParentPayment=openParentPayment; window.openParentDocument=openParentDocument; window.installDucksApp=installDucksApp; window.goBackSmart=goBackSmart; window.openPlayerForm=openPlayerForm; window.deletePlayer=deletePlayer; window.openPaymentForm=openPaymentForm; window.confirmPayment=confirmPayment; window.rejectPayment=rejectPayment; window.deletePayment=deletePayment; window.closeModal=closeModal; window.copyReminder=copyReminder; window.deleteParentLink=deleteParentLink; window.prefillParent=prefillParent; window.exportCSV=exportCSV; window.exportFullJSON=exportFullJSON; window.exportDocumentsCSV=exportDocumentsCSV; window.resetParentPassword=resetParentPassword;
+window.renderPublicHome=renderPublicHome; window.renderParentLogin=renderParentLogin; window.renderAdminLogin=renderAdminLogin; window.renderLogin=renderAdminLogin; window.parentLogout=parentLogout; window.copyBank=copyBank; window.openParentPayment=openParentPayment; window.openParentDocument=openParentDocument; window.installDucksApp=installDucksApp; window.goBackSmart=goBackSmart; window.openPlayerForm=openPlayerForm; window.deletePlayer=deletePlayer; window.openPaymentForm=openPaymentForm; window.confirmPayment=confirmPayment; window.rejectPayment=rejectPayment; window.deletePayment=deletePayment; window.closeModal=closeModal; window.copyReminder=copyReminder; window.deleteParentLink=deleteParentLink; window.prefillParent=prefillParent; window.exportCSV=exportCSV; window.exportFullJSON=exportFullJSON; window.exportDocumentsCSV=exportDocumentsCSV; window.resetParentPassword=resetParentPassword; window.autoLinkAccountFromButton=autoLinkAccountFromButton;
 
 init();

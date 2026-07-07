@@ -1128,3 +1128,156 @@ nav button{
     font-size:15px !important;
   }
 }
+
+/* v2.27 - Tutores y auto ligado */
+.form-grid .label input::placeholder{color:#94a3b8;}
+
+
+/* v2.28 - Menú siempre visible */
+.global-top-menu{
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  z-index:9999;
+  background:linear-gradient(90deg,#061528,#0B223F);
+  border-bottom:1px solid rgba(57,255,136,.22);
+  box-shadow:0 8px 24px rgba(6,21,40,.18);
+}
+.global-menu-inner{
+  max-width:1180px;
+  margin:auto;
+  min-height:58px;
+  padding:7px 14px;
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  gap:12px;
+  align-items:center;
+}
+.global-brand-btn{
+  border:0;
+  background:transparent;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-weight:950;
+  cursor:pointer;
+  font-size:16px;
+}
+.global-brand-btn img{
+  width:40px;
+  height:40px;
+  object-fit:contain;
+}
+.global-links{
+  display:flex;
+  justify-content:center;
+  gap:8px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+.global-links button,
+.global-links a{
+  border:0;
+  background:rgba(255,255,255,.06);
+  color:#EAF1FB;
+  padding:9px 12px;
+  border-radius:999px;
+  font-size:16px;
+  font-weight:850;
+  text-decoration:none;
+  cursor:pointer;
+}
+.global-links button:hover,
+.global-links a:hover{
+  background:rgba(57,255,136,.14);
+  color:#39FF88;
+}
+.global-admin{
+  background:#fff !important;
+  opacity:.82 !important;
+}
+.with-global-menu{
+  padding-top:74px;
+}
+.with-global-menu > .academy-menu{
+  display:none !important;
+}
+
+/* Menú fijo dentro de administrador */
+.admin-top-fixed{
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  z-index:9999;
+  background:linear-gradient(90deg,#061528,#0B223F);
+  border-bottom:1px solid rgba(57,255,136,.22);
+  box-shadow:0 8px 24px rgba(6,21,40,.18);
+}
+.admin-top-inner{
+  min-height:58px;
+  padding:8px 14px;
+  display:flex;
+  gap:8px;
+  align-items:center;
+  justify-content:center;
+  flex-wrap:wrap;
+}
+.admin-top-inner button{
+  border:0;
+  background:rgba(255,255,255,.08);
+  color:#EAF1FB;
+  border-radius:999px;
+  padding:9px 12px;
+  font-size:15px;
+  font-weight:850;
+  cursor:pointer;
+}
+.admin-top-inner button:hover{
+  background:rgba(57,255,136,.14);
+  color:#39FF88;
+}
+.admin-home-btn{
+  background:#39FF88 !important;
+  color:#061528 !important;
+}
+.with-admin-menu{
+  padding-top:66px;
+}
+
+/* Ajustes móviles */
+@media(max-width:760px){
+  .global-menu-inner{
+    grid-template-columns:1fr auto;
+  }
+  .global-links{
+    grid-column:1 / -1;
+    order:3;
+    justify-content:flex-start;
+    overflow-x:auto;
+    flex-wrap:nowrap;
+    padding-bottom:4px;
+  }
+  .global-links button,
+  .global-links a{
+    font-size:14px;
+    white-space:nowrap;
+  }
+  .with-global-menu{
+    padding-top:112px;
+  }
+  .admin-top-inner{
+    justify-content:flex-start;
+    overflow-x:auto;
+    flex-wrap:nowrap;
+  }
+  .admin-top-inner button{
+    white-space:nowrap;
+    font-size:14px;
+  }
+  .with-admin-menu{
+    padding-top:68px;
+  }
+}

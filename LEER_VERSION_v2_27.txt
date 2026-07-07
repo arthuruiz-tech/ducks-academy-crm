@@ -1,0 +1,24 @@
+Ducks CRM Profesional v2.27
+
+Nuevo:
+- Al crear cuenta de papá/tutor, el CRM liga automáticamente jugadores que coinciden por teléfono o nombre de tutor.
+- Coincide con tutor principal y tutor secundario.
+- Se conserva la opción manual Ligar jugador.
+- Agregué botón Auto ligar en Cuentas creadas.
+- Cada jugador ahora permite:
+  Tutor principal,
+  WhatsApp principal,
+  Tutor secundario,
+  WhatsApp secundario.
+
+Importante:
+Esta versión SÍ requiere ejecutar SQL nuevo:
+PASO_5_SQL_DOS_TUTORES_v2_27.txt
+
+Orden:
+1. Ejecuta el SQL en Supabase SQL Editor.
+2. Sube todo el contenido del ZIP a GitHub raíz.
+3. Commit changes.
+4. Espera Vercel.
+5. En Jugadores, edita un jugador y agrega tutor secundario si aplica.
+6. En Papás, crea cuenta; el sistema ligará automáticamente.

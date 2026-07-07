@@ -1,0 +1,25 @@
+Ducks CRM Profesional v2.28
+
+Cambio principal:
+- Menú siempre visible en las ventanas principales.
+- Desde cualquier vista puedes volver rápido a:
+  Inicio,
+  Portal de Papás,
+  Calendario,
+  Academia,
+  Contacto.
+- En administrador se agregó barra fija superior para cambiar rápido entre:
+  Dashboard,
+  Jugadores,
+  Papás,
+  Pagos,
+  Documentos,
+  Respaldos.
+- Mantiene funcionalidad de v2.27.
+- No requiere SQL nuevo si ya ejecutaste el SQL de v2.27.
+
+Instalación:
+1. Sube todo el contenido del ZIP a GitHub raíz.
+2. Commit changes.
+3. Espera Vercel.
+4. Recarga el portal.
