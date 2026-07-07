@@ -1,0 +1,7 @@
+Ducks CRM Profesional v2.29
+
+Cambios:
+- Menú global fijo agregado en ventanas públicas, incluyendo Portal de Papás.
+- Acceso rápido a Inicio, Portal de Papás, Calendario, Academia y Contacto.
+- Ícono administrador más grande, sin transparencia y sin fondo blanco.
+- No requiere SQL nuevo si ya ejecutaste SQL de v2.27.

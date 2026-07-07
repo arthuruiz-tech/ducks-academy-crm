@@ -1281,3 +1281,95 @@ nav button{
     padding-top:68px;
   }
 }
+
+
+/* v2.29 - Menú global en todas las ventanas públicas */
+.global-top-menu{
+  position:fixed !important;
+  top:0 !important;
+  left:0 !important;
+  right:0 !important;
+  z-index:99999 !important;
+  background:linear-gradient(90deg,#061528,#0B223F) !important;
+  border-bottom:1px solid rgba(57,255,136,.22) !important;
+  box-shadow:0 8px 24px rgba(6,21,40,.18) !important;
+}
+.global-menu-inner{
+  max-width:1180px;
+  margin:auto;
+  min-height:62px;
+  padding:7px 14px;
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  gap:12px;
+  align-items:center;
+}
+.global-brand-btn{
+  border:0;
+  background:transparent;
+  color:white;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-weight:950;
+  cursor:pointer;
+  font-size:17px;
+}
+.global-brand-btn img{width:42px;height:42px;object-fit:contain}
+.global-links{
+  display:flex;
+  justify-content:center;
+  gap:8px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+.global-links button{
+  border:0;
+  background:rgba(255,255,255,.08);
+  color:#EAF1FB;
+  padding:10px 13px;
+  border-radius:999px;
+  font-size:16px;
+  font-weight:900;
+  cursor:pointer;
+}
+.global-links button:hover{
+  background:rgba(57,255,136,.14);
+  color:#39FF88;
+}
+.with-global-menu{padding-top:82px !important}
+.with-global-menu > .academy-menu{display:none !important}
+
+/* Admin icon grande, opaco y sin fondo */
+.admin-image-btn,.global-admin{
+  background:transparent !important;
+  border:0 !important;
+  border-radius:0 !important;
+  padding:0 !important;
+  opacity:1 !important;
+  width:86px !important;
+  min-width:86px !important;
+  height:62px !important;
+  box-shadow:none !important;
+  overflow:visible !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+}
+.admin-image-btn img,.global-admin img{
+  width:86px !important;
+  max-width:86px !important;
+  height:62px !important;
+  object-fit:contain !important;
+  filter:drop-shadow(0 6px 12px rgba(0,0,0,.32)) !important;
+}
+.admin-image-btn:hover,.global-admin:hover{transform:scale(1.04) !important}
+
+@media(max-width:760px){
+  .global-menu-inner{grid-template-columns:1fr auto}
+  .global-links{grid-column:1/-1;order:3;justify-content:flex-start;overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px}
+  .global-links button{white-space:nowrap;font-size:14px}
+  .with-global-menu{padding-top:126px !important}
+  .admin-image-btn,.global-admin{width:74px !important;min-width:74px !important;height:54px !important}
+  .admin-image-btn img,.global-admin img{width:74px !important;height:54px !important}
+}
