@@ -1,4 +1,4 @@
-// Ducks CRM profesional v2.17 - módulo de respaldos y exportación
+// Ducks CRM profesional v2.18 - documentos privados por jugador
 const app = document.getElementById('app');
 let sb = null;
 let session = null;
@@ -12,6 +12,8 @@ let parentAccounts = [];
 let parentLinks = [];
 let parentPlayers = [];
 let parentPayments = [];
+let parentDocuments = [];
+let documents = [];
 let q = '';
 
 const BANK_ACCOUNT = '157 889 8256';
@@ -22,6 +24,9 @@ const BANK_BENEFICIARY = 'DUCKS BASKETBALL';
 const ACADEMY_WHATSAPP = window.DUCKS_ACADEMY_WHATSAPP || '+5214490000000';
 const ACADEMY_WHATSAPP_DIGITS = String(ACADEMY_WHATSAPP).replace(/\D/g,'');
 const ACADEMY_ADDRESS = 'Parque Boulevares 1: Jesús Sotelo Inclán, Bulevares 1ra Secc, 20288 Aguascalientes, Ags.';
+
+const DOCUMENT_TYPES = ['Acta de nacimiento','CURP','Fotografía','Certificado médico','Identificación tutor','Comprobante de pago','Otro'];
+
 
 
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),4000); }
@@ -363,6 +368,9 @@ async function loadParentData(){
   parentProfile=data.account;
   parentPlayers=data.players||[];
   parentPayments=data.payments||[];
+  const docs = await sb.rpc('ducks_parent_documents_v218',{p_token:parentToken});
+  if(!docs.error && docs.data?.ok){ parentDocuments = docs.data.documents || []; }
+  else { parentDocuments = []; }
 }
 function renderParentPortal(){
   mode='parentPortal';
@@ -373,7 +381,14 @@ function renderParentPortal(){
       <div class="family-head"><img src="${playerPhotoUrl(p)}"><div><h2>${esc(p.name)}</h2><p>${esc(p.category||'')} · Uniforme #${esc(p.uniform_number||'-')}</p><span class="status ${c.status}">${c.status}</span></div></div>
       <div class="family-kpis"><div><small>Último pago</small><b>${esc(c.last||'Sin registro')}</b></div><div><small>Meses pendientes</small><b>${c.months}</b></div><div><small>Adeudo actual</small><b class="amount">${money(c.amount)}</b></div></div>
       <details class="history-box"><summary>Ver historial y comprobantes</summary>${history.length?`<table class="mini-table"><thead><tr><th>Fecha</th><th>Monto</th><th>Estatus</th><th>Evidencia</th></tr></thead><tbody>${history.map(h=>`<tr><td>${esc(h.payment_date)}</td><td>${money(h.amount)}</td><td><span class="status ${statusClass(h.confirmation_status)}">${esc(h.confirmation_status)}</span></td><td>${h.evidence_url?`<a target="_blank" href="${h.evidence_url}">Ver</a>`:'-'}</td></tr>`).join('')}</tbody></table>`:'<p class="sub">Sin pagos registrados.</p>'}</details>
-      <button class="btn green" onclick="openParentPayment('${p.id}')">Subir comprobante de este jugador</button>
+      <div class="doc-actions">
+        <button class="btn green" onclick="openParentPayment('${p.id}')">Subir comprobante</button>
+        <button class="btn secondary" onclick="openParentDocument('${p.id}')">Subir documentos</button>
+      </div>
+      <details class="history-box">
+        <summary>Documentos del jugador</summary>
+        ${renderParentDocuments(p.id)}
+      </details>
     </div>`;
   }).join('');
   app.innerHTML=`<div class="public-site">
@@ -390,6 +405,61 @@ function renderParentPortal(){
   </div>`;
 }
 function parentLogout(){ parentToken=''; parentProfile=null; parentPlayers=[]; parentPayments=[]; localStorage.removeItem('ducks_parent_token_v213'); renderPublicHome(); }
+
+function renderParentDocuments(playerId){
+  const docs = parentDocuments.filter(d=>d.player_id===playerId);
+  if(!docs.length) return '<p class="sub">Aún no hay documentos cargados.</p>';
+  return `<table class="mini-table"><thead><tr><th>Tipo</th><th>Nombre</th><th>Fecha</th><th>Archivo</th></tr></thead><tbody>${docs.map(d=>`<tr><td>${esc(d.document_type||'')}</td><td>${esc(d.title||'')}</td><td>${esc(String(d.created_at||'').slice(0,10))}</td><td><a target="_blank" href="${d.file_url}">Ver</a></td></tr>`).join('')}</tbody></table>`;
+}
+function openParentDocument(playerId=''){
+  if(!parentPlayers.length){toast('No tienes jugadores asignados.'); return;}
+  const selected = playerId ? parentPlayers.find(p=>p.id===playerId) : parentPlayers[0];
+  const options = parentPlayers.map(p=>`<option value="${p.id}" ${p.id===selected.id?'selected':''}>${esc(p.name)} · #${esc(p.uniform_number||'-')}</option>`).join('');
+  const typeOptions = DOCUMENT_TYPES.map(t=>`<option>${esc(t)}</option>`).join('');
+  const modal=document.createElement('div'); modal.className='modalbg open'; modal.id='parentDocModal';
+  modal.innerHTML=`<div class="modal"><div class="modal-head"><h3>Subir documentos del jugador</h3><button class="btn secondary" onclick="closeModal('parentDocModal')">Cerrar</button></div><div class="modal-body">
+    <div class="notice success"><b>Documentos privados:</b> solo el papá/tutor asignado y el administrador podrán consultar estos documentos.</div>
+    <form id="parentDocForm" class="form-grid">
+      <label class="label full">Jugador<select id="docPlayer" class="select" required>${options}</select></label>
+      <label class="label">Tipo de documento<select id="docType" class="select" required>${typeOptions}</select></label>
+      <label class="label">Nombre o descripción<input id="docTitle" class="input" placeholder="Ej. CURP actualizada, Acta original..." required></label>
+      <label class="label full">Archivo<input id="docFile" class="input" type="file" accept="image/*,application/pdf,.doc,.docx" required></label>
+      <label class="label full">Comentarios opcionales<textarea id="docNotes" class="input" placeholder="Comentarios sobre el documento..."></textarea></label>
+      <div class="full"><button class="btn green" style="width:100%;font-size:18px;padding:14px">Enviar documento</button></div>
+    </form>
+  </div></div>`;
+  document.body.appendChild(modal);
+  document.getElementById('parentDocForm').onsubmit=submitParentDocument;
+}
+async function submitParentDocument(e){
+  e.preventDefault();
+  const player_id=document.getElementById('docPlayer').value;
+  const player=parentPlayers.find(p=>p.id===player_id);
+  const file=document.getElementById('docFile').files[0];
+  try{
+    const file_url=await uploadFile(file,`documentos/${player_id}`);
+    const row={
+      p_token:parentToken,
+      p_player_id:player_id,
+      p_document_type:document.getElementById('docType').value,
+      p_title:document.getElementById('docTitle').value.trim(),
+      p_file_url:file_url,
+      p_file_name:file.name,
+      p_file_mime:file.type || '',
+      p_notes:document.getElementById('docNotes').value.trim()
+    };
+    const {data,error}=await sb.rpc('ducks_parent_submit_document_v218',row);
+    if(error) throw error;
+    if(!data?.ok) throw new Error(data?.message||'No se pudo guardar el documento');
+    closeModal('parentDocModal');
+    toast('Documento enviado correctamente.');
+    await loadParentData();
+    renderParentPortal();
+  }catch(err){
+    toast('Error: '+err.message);
+  }
+}
+
 function openParentPayment(playerId=''){
   if(!parentPlayers.length){toast('No tienes jugadores asignados.'); return;}
   const selected = playerId ? parentPlayers.find(p=>p.id===playerId) : parentPlayers[0];
@@ -449,19 +519,21 @@ async function loadAdminData(){
   const py=await sb.from('payments').select('*').order('created_at',{ascending:false});
   if(py.error){toast('Error cargando pagos: '+py.error.message); payments=[];} else payments=py.data||[];
   const ac=await sb.from('parent_accounts_v213').select('*').order('display_name');
-  if(ac.error){toast('Ejecuta el SQL v2.17: '+ac.error.message); parentAccounts=[];} else parentAccounts=ac.data||[];
+  if(ac.error){toast('Ejecuta el SQL v2.18: '+ac.error.message); parentAccounts=[];} else parentAccounts=ac.data||[];
   const ln=await sb.from('parent_player_links_v213').select('*').order('created_at',{ascending:false});
   if(ln.error){parentLinks=[];} else parentLinks=ln.data||[];
+  const dc=await sb.from('player_documents_v218').select('*').order('created_at',{ascending:false});
+  if(dc.error){documents=[];} else documents=dc.data||[];
 }
 async function refresh(){ if(mode==='admin'){await loadAdminData(); renderShell(); renderPage();} }
 function renderShell(){
-  app.innerHTML=`<div class="shell"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.17: respaldos y exportación.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
+  app.innerHTML=`<div class="shell"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.18: documentos privados por jugador.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
   document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page=b.dataset.page; if(page==='public'){renderPublicHome(); return;} renderPage();});
   document.getElementById('search').oninput=e=>{q=e.target.value; renderPage();};
   document.getElementById('authBtn').onclick=logout;
 }
 function setTitle(t){ const el=document.getElementById('title'); if(el) el.textContent=t; document.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===page)); }
-function renderPage(){ if(page==='dashboard') renderDashboard(); if(page==='players') renderPlayers(); if(page==='parents') renderParents(); if(page==='payments') renderPayments(); if(page==='evidence') renderEvidence(); if(page==='whatsapp') renderWhatsApp(); if(page==='backups') renderBackups(); if(page==='settings') renderSettings(); }
+function renderPage(){ if(page==='dashboard') renderDashboard(); if(page==='players') renderPlayers(); if(page==='parents') renderParents(); if(page==='payments') renderPayments(); if(page==='evidence') renderEvidence(); if(page==='whatsapp') renderWhatsApp(); if(page==='documents') renderDocuments(); if(page==='backups') renderBackups(); if(page==='settings') renderSettings(); }
 function filteredPlayers(){ const s=q.toLowerCase().trim(); return players.filter(p=>!s || [p.id,p.name,p.tutor,p.phone,p.category,p.uniform_number].join(' ').toLowerCase().includes(s)); }
 
 function renderDashboard(){
@@ -489,7 +561,7 @@ function renderParents(){
   const fams=suggestedFamilies();
   const playersOptions = players.map(p=>`<option value="${p.id}">${p.id} · ${esc(p.name)} · Tutor: ${esc(p.tutor||'')}</option>`).join('');
   const accountsOptions = parentAccounts.map(a=>`<option value="${a.id}">${esc(a.display_name)} · ${esc(a.login)}</option>`).join('');
-  document.getElementById('content').innerHTML=`<div class="notice success"><b>v2.17:</b> esta sección usa usuario y clave temporal simple para papás. Si no ves jugadores, entra a la sección Jugadores para validar que carguen correctamente.</div>
+  document.getElementById('content').innerHTML=`<div class="notice success"><b>v2.18:</b> esta sección usa usuario y clave temporal simple para papás. Si no ves jugadores, entra a la sección Jugadores para validar que carguen correctamente.</div>
   <div class="panel"><div class="panel-head"><h3>Crear cuenta de papá/tutor</h3></div><div class="modal-body"><form id="parentAccountForm" class="form-grid">
     <label class="label">Nombre visible<input id="accName" class="input" required placeholder="Nombre del papá, mamá o tutor"></label>
     <label class="label">Usuario<input id="accLogin" class="input" required placeholder="Correo, teléfono o usuario"></label>
@@ -570,6 +642,45 @@ function renderWhatsApp(){
   document.getElementById('content').innerHTML=`<div class="notice warning"><b>Enviar recordatorios:</b> cada botón abre WhatsApp con el mensaje listo.</div><div class="panel"><div class="panel-head"><h3>Jugadores vencidos con WhatsApp</h3></div><div class="tablewrap"><table><thead><tr><th>ID</th><th>Jugador</th><th>Tutor</th><th>WhatsApp</th><th>Meses</th><th>Adeudo</th><th>Acción</th></tr></thead><tbody>${rows.map(p=>`<tr><td>${p.id}</td><td><b>${esc(p.name)}</b></td><td>${esc(p.tutor||'')}</td><td>${esc(p.phone||'')}</td><td>${p.c.months}</td><td class="amount">${money(p.c.amount)}</td><td>${whatsappButtons(p)}</td></tr>`).join('')||'<tr><td colspan="7">No hay jugadores vencidos con WhatsApp registrado.</td></tr>'}</tbody></table></div></div>`;
 }
 
+
+function renderDocuments(){
+  setTitle('Documentos de jugadores');
+  const rows = documents.map(d=>{
+    const p = players.find(x=>x.id===d.player_id) || {};
+    const a = parentAccounts.find(x=>x.id===d.parent_account_id) || {};
+    return {...d, player_name:p.name||d.player_name||'', tutor:p.tutor||'', parent_name:a.display_name||'', parent_login:a.login||''};
+  });
+  document.getElementById('content').innerHTML=`<div class="notice success"><b>Documentos privados:</b> aquí puedes consultar todos los documentos enviados por papás. Cada papá solo ve los documentos de sus hijos en su portal.</div>
+  <div class="kpis">
+    <div class="kpi"><small>Documentos</small><strong>${documents.length}</strong></div>
+    <div class="kpi"><small>Jugadores con docs</small><strong>${new Set(documents.map(d=>d.player_id)).size}</strong></div>
+    <div class="kpi"><small>Actas</small><strong>${documents.filter(d=>String(d.document_type).includes('Acta')).length}</strong></div>
+    <div class="kpi"><small>CURP</small><strong>${documents.filter(d=>String(d.document_type).includes('CURP')).length}</strong></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><h3>Documentos cargados</h3><button class="btn secondary" onclick="exportDocumentsCSV()">Exportar CSV</button></div>
+    <div class="tablewrap"><table><thead><tr><th>Jugador</th><th>Tutor</th><th>Tipo</th><th>Documento</th><th>Subido por</th><th>Fecha</th><th>Archivo</th><th>Notas</th></tr></thead><tbody>
+      ${rows.map(d=>`<tr><td><b>${esc(d.player_name)}</b><br><small>${esc(d.player_id)}</small></td><td>${esc(d.tutor||'')}</td><td>${esc(d.document_type||'')}</td><td>${esc(d.title||'')}</td><td>${esc(d.parent_name||d.submitted_by||'')}<br><small>${esc(d.parent_login||'')}</small></td><td>${esc(String(d.created_at||'').slice(0,10))}</td><td><a class="btn secondary" target="_blank" href="${d.file_url}">Ver</a></td><td>${esc(d.notes||'')}</td></tr>`).join('')||'<tr><td colspan="8">Aún no hay documentos.</td></tr>'}
+    </tbody></table></div>
+  </div>`;
+}
+function exportDocumentsCSV(){
+  const d = backupDate();
+  const rows = documents.map(doc=>{
+    const p = players.find(x=>x.id===doc.player_id) || {};
+    const a = parentAccounts.find(x=>x.id===doc.parent_account_id) || {};
+    return {...doc, player_name:p.name||'', tutor:p.tutor||'', parent_name:a.display_name||'', parent_login:a.login||''};
+  });
+  const headers=[
+    {label:'ID documento',key:'id'}, {label:'ID jugador',key:'player_id'}, {label:'Jugador',key:'player_name'},
+    {label:'Tutor',key:'tutor'}, {label:'Tipo',key:'document_type'}, {label:'Titulo',key:'title'},
+    {label:'Subido por',key:'parent_name'}, {label:'Usuario papá',key:'parent_login'},
+    {label:'Archivo URL',key:'file_url'}, {label:'Archivo nombre',key:'file_name'},
+    {label:'Mime',key:'file_mime'}, {label:'Notas',key:'notes'}, {label:'Creado',key:'created_at'}
+  ];
+  downloadText(`ducks_documentos_jugadores_${d}.csv`, toCSV(rows, headers));
+}
+
 function renderBackups(){
   setTitle('Respaldos / Exportar información');
   const debts = players.map(p=>calc(p));
@@ -607,8 +718,12 @@ function renderBackups(){
       <div><h3>Adeudos</h3><p>Reporte calculado con último pago, meses pendientes, adeudo y estatus.</p></div>
       <button class="btn green" onclick="exportCSV('debts')">Descargar CSV</button>
     </div>
+    <div class="backup-card">
+      <div><h3>Documentos</h3><p>Listado de documentos cargados por jugador con sus ligas URL.</p></div>
+      <button class="btn green" onclick="exportDocumentsCSV()">Descargar CSV</button>
+    </div>
     <div class="backup-card featured">
-      <div><h3>Respaldo completo</h3><p>Archivo JSON con jugadores, pagos, cuentas, relaciones y adeudos calculados.</p></div>
+      <div><h3>Respaldo completo</h3><p>Archivo JSON con jugadores, pagos, cuentas, relaciones, documentos y adeudos calculados.</p></div>
       <button class="btn" onclick="exportFullJSON()">Descargar JSON</button>
     </div>
   </div>
@@ -675,6 +790,6 @@ async function confirmPayment(id){const {error}=await sb.from('payments').update
 async function rejectPayment(id){const {error}=await sb.from('payments').update({confirmation_status:'Rechazado'}).eq('id',id); if(error)toast(error.message); else{toast('Pago rechazado'); await refresh();}}
 async function deletePayment(id){if(!confirm('¿Eliminar pago?'))return; const {error}=await sb.from('payments').delete().eq('id',id); if(error)toast(error.message); else{toast('Pago eliminado'); await refresh();}}
 
-window.renderPublicHome=renderPublicHome; window.renderParentLogin=renderParentLogin; window.renderAdminLogin=renderAdminLogin; window.renderLogin=renderAdminLogin; window.parentLogout=parentLogout; window.copyBank=copyBank; window.openParentPayment=openParentPayment; window.openPlayerForm=openPlayerForm; window.deletePlayer=deletePlayer; window.openPaymentForm=openPaymentForm; window.confirmPayment=confirmPayment; window.rejectPayment=rejectPayment; window.deletePayment=deletePayment; window.closeModal=closeModal; window.copyReminder=copyReminder; window.deleteParentLink=deleteParentLink; window.prefillParent=prefillParent; window.exportCSV=exportCSV; window.exportFullJSON=exportFullJSON; window.resetParentPassword=resetParentPassword;
+window.renderPublicHome=renderPublicHome; window.renderParentLogin=renderParentLogin; window.renderAdminLogin=renderAdminLogin; window.renderLogin=renderAdminLogin; window.parentLogout=parentLogout; window.copyBank=copyBank; window.openParentPayment=openParentPayment; window.openParentDocument=openParentDocument; window.openPlayerForm=openPlayerForm; window.deletePlayer=deletePlayer; window.openPaymentForm=openPaymentForm; window.confirmPayment=confirmPayment; window.rejectPayment=rejectPayment; window.deletePayment=deletePayment; window.closeModal=closeModal; window.copyReminder=copyReminder; window.deleteParentLink=deleteParentLink; window.prefillParent=prefillParent; window.exportCSV=exportCSV; window.exportFullJSON=exportFullJSON; window.exportDocumentsCSV=exportDocumentsCSV; window.resetParentPassword=resetParentPassword;
 
 init();

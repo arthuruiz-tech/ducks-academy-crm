@@ -1,0 +1,123 @@
+-- Ducks CRM v2.18 - Documentos privados por jugador
+-- Ejecutar completo en Supabase > SQL Editor.
+-- Requiere que ya funcione v2.13 con:
+-- parent_accounts_v213, parent_player_links_v213, parent_sessions_v213
+
+create table if not exists public.player_documents_v218 (
+  id uuid primary key default gen_random_uuid(),
+  player_id text not null references public.players(id) on delete cascade,
+  parent_account_id uuid references public.parent_accounts_v213(id) on delete set null,
+  document_type text not null,
+  title text not null,
+  file_url text not null,
+  file_name text,
+  file_mime text,
+  notes text,
+  submitted_by text,
+  created_at timestamptz not null default now()
+);
+
+alter table public.player_documents_v218 enable row level security;
+
+drop policy if exists "admin manage player documents v218" on public.player_documents_v218;
+
+create policy "admin manage player documents v218"
+on public.player_documents_v218
+for all
+to authenticated
+using (true)
+with check (true);
+
+-- Papá: consultar solo documentos de sus hijos
+create or replace function public.ducks_parent_documents_v218(p_token uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_account_id uuid;
+  v_docs jsonb;
+begin
+  select s.parent_account_id into v_account_id
+  from public.parent_sessions_v213 s
+  where s.token = p_token and s.expires_at > now();
+
+  if v_account_id is null then
+    return jsonb_build_object('ok', false, 'message', 'Sesión inválida.');
+  end if;
+
+  select coalesce(jsonb_agg(to_jsonb(d) order by d.created_at desc), '[]'::jsonb)
+  into v_docs
+  from public.player_documents_v218 d
+  join public.parent_player_links_v213 l on l.player_id = d.player_id
+  where l.parent_account_id = v_account_id
+    and l.active = true;
+
+  return jsonb_build_object('ok', true, 'documents', v_docs);
+end;
+$$;
+
+-- Papá: subir documento solo para hijos asignados
+create or replace function public.ducks_parent_submit_document_v218(
+  p_token uuid,
+  p_player_id text,
+  p_document_type text,
+  p_title text,
+  p_file_url text,
+  p_file_name text,
+  p_file_mime text,
+  p_notes text
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_account_id uuid;
+  v_login text;
+begin
+  select s.parent_account_id into v_account_id
+  from public.parent_sessions_v213 s
+  where s.token = p_token and s.expires_at > now();
+
+  if v_account_id is null then
+    return jsonb_build_object('ok', false, 'message', 'Sesión inválida.');
+  end if;
+
+  if not exists (
+    select 1
+    from public.parent_player_links_v213 l
+    where l.parent_account_id = v_account_id
+      and l.player_id = p_player_id
+      and l.active = true
+  ) then
+    return jsonb_build_object('ok', false, 'message', 'Jugador no autorizado para esta cuenta.');
+  end if;
+
+  if length(trim(coalesce(p_title,''))) < 2 then
+    return jsonb_build_object('ok', false, 'message', 'Captura un nombre para el documento.');
+  end if;
+
+  select login into v_login
+  from public.parent_accounts_v213
+  where id = v_account_id;
+
+  insert into public.player_documents_v218(
+    player_id, parent_account_id, document_type, title,
+    file_url, file_name, file_mime, notes, submitted_by
+  )
+  values (
+    p_player_id, v_account_id, p_document_type, trim(p_title),
+    p_file_url, p_file_name, p_file_mime, p_notes, v_login
+  );
+
+  return jsonb_build_object('ok', true);
+end;
+$$;
+
+grant execute on function public.ducks_parent_documents_v218(uuid) to anon, authenticated;
+grant execute on function public.ducks_parent_submit_document_v218(uuid,text,text,text,text,text,text,text) to anon, authenticated;
+
+select 'OK - Ducks CRM v2.18 documentos instalado correctamente' as resultado;

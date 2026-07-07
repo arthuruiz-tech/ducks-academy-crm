@@ -814,3 +814,20 @@ html{scroll-behavior:smooth}
   .backup-card{flex-direction:column;align-items:flex-start}
   .backup-card .btn{width:100%}
 }
+
+
+/* v2.18 - Documentos privados por jugador */
+.doc-actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:10px;
+}
+.doc-actions .btn{
+  flex:1;
+  min-width:150px;
+}
+@media(max-width:640px){
+  .doc-actions{flex-direction:column}
+  .doc-actions .btn{width:100%}
+}

@@ -1,0 +1,29 @@
+Ducks CRM Profesional v2.18
+
+Base funcional: v2.17 / v2.13.
+
+Nuevo:
+- En el Portal de Papás cada hijo tiene botón "Subir documentos".
+- Permite subir:
+  Acta de nacimiento,
+  CURP,
+  Fotografía,
+  Certificado médico,
+  Identificación tutor,
+  Comprobante de pago,
+  Otro.
+- El papá solo ve documentos de sus hijos asignados.
+- El administrador ve todos los documentos en el nuevo módulo "Documentos".
+- Respaldos incluye documentos en CSV y en JSON completo.
+
+Importante:
+Esta versión SÍ requiere ejecutar SQL nuevo:
+PASO_4_SQL_DOCUMENTOS_JUGADOR_v2_18.txt
+
+Instalación:
+1. Ejecuta el SQL en Supabase SQL Editor.
+2. Sube todo el contenido del ZIP a GitHub raíz.
+3. Commit changes.
+4. Espera Vercel.
+5. Entra como papá y prueba Subir documentos.
+6. Entra como admin y revisa módulo Documentos.
