@@ -1029,3 +1029,41 @@ button.back-btn{
 .academy-admin{
   display:none !important;
 }
+
+
+/* v2.25 - cache fix + admin forced */
+.back-btn,
+button.back-btn{
+  display:none !important;
+  visibility:hidden !important;
+}
+.academy-admin{
+  display:none !important;
+}
+.admin-image-btn{
+  appearance:none !important;
+  border:0 !important;
+  background:transparent !important;
+  padding:0 !important;
+  margin:0 !important;
+  cursor:pointer !important;
+  opacity:.48 !important;
+  transition:opacity .18s ease, transform .18s ease !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  width:58px !important;
+  min-width:58px !important;
+  height:42px !important;
+}
+.admin-image-btn:hover{
+  opacity:.9 !important;
+  transform:scale(1.04) !important;
+}
+.admin-image-btn img{
+  width:58px !important;
+  max-width:58px !important;
+  height:auto !important;
+  display:block !important;
+  object-fit:contain !important;
+}

@@ -1,0 +1,23 @@
+Ducks CRM Profesional v2.25
+
+Corrección principal:
+- Vercel sí desplegaba cambios, pero el portal podía mostrar versión vieja por caché/PWA/service worker.
+- Esta versión fuerza actualización de app.js y styles.css con ?v=2.25.0.
+- Limpia cachés anteriores ducks-academy.
+- Service worker ahora usa red primero para evitar quedarse en versiones viejas.
+
+Mantiene:
+- Imagen Ducks Administrador pequeña y discreta.
+- Sin botón "Regresar".
+- WhatsApp contacto: 4495498220.
+- No requiere SQL.
+
+Después de subir:
+1. GitHub > subir todo el contenido del ZIP en raíz.
+2. Commit changes.
+3. Esperar Vercel Ready / Production.
+4. Abrir el portal y presionar Ctrl + F5 en computadora.
+5. En celular:
+   - cerrar pestaña,
+   - borrar caché del sitio si sigue igual,
+   - si está instalada como PWA, eliminarla y volverla a instalar.

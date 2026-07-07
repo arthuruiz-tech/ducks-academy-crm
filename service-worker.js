@@ -1,30 +1,15 @@
-const CACHE_NAME = 'ducks-academy-v2-20';
-const APP_SHELL = [
-  './',
-  './index.html',
-  './styles.css',
-  './app.js',
-  './config.js',
-  './manifest.webmanifest',
-  './assets/logo.png',
-  './assets/pwa-icon-192.png',
-  './assets/pwa-icon-512.png',
-  './assets/apple-touch-icon.png',
-  './assets/share-card.png'
-];
+const CACHE_NAME = 'ducks-academy-v2-25';
 
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL).catch(() => null))
-  );
   self.skipWaiting();
 });
 
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))))
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(k => k.startsWith('ducks-academy') && k !== CACHE_NAME).map(k => caches.delete(k))))
+      .then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 self.addEventListener('fetch', event => {
@@ -32,18 +17,16 @@ self.addEventListener('fetch', event => {
   if (req.method !== 'GET') return;
 
   const url = new URL(req.url);
-
-  // No cachear llamadas a Supabase ni APIs externas.
   if (url.origin !== location.origin) return;
 
+  // Siempre intentar red primero para evitar quedarse en versiones viejas.
   event.respondWith(
-    caches.match(req).then(cached => {
-      if (cached) return cached;
-      return fetch(req).then(res => {
+    fetch(req, { cache: 'no-store' })
+      .then(res => {
         const copy = res.clone();
         caches.open(CACHE_NAME).then(cache => cache.put(req, copy)).catch(() => {});
         return res;
-      }).catch(() => caches.match('./index.html'))
-    })
+      })
+      .catch(() => caches.match(req).then(cached => cached || caches.match('./index.html')))
   );
 });
