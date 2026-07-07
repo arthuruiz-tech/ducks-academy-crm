@@ -831,3 +831,40 @@ html{scroll-behavior:smooth}
   .doc-actions{flex-direction:column}
   .doc-actions .btn{width:100%}
 }
+
+
+/* v2.19 - PWA App instalable */
+.quick-actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
+.quick-actions .btn{
+  white-space:nowrap;
+}
+.install-steps{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin-top:12px;
+}
+.install-steps div{
+  background:#F8FAFC;
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:16px;
+}
+.install-steps b{
+  color:#061528;
+}
+.install-steps p{
+  color:#64748B;
+  margin:8px 0 0;
+  line-height:1.45;
+}
+@media(max-width:720px){
+  .quick-actions{width:100%;justify-content:center}
+  .quick-actions .btn{width:100%}
+  .install-steps{grid-template-columns:1fr}
+}

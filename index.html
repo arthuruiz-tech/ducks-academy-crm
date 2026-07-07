@@ -7,10 +7,41 @@
   <link rel="stylesheet" href="styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
+
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#061528">
+  <meta name="application-name" content="Ducks Basketball Academy">
+  <meta name="apple-mobile-web-app-title" content="Ducks Academy">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/pwa-icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="assets/pwa-icon-512.png">
+  <meta property="og:title" content="Ducks Basketball Academy">
+  <meta property="og:description" content="Portal de Papás: pagos, calendario, documentos y comprobantes.">
+  <meta property="og:image" content="assets/share-card.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+
 </head>
 <body>
   <div id="app"></div>
   <div id="toast" class="toast"></div>
   <script src="app.js"></script>
+
+<script>
+  window.deferredDucksInstallPrompt = null;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    window.deferredDucksInstallPrompt = e;
+    document.dispatchEvent(new CustomEvent('ducks-pwa-ready'));
+  });
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+    });
+  }
+</script>
+
 </body>
 </html>

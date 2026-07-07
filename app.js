@@ -1,4 +1,4 @@
-// Ducks CRM profesional v2.18 - documentos privados por jugador
+// Ducks CRM profesional v2.19 - App instalable tipo PWA
 const app = document.getElementById('app');
 let sb = null;
 let session = null;
@@ -194,6 +194,31 @@ async function init(){
   session = data.session;
   renderPublicHome();
 }
+
+function isStandalonePWA(){
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+async function installDucksApp(){
+  if(window.deferredDucksInstallPrompt){
+    window.deferredDucksInstallPrompt.prompt();
+    await window.deferredDucksInstallPrompt.userChoice.catch(()=>null);
+    window.deferredDucksInstallPrompt = null;
+    return;
+  }
+  showInstallHelp();
+}
+function showInstallHelp(){
+  const modal=document.createElement('div'); modal.className='modalbg open'; modal.id='installHelpModal';
+  modal.innerHTML=`<div class="modal"><div class="modal-head"><h3>Instalar Ducks Academy</h3><button class="btn secondary" onclick="closeModal('installHelpModal')">Cerrar</button></div><div class="modal-body">
+    <div class="notice success"><b>App instalable:</b> puedes agregar Ducks Basketball Academy a la pantalla de inicio de tu celular.</div>
+    <div class="install-steps">
+      <div><b>Android / Chrome</b><p>Toca el menú ⋮ y selecciona <b>Instalar app</b> o <b>Agregar a pantalla principal</b>.</p></div>
+      <div><b>iPhone / Safari</b><p>Toca el botón compartir y selecciona <b>Agregar a pantalla de inicio</b>.</p></div>
+    </div>
+  </div></div>`;
+  document.body.appendChild(modal);
+}
+
 function renderSetup(){ app.innerHTML=`<div class="public-site"><div class="academy-main"><div class="parent-card"><h1>Configurar Supabase</h1><div class="notice warning">Falta configurar config.js.</div></div></div></div>`; }
 
 function renderPublicHome(){
@@ -203,7 +228,7 @@ function renderPublicHome(){
       <a class="academy-brand" href="#inicio"><img src="assets/logo.png"><span>Ducks Basketball Academy</span></a>
       <nav class="academy-links">
         <a href="#inicio">Inicio</a>
-        <button type="button" class="primary-menu-btn" onclick="renderParentLogin()">Portal de Papás</button>
+        <button type="button" class="primary-menu-btn" onclick="renderParentLogin()">Portal de Papás</button><button type="button" onclick="installDucksApp()">Instalar App</button>
         <a href="#calendario">Calendario</a>
         <div class="menu-drop">
           <a href="#academia">Academia</a>
@@ -238,7 +263,7 @@ function renderPublicHome(){
       </section>
       <section class="quick-parent-card">
         <div><h2>Pagos y comprobantes</h2><p>El Portal de Papás es privado. Cada familia entra con usuario y contraseña para ver únicamente la información de sus hijos.</p></div>
-        <button class="btn green" onclick="renderParentLogin()">Entrar al Portal de Papás</button>
+        <div class="quick-actions"><button class="btn green" onclick="renderParentLogin()">Entrar al Portal de Papás</button><button class="btn secondary" onclick="installDucksApp()">Instalar App</button></div>
       </section>
       <section id="calendario" class="academy-section"><h2>Calendario de Juegos</h2><p>Próximamente aquí podrás consultar juegos, torneos, horarios, sedes y categorías.</p><div class="coming-soon"><span>🏀</span><b>Calendario en preparación</b><small>Consulta avisos oficiales de la academia mientras se activa este módulo.</small></div></section>
       <section id="academia" class="academy-section">
@@ -519,7 +544,7 @@ async function loadAdminData(){
   const py=await sb.from('payments').select('*').order('created_at',{ascending:false});
   if(py.error){toast('Error cargando pagos: '+py.error.message); payments=[];} else payments=py.data||[];
   const ac=await sb.from('parent_accounts_v213').select('*').order('display_name');
-  if(ac.error){toast('Ejecuta el SQL v2.18: '+ac.error.message); parentAccounts=[];} else parentAccounts=ac.data||[];
+  if(ac.error){toast('Ejecuta el SQL v2.19: '+ac.error.message); parentAccounts=[];} else parentAccounts=ac.data||[];
   const ln=await sb.from('parent_player_links_v213').select('*').order('created_at',{ascending:false});
   if(ln.error){parentLinks=[];} else parentLinks=ln.data||[];
   const dc=await sb.from('player_documents_v218').select('*').order('created_at',{ascending:false});
@@ -527,7 +552,7 @@ async function loadAdminData(){
 }
 async function refresh(){ if(mode==='admin'){await loadAdminData(); renderShell(); renderPage();} }
 function renderShell(){
-  app.innerHTML=`<div class="shell"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.18: documentos privados por jugador.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
+  app.innerHTML=`<div class="shell"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.19: App instalable tipo PWA.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
   document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page=b.dataset.page; if(page==='public'){renderPublicHome(); return;} renderPage();});
   document.getElementById('search').oninput=e=>{q=e.target.value; renderPage();};
   document.getElementById('authBtn').onclick=logout;
@@ -561,7 +586,7 @@ function renderParents(){
   const fams=suggestedFamilies();
   const playersOptions = players.map(p=>`<option value="${p.id}">${p.id} · ${esc(p.name)} · Tutor: ${esc(p.tutor||'')}</option>`).join('');
   const accountsOptions = parentAccounts.map(a=>`<option value="${a.id}">${esc(a.display_name)} · ${esc(a.login)}</option>`).join('');
-  document.getElementById('content').innerHTML=`<div class="notice success"><b>v2.18:</b> esta sección usa usuario y clave temporal simple para papás. Si no ves jugadores, entra a la sección Jugadores para validar que carguen correctamente.</div>
+  document.getElementById('content').innerHTML=`<div class="notice success"><b>v2.19:</b> esta sección usa usuario y clave temporal simple para papás. Si no ves jugadores, entra a la sección Jugadores para validar que carguen correctamente.</div>
   <div class="panel"><div class="panel-head"><h3>Crear cuenta de papá/tutor</h3></div><div class="modal-body"><form id="parentAccountForm" class="form-grid">
     <label class="label">Nombre visible<input id="accName" class="input" required placeholder="Nombre del papá, mamá o tutor"></label>
     <label class="label">Usuario<input id="accLogin" class="input" required placeholder="Correo, teléfono o usuario"></label>
@@ -790,6 +815,6 @@ async function confirmPayment(id){const {error}=await sb.from('payments').update
 async function rejectPayment(id){const {error}=await sb.from('payments').update({confirmation_status:'Rechazado'}).eq('id',id); if(error)toast(error.message); else{toast('Pago rechazado'); await refresh();}}
 async function deletePayment(id){if(!confirm('¿Eliminar pago?'))return; const {error}=await sb.from('payments').delete().eq('id',id); if(error)toast(error.message); else{toast('Pago eliminado'); await refresh();}}
 
-window.renderPublicHome=renderPublicHome; window.renderParentLogin=renderParentLogin; window.renderAdminLogin=renderAdminLogin; window.renderLogin=renderAdminLogin; window.parentLogout=parentLogout; window.copyBank=copyBank; window.openParentPayment=openParentPayment; window.openParentDocument=openParentDocument; window.openPlayerForm=openPlayerForm; window.deletePlayer=deletePlayer; window.openPaymentForm=openPaymentForm; window.confirmPayment=confirmPayment; window.rejectPayment=rejectPayment; window.deletePayment=deletePayment; window.closeModal=closeModal; window.copyReminder=copyReminder; window.deleteParentLink=deleteParentLink; window.prefillParent=prefillParent; window.exportCSV=exportCSV; window.exportFullJSON=exportFullJSON; window.exportDocumentsCSV=exportDocumentsCSV; window.resetParentPassword=resetParentPassword;
+window.renderPublicHome=renderPublicHome; window.renderParentLogin=renderParentLogin; window.renderAdminLogin=renderAdminLogin; window.renderLogin=renderAdminLogin; window.parentLogout=parentLogout; window.copyBank=copyBank; window.openParentPayment=openParentPayment; window.openParentDocument=openParentDocument; window.installDucksApp=installDucksApp; window.openPlayerForm=openPlayerForm; window.deletePlayer=deletePlayer; window.openPaymentForm=openPaymentForm; window.confirmPayment=confirmPayment; window.rejectPayment=rejectPayment; window.deletePayment=deletePayment; window.closeModal=closeModal; window.copyReminder=copyReminder; window.deleteParentLink=deleteParentLink; window.prefillParent=prefillParent; window.exportCSV=exportCSV; window.exportFullJSON=exportFullJSON; window.exportDocumentsCSV=exportDocumentsCSV; window.resetParentPassword=resetParentPassword;
 
 init();

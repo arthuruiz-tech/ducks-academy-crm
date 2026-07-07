@@ -1,0 +1,36 @@
+Ducks CRM Profesional v2.19
+
+Base funcional: v2.18 / v2.13.
+
+Nuevo:
+- Plataforma convertida en App instalable tipo PWA.
+- Archivo manifest.webmanifest.
+- Archivo service-worker.js.
+- Íconos generados:
+  assets/pwa-icon-192.png
+  assets/pwa-icon-512.png
+  assets/apple-touch-icon.png
+- El ícono incluye el nombre de la academia: DUCKS ACADEMY.
+- Nombre de la app:
+  Ducks Basketball Academy
+- Nombre corto:
+  Ducks Academy
+- Botón público:
+  Instalar App
+- Instrucciones para Android y iPhone.
+- Vista previa profesional para compartir link:
+  assets/share-card.png
+
+Importante:
+- No requiere SQL nuevo si v2.18/v2.13 ya funciona.
+- Para que PWA funcione correctamente debe estar publicada en HTTPS. Vercel ya usa HTTPS.
+- En iPhone se instala desde Safari > Compartir > Agregar a pantalla de inicio.
+- En Android normalmente aparece Instalar App o Agregar a pantalla principal.
+
+Instalación:
+1. No ejecutes SQL nuevo.
+2. Sube todo el contenido del ZIP a GitHub raíz.
+3. Commit changes.
+4. Espera Vercel.
+5. Abre el sitio desde celular.
+6. Usa el botón Instalar App.
