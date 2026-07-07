@@ -454,3 +454,62 @@ html{scroll-behavior:smooth}
   .ribbon-text h1{font-size:31px !important}
   .ribbon-text p{font-size:16px !important}
 }
+
+
+/* v2.15 - Video de fondo en cinta central */
+.video-hero{
+  position:relative !important;
+  overflow:hidden !important;
+  isolation:isolate;
+}
+.video-hero .hero-video{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  z-index:0;
+  filter:saturate(1.08) contrast(1.08) brightness(.82);
+  transform:scale(1.02);
+}
+.video-hero .hero-video-overlay{
+  position:absolute;
+  inset:0;
+  z-index:1;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(57,255,136,.22), transparent 34%),
+    radial-gradient(circle at 86% 15%, rgba(215,222,232,.12), transparent 30%),
+    linear-gradient(135deg, rgba(6,21,40,.82) 0%, rgba(6,21,40,.68) 46%, rgba(11,34,63,.78) 100%);
+}
+.video-hero .court-lines,
+.video-hero .ribbon-ball,
+.video-hero .ribbon-content{
+  position:relative;
+  z-index:2;
+}
+.video-hero .ribbon-content{
+  z-index:3;
+}
+.video-hero .ribbon-logo{
+  filter:
+    drop-shadow(0 30px 44px rgba(0,0,0,.48))
+    drop-shadow(0 0 30px rgba(57,255,136,.24)) !important;
+}
+.video-hero .ribbon-text h1{
+  text-shadow:0 14px 34px rgba(0,0,0,.52) !important;
+}
+.video-hero .ribbon-text p{
+  color:#EEF5FF !important;
+}
+.video-hero:before{
+  z-index:2 !important;
+}
+.video-hero:after{
+  z-index:1 !important;
+  opacity:.72;
+}
+
+/* Respeta accesibilidad: si el usuario reduce movimiento, oculta el video */
+@media (prefers-reduced-motion: reduce){
+  .video-hero .hero-video{display:none}
+}

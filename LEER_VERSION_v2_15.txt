@@ -1,0 +1,26 @@
+Ducks CRM Profesional v2.15
+
+Base funcional: v2.13/v2.14.
+
+Cambios:
+- Se integró el video subido como fondo de la cinta central.
+- Archivo incluido:
+  assets/hero-video.mp4
+- El video se reproduce:
+  automáticamente,
+  sin sonido,
+  en loop,
+  optimizado para celular con playsinline.
+- Se agregó una capa visual azul marino encima para mantener texto y logo visibles.
+- Conserva el estilo:
+  azul marino,
+  verde fluorescente,
+  gris/plata.
+- No se modificó la lógica funcional de cuentas, papás, jugadores ni pagos.
+
+Instalación:
+1. No necesitas ejecutar SQL nuevo si v2.13 ya funciona.
+2. Sube todo el contenido del ZIP a GitHub raíz.
+3. Commit changes.
+4. Espera Vercel.
+5. Abre la página pública y revisa la cinta central.
