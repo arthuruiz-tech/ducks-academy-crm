@@ -1,4 +1,4 @@
-// Ducks CRM profesional v2.20 - PWA corregida y botones regresar
+// Ducks CRM profesional v2.21 - icono redondo HD e instalación iPhone
 const app = document.getElementById('app');
 let sb = null;
 let session = null;
@@ -228,6 +228,21 @@ function backButton(label='Regresar'){
   return `<button class="btn secondary back-btn" onclick="goBackSmart()">← ${label}</button>`;
 }
 
+
+function isIOSDevice(){
+  return /iphone|ipad|ipod/i.test(window.navigator.userAgent || '');
+}
+function canShowIOSInstallHint(){
+  return isIOSDevice() && !isStandalonePWA();
+}
+function iosInstallBanner(){
+  if(!canShowIOSInstallHint()) return '';
+  return `<div class="ios-install-banner">
+    <div><b>Instalar en iPhone:</b> abre este portal en <b>Safari</b>, toca <b>Compartir</b> y luego <b>Agregar a pantalla de inicio</b>.</div>
+    <button class="btn green small" onclick="showInstallHelp()">Ver cómo</button>
+  </div>`;
+}
+
 function isStandalonePWA(){
   return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
 }
@@ -247,14 +262,16 @@ async function installDucksApp(){
   showInstallHelp();
 }
 function showInstallHelp(){
+  const isIOS = isIOSDevice();
   const modal=document.createElement('div'); modal.className='modalbg open'; modal.id='installHelpModal';
   modal.innerHTML=`<div class="modal"><div class="modal-head"><h3>Instalar Ducks Academy</h3><button class="btn secondary" onclick="closeModal('installHelpModal')">Cerrar</button></div><div class="modal-body">
-    <div class="notice success"><b>App instalable:</b> si tu navegador no muestra el botón automático, instálala manualmente desde el menú del navegador.</div>
+    <div class="notice success"><b>Importante:</b> en iPhone la app <b>no se instala automática</b>. Debes abrir el portal en <b>Safari</b>.</div>
+    ${isIOS ? `<div class="notice">Detectamos iPhone/iPad. Si estás en Chrome o dentro de otra app, abre primero el enlace en <b>Safari</b>.</div>` : ``}
     <div class="install-steps">
-      <div><b>Android / Chrome</b><p>Abre el sitio en Chrome, toca el menú <b>⋮</b> y selecciona <b>Instalar app</b> o <b>Agregar a pantalla principal</b>.</p></div>
-      <div><b>iPhone / Safari</b><p>Abre el sitio en Safari, toca <b>Compartir</b> y selecciona <b>Agregar a pantalla de inicio</b>.</p></div>
-      <div><b>Importante</b><p>Debe abrirse desde el enlace publicado en Vercel con <b>https</b>. No se instala desde vista previa local o archivo descargado.</p></div>
-      <div><b>Nombre del ícono</b><p>En el celular aparecerá como <b>Ducks Academy</b> con el ícono de la academia.</p></div>
+      <div><b>iPhone / iPad (Safari)</b><p>1. Abre el sitio en <b>Safari</b>.<br>2. Toca <b>Compartir</b>.<br>3. Selecciona <b>Agregar a pantalla de inicio</b>.<br>4. Confirma <b>Agregar</b>.</p></div>
+      <div><b>Android / Chrome</b><p>1. Abre el sitio en <b>Chrome</b>.<br>2. Toca el menú <b>⋮</b>.<br>3. Elige <b>Instalar app</b> o <b>Agregar a pantalla principal</b>.</p></div>
+      <div><b>Nombre del ícono</b><p>Aparecerá como <b>Ducks Academy</b> con el logo redondo oficial de la academia.</p></div>
+      <div><b>Requisito</b><p>Debe abrirse desde el enlace publicado en <b>https</b> (Vercel). Si no ves la opción, recarga una vez y vuelve a intentarlo.</p></div>
     </div>
   </div></div>`;
   document.body.appendChild(modal);
@@ -585,7 +602,7 @@ async function loadAdminData(){
   const py=await sb.from('payments').select('*').order('created_at',{ascending:false});
   if(py.error){toast('Error cargando pagos: '+py.error.message); payments=[];} else payments=py.data||[];
   const ac=await sb.from('parent_accounts_v213').select('*').order('display_name');
-  if(ac.error){toast('Ejecuta el SQL v2.20: '+ac.error.message); parentAccounts=[];} else parentAccounts=ac.data||[];
+  if(ac.error){toast('Ejecuta el SQL v2.21: '+ac.error.message); parentAccounts=[];} else parentAccounts=ac.data||[];
   const ln=await sb.from('parent_player_links_v213').select('*').order('created_at',{ascending:false});
   if(ln.error){parentLinks=[];} else parentLinks=ln.data||[];
   const dc=await sb.from('player_documents_v218').select('*').order('created_at',{ascending:false});
@@ -593,7 +610,7 @@ async function loadAdminData(){
 }
 async function refresh(){ if(mode==='admin'){await loadAdminData(); renderShell(); renderPage();} }
 function renderShell(){
-  app.innerHTML=`<div class="shell"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.20: PWA corregida + botones regresar.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><button class="btn secondary back-btn" onclick="goBackSmart()">← Regresar</button><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
+  app.innerHTML=`<div class="shell"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.21: icono redondo HD + iPhone.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><button class="btn secondary back-btn" onclick="goBackSmart()">← Regresar</button><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
   document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page=b.dataset.page; if(page==='public'){renderPublicHome(); return;} renderPage();});
   document.getElementById('search').oninput=e=>{q=e.target.value; renderPage();};
   document.getElementById('authBtn').onclick=logout;
@@ -605,7 +622,7 @@ function filteredPlayers(){ const s=q.toLowerCase().trim(); return players.filte
 function renderDashboard(){
   setTitle('Dashboard ejecutivo');
   const rows=players.map(p=>({...p,c:calc(p)})); const active=rows.filter(p=>p.status==='Activo').length; const debtors=rows.filter(p=>p.c.amount>0); const overdue=rows.filter(p=>p.c.status==='Vencido').length; const pendingEvidence=payments.filter(p=>p.confirmation_status==='Pendiente de confirmación').length; const totalDebt=debtors.reduce((a,p)=>a+p.c.amount,0);
-  document.getElementById('content').innerHTML=`<div class="kpis"><div class="kpi"><small>Jugadores</small><strong>${players.length}</strong></div><div class="kpi green"><small>Activos</small><strong>${active}</strong></div><div class="kpi orange"><small>Con adeudo</small><strong>${debtors.length}</strong></div><div class="kpi red"><small>Vencidos</small><strong>${overdue}</strong></div><div class="kpi orange"><small>Por confirmar</small><strong>${pendingEvidence}</strong></div><div class="kpi red"><small>Adeudo total</small><strong>${money(totalDebt)}</strong></div></div>
+  document.getElementById('content').innerHTML=`${iosInstallBanner()}<div class="kpis"><div class="kpi"><small>Jugadores</small><strong>${players.length}</strong></div><div class="kpi green"><small>Activos</small><strong>${active}</strong></div><div class="kpi orange"><small>Con adeudo</small><strong>${debtors.length}</strong></div><div class="kpi red"><small>Vencidos</small><strong>${overdue}</strong></div><div class="kpi orange"><small>Por confirmar</small><strong>${pendingEvidence}</strong></div><div class="kpi red"><small>Adeudo total</small><strong>${money(totalDebt)}</strong></div></div>
   <div class="panel"><div class="panel-head"><h3>Jugadores con adeudo</h3></div><div class="tablewrap"><table><thead><tr><th>Foto</th><th>ID</th><th>Jugador</th><th>Núm.</th><th>Tutor</th><th>Último pago</th><th>Meses</th><th>Adeudo</th><th>Estado</th><th>WhatsApp</th></tr></thead><tbody>${debtors.sort((a,b)=>b.c.amount-a.c.amount).map(p=>`<tr><td>${thumb(p.photo_url)}</td><td>${p.id}</td><td><b>${esc(p.name)}</b><br><small>${esc(p.category||'')}</small></td><td><span class="uniform">#${esc(p.uniform_number||'-')}</span></td><td>${esc(p.tutor||'')}</td><td>${esc(p.c.last||'')}</td><td>${p.c.months}</td><td class="amount">${money(p.c.amount)}</td><td><span class="status ${p.c.status}">${p.c.status}</span></td><td>${whatsappButtons(p)}</td></tr>`).join('')||'<tr><td colspan="10">Sin adeudos</td></tr>'}</tbody></table></div></div>`;
 }
 function renderPlayers(){
@@ -627,7 +644,7 @@ function renderParents(){
   const fams=suggestedFamilies();
   const playersOptions = players.map(p=>`<option value="${p.id}">${p.id} · ${esc(p.name)} · Tutor: ${esc(p.tutor||'')}</option>`).join('');
   const accountsOptions = parentAccounts.map(a=>`<option value="${a.id}">${esc(a.display_name)} · ${esc(a.login)}</option>`).join('');
-  document.getElementById('content').innerHTML=`<div class="notice success"><b>v2.20:</b> esta sección usa usuario y clave temporal simple para papás. Si no ves jugadores, entra a la sección Jugadores para validar que carguen correctamente.</div>
+  document.getElementById('content').innerHTML=`<div class="notice success"><b>v2.21:</b> esta sección usa usuario y clave temporal simple para papás. Si no ves jugadores, entra a la sección Jugadores para validar que carguen correctamente.</div>
   <div class="panel"><div class="panel-head"><h3>Crear cuenta de papá/tutor</h3></div><div class="modal-body"><form id="parentAccountForm" class="form-grid">
     <label class="label">Nombre visible<input id="accName" class="input" required placeholder="Nombre del papá, mamá o tutor"></label>
     <label class="label">Usuario<input id="accLogin" class="input" required placeholder="Correo, teléfono o usuario"></label>

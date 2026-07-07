@@ -1,0 +1,25 @@
+Ducks CRM Profesional v2.21
+
+Cambios:
+- Ícono de app reemplazado por el logo original HD de la academia.
+- Ícono redondo, sin fondo blanco.
+- Archivos actualizados:
+  assets/pwa-icon-192.png
+  assets/pwa-icon-512.png
+  assets/apple-touch-icon.png
+- Compatibilidad mejorada para iPhone / iPad.
+- Banner especial para iPhone con instrucciones.
+- Ayuda de instalación más clara:
+  en iPhone se debe usar Safari > Compartir > Agregar a pantalla de inicio.
+
+Importante:
+- En iPhone la instalación NO aparece como botón automático como en Android.
+- Debes abrir el sitio desde Safari y luego usar "Agregar a pantalla de inicio".
+- No requiere SQL nuevo.
+
+Pasos:
+1. Sube todo el contenido del ZIP a GitHub raíz.
+2. Commit changes.
+3. Espera Vercel.
+4. Abre el link en Safari en iPhone.
+5. Toca Compartir > Agregar a pantalla de inicio.
