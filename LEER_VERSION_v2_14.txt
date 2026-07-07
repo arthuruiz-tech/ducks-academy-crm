@@ -1,0 +1,22 @@
+Ducks CRM Profesional v2.14
+
+Base funcional: v2.13, que ya permitió crear cuenta, ligar jugador y entrar al Portal de Papás.
+
+Cambios visuales:
+- Logos sin fondo blanco.
+- Logo central más grande.
+- Cinta central moderna y minimalista.
+- Paleta visual:
+  azul marino como color principal,
+  verde fluorescente como acento,
+  gris/plata como soporte.
+- Header más limpio.
+- Botón Portal de Papás más visible.
+- No se modificó la lógica funcional del portal, cuentas, jugadores ni pagos.
+
+Instalación:
+1. No necesitas ejecutar SQL nuevo si v2.13 ya funciona.
+2. Sube todo el contenido del ZIP a GitHub raíz.
+3. Commit changes.
+4. Espera Vercel.
+5. Revisa la página pública y el Portal de Papás.

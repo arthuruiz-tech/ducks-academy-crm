@@ -277,3 +277,180 @@ html{scroll-behavior:smooth}
 @media(max-width:640px){.academy-main{padding:12px 10px 44px}.academy-links{gap:4px}.academy-links a,.academy-links button{font-size:12px;padding:8px 7px}.academy-brand span{font-size:13px}.ribbon-logo{width:145px;height:145px;border-radius:30px}.ribbon-text h1{font-size:29px}.ribbon-content{padding:24px 14px}.family-kpis{grid-template-columns:1fr}}
 
 /* v2.11 mantiene estilos v2.10 y cambia lógica de cuentas de papás */
+
+
+/* v2.14 - Diseño moderno minimalista Ducks: azul marino, verde fluorescente y plata */
+:root{
+  --ducks-navy:#061528;
+  --ducks-navy-2:#0B223F;
+  --ducks-green:#39FF88;
+  --ducks-green-2:#14D86C;
+  --ducks-silver:#D7DEE8;
+  --ducks-silver-2:#8FA2B8;
+}
+
+/* Logos sin fondo blanco */
+.academy-brand img,
+.ribbon-logo,
+.ribbon-logo.small,
+.parent-title img,
+.bank-head img,
+.brand-logo{
+  background:transparent !important;
+  border-radius:0 !important;
+  padding:0 !important;
+  box-shadow:none !important;
+  image-rendering:auto;
+}
+
+/* Header más limpio y moderno */
+.academy-menu{
+  background:linear-gradient(90deg, rgba(6,21,40,.98), rgba(11,34,63,.98)) !important;
+  border-bottom:1px solid rgba(57,255,136,.22) !important;
+}
+.academy-brand img{width:50px !important;height:50px !important}
+.academy-brand span{letter-spacing:.2px}
+.academy-links .primary-menu-btn{
+  background:linear-gradient(135deg,var(--ducks-green),var(--ducks-green-2)) !important;
+  color:#061528 !important;
+  box-shadow:0 10px 26px rgba(57,255,136,.22) !important;
+}
+.academy-links a:hover,.academy-links button:hover{
+  background:rgba(57,255,136,.12) !important;
+  color:var(--ducks-green) !important;
+}
+
+/* Cinta principal moderna */
+.academy-ribbon.ribbon-hq{
+  min-height:390px !important;
+  border-radius:34px !important;
+  background:
+    radial-gradient(circle at 20% 15%, rgba(57,255,136,.28) 0, transparent 32%),
+    radial-gradient(circle at 88% 20%, rgba(215,222,232,.18) 0, transparent 28%),
+    linear-gradient(135deg, #061528 0%, #071A31 42%, #0B223F 72%, #071629 100%) !important;
+  border:1px solid rgba(215,222,232,.18) !important;
+  box-shadow:0 32px 90px rgba(6,21,40,.38) !important;
+}
+.academy-ribbon.ribbon-hq:before{
+  content:"";
+  position:absolute;
+  inset:18px;
+  border-radius:26px;
+  border:1px solid rgba(57,255,136,.20);
+  pointer-events:none;
+}
+.academy-ribbon.ribbon-hq:after{
+  content:"";
+  position:absolute;
+  left:-12%;
+  bottom:-42%;
+  width:72%;
+  height:72%;
+  background:linear-gradient(135deg, rgba(57,255,136,.16), rgba(215,222,232,.05));
+  transform:rotate(-9deg);
+  border-radius:60px;
+  filter:blur(.2px);
+}
+.court-lines{
+  opacity:.20 !important;
+  background:
+    linear-gradient(115deg, transparent 0 28%, rgba(57,255,136,.18) 28.2%, transparent 28.7%),
+    linear-gradient(115deg, transparent 0 38%, rgba(215,222,232,.12) 38.2%, transparent 38.7%),
+    radial-gradient(circle at 84% 48%, transparent 0 92px, rgba(57,255,136,.30) 94px, transparent 97px),
+    linear-gradient(90deg, transparent 49.7%, rgba(215,222,232,.18) 50%, transparent 50.3%) !important;
+}
+.ribbon-ball{
+  right:-120px !important;
+  top:-125px !important;
+  width:390px !important;
+  height:390px !important;
+  background:radial-gradient(circle at 35% 35%, rgba(57,255,136,.42), rgba(20,216,108,.16) 50%, transparent 72%) !important;
+  opacity:1 !important;
+}
+.ribbon-ball:after{border-color:rgba(215,222,232,.14) !important}
+
+/* Logo central más grande y sin recuadro */
+.ribbon-content{
+  gap:46px !important;
+  padding:46px 42px !important;
+}
+.ribbon-logo{
+  width:260px !important;
+  height:260px !important;
+  object-fit:contain !important;
+  filter:drop-shadow(0 28px 42px rgba(0,0,0,.38)) drop-shadow(0 0 26px rgba(57,255,136,.18));
+}
+.ribbon-logo.small{
+  width:178px !important;
+  height:178px !important;
+  filter:drop-shadow(0 20px 34px rgba(0,0,0,.32));
+}
+
+/* Texto hero minimalista */
+.ribbon-kicker{
+  background:rgba(57,255,136,.12) !important;
+  color:var(--ducks-green) !important;
+  border:1px solid rgba(57,255,136,.34);
+  letter-spacing:.9px;
+  text-transform:uppercase;
+  font-size:12px;
+}
+.ribbon-text h1{
+  color:white !important;
+  font-size:52px !important;
+  letter-spacing:-1.2px !important;
+  text-shadow:0 10px 26px rgba(0,0,0,.25);
+}
+.ribbon-text p{
+  color:#D7DEE8 !important;
+  max-width:560px;
+}
+.ribbon-actions .btn.green,
+.quick-parent-card .btn.green,
+.contact-section .btn.green{
+  background:linear-gradient(135deg,var(--ducks-green),var(--ducks-green-2)) !important;
+  color:#061528 !important;
+  box-shadow:0 14px 28px rgba(57,255,136,.24);
+  border:0;
+}
+.ribbon-actions .btn.secondary{
+  background:rgba(215,222,232,.10) !important;
+  color:#EAF1FB !important;
+  border:1px solid rgba(215,222,232,.22) !important;
+}
+.ribbon-actions .btn.secondary:hover{background:rgba(215,222,232,.18) !important}
+
+/* Tarjeta rápida con look más premium */
+.quick-parent-card{
+  border:1px solid rgba(11,34,63,.10) !important;
+  background:linear-gradient(135deg,#ffffff,#F7FAFD) !important;
+}
+.quick-parent-card h2{color:var(--ducks-navy) !important}
+
+/* Portal privado coherente */
+.private-ribbon{
+  background:
+    radial-gradient(circle at 18% 20%, rgba(57,255,136,.20), transparent 34%),
+    linear-gradient(135deg,#061528,#0B223F) !important;
+  border:1px solid rgba(57,255,136,.18) !important;
+}
+
+/* Menú admin logo sin caja */
+.brand-logo{
+  width:58px !important;
+  height:58px !important;
+  object-fit:contain !important;
+  filter:drop-shadow(0 8px 16px rgba(0,0,0,.22));
+}
+
+@media(max-width:920px){
+  .ribbon-content{gap:22px !important}
+  .ribbon-logo{width:215px !important;height:215px !important}
+  .ribbon-text h1{font-size:40px !important}
+}
+@media(max-width:640px){
+  .academy-ribbon.ribbon-hq{min-height:360px !important;border-radius:26px !important}
+  .ribbon-logo{width:185px !important;height:185px !important}
+  .ribbon-text h1{font-size:31px !important}
+  .ribbon-text p{font-size:16px !important}
+}
