@@ -1,0 +1,29 @@
+Ducks CRM Profesional v2.22
+
+Cambios:
+- El ícono de la app ahora usa exactamente la imagen proporcionada por el usuario.
+- Archivos actualizados:
+  assets/apple-touch-icon.png
+  assets/pwa-icon-192.png
+  assets/pwa-icon-512.png
+  assets/app-icon-round.png
+  assets/favicon-96.png
+- Manifest y meta tags actualizados para usar el nuevo ícono.
+
+Importante:
+- Este paquete corresponde a la versión PWA instalable desde navegador.
+- Para iPhone:
+  abrir el sitio en Safari > Compartir > Agregar a pantalla de inicio.
+- Para Android:
+  abrir el sitio en Chrome > menú > Instalar app / Agregar a pantalla principal.
+- No requiere SQL nuevo.
+
+Nota:
+- Un archivo nativo .ipa (iPhone) o .apk (Android) requiere un proceso adicional de empaquetado y firma fuera de este entorno.
+
+Pasos:
+1. Sube el contenido del ZIP a GitHub raíz.
+2. Commit changes.
+3. Espera Vercel.
+4. Abre el sitio publicado.
+5. Instala la app desde el navegador.
