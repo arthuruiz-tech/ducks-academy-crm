@@ -1,17 +1,16 @@
-const CACHE_NAME = 'ducks-academy-v2-19';
+const CACHE_NAME = 'ducks-academy-v2-20';
 const APP_SHELL = [
-  '/',
-  '/index.html',
-  '/styles.css',
-  '/app.js',
-  '/config.js',
-  '/manifest.webmanifest',
-  '/assets/logo.png',
-  '/assets/pwa-icon-192.png',
-  '/assets/pwa-icon-512.png',
-  '/assets/apple-touch-icon.png',
-  '/assets/share-card.png',
-  '/assets/hero-video.mp4'
+  './',
+  './index.html',
+  './styles.css',
+  './app.js',
+  './config.js',
+  './manifest.webmanifest',
+  './assets/logo.png',
+  './assets/pwa-icon-192.png',
+  './assets/pwa-icon-512.png',
+  './assets/apple-touch-icon.png',
+  './assets/share-card.png'
 ];
 
 self.addEventListener('install', event => {
@@ -31,16 +30,20 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const req = event.request;
   if (req.method !== 'GET') return;
+
+  const url = new URL(req.url);
+
+  // No cachear llamadas a Supabase ni APIs externas.
+  if (url.origin !== location.origin) return;
+
   event.respondWith(
     caches.match(req).then(cached => {
       if (cached) return cached;
       return fetch(req).then(res => {
         const copy = res.clone();
-        if (new URL(req.url).origin === location.origin) {
-          caches.open(CACHE_NAME).then(cache => cache.put(req, copy)).catch(() => {});
-        }
+        caches.open(CACHE_NAME).then(cache => cache.put(req, copy)).catch(() => {});
         return res;
-      }).catch(() => caches.match('/index.html'));
+      }).catch(() => caches.match('./index.html'))
     })
   );
 });

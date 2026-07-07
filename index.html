@@ -8,7 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
 
-  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="manifest" href="./manifest.webmanifest">
   <meta name="theme-color" content="#061528">
   <meta name="application-name" content="Ducks Basketball Academy">
   <meta name="apple-mobile-web-app-title" content="Ducks Academy">
@@ -38,7 +38,7 @@
   });
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+      navigator.serviceWorker.register('./service-worker.js', { scope: './' }).catch(() => {});
     });
   }
 </script>

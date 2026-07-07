@@ -1,0 +1,30 @@
+Ducks CRM Profesional v2.20
+
+Base funcional: v2.19 / v2.18 / v2.13.
+
+Correcciones PWA:
+- manifest.webmanifest con rutas relativas.
+- start_url y scope corregidos a ./ para Vercel.
+- service-worker.js corregido con scope relativo.
+- Meta tags adicionales para Android/iPhone.
+- Instrucciones mejoradas para instalación.
+- Ícono mantiene nombre Ducks Academy.
+- Se conserva vista previa share-card.png.
+
+Importante:
+- Para instalar la app se debe abrir desde el sitio publicado en HTTPS, no desde archivo local.
+- En iPhone no aparece prompt automático: se instala desde Safari > Compartir > Agregar a pantalla de inicio.
+- En Android/Chrome puede aparecer Instalar App; si no aparece, usar menú ⋮ > Agregar a pantalla principal.
+
+Navegación:
+- Se agregó botón ← Regresar en páginas principales, portal de papás, login y panel admin.
+
+No requiere SQL nuevo si v2.18/v2.13 ya funciona.
+
+Instalación:
+1. Sube todo el contenido del ZIP a GitHub raíz.
+2. Commit changes.
+3. Espera Vercel.
+4. Abre desde el link https publicado.
+5. Recarga una vez.
+6. Prueba Instalar App.
