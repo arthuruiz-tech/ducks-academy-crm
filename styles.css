@@ -948,3 +948,44 @@ html{scroll-behavior:smooth}
     width:100%;
   }
 }
+
+
+/* v2.23 - Admin discreto + sin botón regresar + WhatsApp actualizado */
+.back-btn{
+  display:none !important;
+}
+.admin-image-btn{
+  appearance:none;
+  border:0;
+  background:transparent;
+  padding:0;
+  margin:0;
+  cursor:pointer;
+  opacity:.58;
+  transition:opacity .18s ease, transform .18s ease;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+.admin-image-btn:hover{
+  opacity:.95;
+  transform:scale(1.03);
+}
+.admin-image-btn img{
+  width:64px;
+  height:auto;
+  display:block;
+  object-fit:contain;
+  filter:drop-shadow(0 4px 10px rgba(0,0,0,.18));
+}
+.academy-menu-inner .admin-image-btn{
+  justify-self:end;
+}
+@media(max-width:920px){
+  .academy-menu-inner .admin-image-btn{
+    justify-self:center;
+  }
+  .admin-image-btn img{
+    width:58px;
+  }
+}

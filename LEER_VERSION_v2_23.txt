@@ -1,0 +1,10 @@
+Ducks CRM Profesional v2.23
+
+Cambios:
+- Se reemplazó el botón "Soy administrador" por la imagen Ducks Administrador.
+- La imagen de administrador queda en tamaño pequeño y discreto.
+- Se eliminaron los botones "← Regresar" de las ventanas.
+- La navegación hacia atrás queda a cargo del navegador/celular.
+- WhatsApp de contacto actualizado a 4495498220.
+
+No requiere SQL nuevo.
