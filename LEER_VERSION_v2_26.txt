@@ -1,0 +1,15 @@
+Ducks CRM Profesional v2.26
+
+Cambios:
+- La imagen Ducks Administrador ahora tiene fondo blanco para asegurar visibilidad.
+- El acceso administrador sigue siendo pequeño y discreto.
+- Se aumentó el tamaño y peso del texto de los menús.
+- Se actualizó la versión de caché para forzar los cambios.
+- Mantiene WhatsApp 4495498220.
+- No requiere SQL nuevo.
+
+Después de subir:
+1. Sube todo el contenido del ZIP a la raíz del repositorio.
+2. Commit changes.
+3. Espera Vercel Ready / Production.
+4. Abre el portal y usa Ctrl + F5 una vez.

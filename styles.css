@@ -1067,3 +1067,64 @@ button.back-btn{
   display:block !important;
   object-fit:contain !important;
 }
+
+
+/* v2.26 - Administrador visible y menús más grandes */
+.admin-image-btn{
+  background:#ffffff !important;
+  border:1px solid rgba(6,21,40,.14) !important;
+  border-radius:12px !important;
+  padding:4px !important;
+  opacity:.82 !important;
+  width:68px !important;
+  min-width:68px !important;
+  height:50px !important;
+  box-shadow:0 4px 12px rgba(0,0,0,.12) !important;
+}
+.admin-image-btn:hover{
+  opacity:1 !important;
+  transform:scale(1.03) !important;
+}
+.admin-image-btn img{
+  width:58px !important;
+  max-width:58px !important;
+  height:40px !important;
+  object-fit:contain !important;
+}
+
+/* Menú público principal */
+.academy-links button,
+.academy-menu button,
+.academy-menu-inner button,
+.public-nav button,
+nav button{
+  font-size:16px !important;
+  font-weight:700 !important;
+  line-height:1.2 !important;
+}
+
+/* Menú lateral administrador */
+.sidebar .nav-item,
+.sidebar button,
+.side-nav button{
+  font-size:16px !important;
+  font-weight:700 !important;
+}
+
+/* Portal de papás */
+.parent-nav button,
+.parent-tabs button,
+.portal-menu button{
+  font-size:16px !important;
+  font-weight:700 !important;
+}
+
+@media(max-width:700px){
+  .academy-links button,
+  .academy-menu button,
+  .academy-menu-inner button,
+  .public-nav button,
+  nav button{
+    font-size:15px !important;
+  }
+}
