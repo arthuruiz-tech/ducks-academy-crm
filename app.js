@@ -1,4 +1,4 @@
-// Ducks CRM profesional v2.15 - cinta central con video de fondo
+// Ducks CRM profesional v2.16 - video hero limpio y academia con submenús
 const app = document.getElementById('app');
 let sb = null;
 let session = null;
@@ -18,6 +18,11 @@ const BANK_ACCOUNT = '157 889 8256';
 const BANK_CLABE = '012 180 01578898256 3';
 const BANK_NAME = 'BBVA';
 const BANK_BENEFICIARY = 'DUCKS BASKETBALL';
+
+const ACADEMY_WHATSAPP = window.DUCKS_ACADEMY_WHATSAPP || '+5214490000000';
+const ACADEMY_WHATSAPP_DIGITS = String(ACADEMY_WHATSAPP).replace(/\D/g,'');
+const ACADEMY_ADDRESS = 'Parque Boulevares 1: Jesús Sotelo Inclán, Bulevares 1ra Secc, 20288 Aguascalientes, Ags.';
+
 
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),4000); }
 function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
@@ -105,28 +110,34 @@ function renderPublicHome(){
         <a href="#inicio">Inicio</a>
         <button type="button" class="primary-menu-btn" onclick="renderParentLogin()">Portal de Papás</button>
         <a href="#calendario">Calendario</a>
-        <a href="#academia">Academia</a>
+        <div class="menu-drop">
+          <a href="#academia">Academia</a>
+          <div class="submenu">
+            <a href="#academia">Quiénes somos</a>
+            <a href="#reglamento">Reglamento</a>
+            <a href="#categorias">Categorías</a>
+            <a href="#valores">Valores</a>
+          </div>
+        </div>
         <a href="#contacto">Contacto</a>
       </nav>
       <button class="btn secondary academy-admin" onclick="renderAdminLogin()">Soy administrador</button>
     </div></header>
     <main class="academy-main">
-      <section id="inicio" class="academy-ribbon ribbon-hq video-hero">
+      <section id="inicio" class="academy-ribbon ribbon-hq video-hero clean-video-hero">
         <video class="hero-video" autoplay muted loop playsinline preload="metadata">
           <source src="assets/hero-video.mp4" type="video/mp4">
         </video>
-        <div class="hero-video-overlay"></div>
-        <div class="court-lines"></div><div class="ribbon-ball"></div>
-        <div class="ribbon-content">
-          <img class="ribbon-logo" src="assets/logo.png">
-          <div class="ribbon-text">
-            <span class="ribbon-kicker">Portal oficial de la academia</span>
-            <h1>Ducks Basketball Academy</h1>
-            <p>Entrenamiento, disciplina y desarrollo deportivo para niños y jóvenes.</p>
-            <div class="ribbon-actions">
-              <button class="btn green ribbon-btn" onclick="renderParentLogin()">Entrar al Portal de Papás</button>
-              <a href="#academia" class="btn secondary ribbon-btn">Conocer la academia</a>
-            </div>
+        <div class="hero-video-overlay clean-overlay"></div>
+        <div class="hero-text-layout">
+          <div class="hero-corner top-left">
+            <span>Ducks Basketball Academy</span>
+          </div>
+          <div class="hero-corner bottom-left">
+            <h1>Formación deportiva con disciplina</h1>
+          </div>
+          <div class="hero-corner bottom-right">
+            <p>Entrenamiento, valores y desarrollo para niños y jóvenes.</p>
           </div>
         </div>
       </section>
@@ -135,8 +146,79 @@ function renderPublicHome(){
         <button class="btn green" onclick="renderParentLogin()">Entrar al Portal de Papás</button>
       </section>
       <section id="calendario" class="academy-section"><h2>Calendario de Juegos</h2><p>Próximamente aquí podrás consultar juegos, torneos, horarios, sedes y categorías.</p><div class="coming-soon"><span>🏀</span><b>Calendario en preparación</b><small>Consulta avisos oficiales de la academia mientras se activa este módulo.</small></div></section>
-      <section id="academia" class="academy-section"><h2>Academia</h2><p>Ducks Basketball Academy impulsa la disciplina, el trabajo en equipo y el desarrollo deportivo de niños y jóvenes.</p><div class="academy-grid"><div><b>Entrenamiento</b><small>Fundamentos, técnica y desarrollo físico.</small></div><div><b>Competencia</b><small>Juegos, torneos y seguimiento por categoría.</small></div><div><b>Comunidad</b><small>Comunicación clara con papás y control administrativo.</small></div></div></section>
-      <section id="contacto" class="academy-section contact-section"><h2>Contacto</h2><p>Para dudas sobre pagos, entrenamientos, calendario o comprobantes, comunícate con la administración.</p><button class="btn green" onclick="renderParentLogin()">Ir al Portal de Papás</button></section>
+      <section id="academia" class="academy-section">
+        <div class="section-headline">
+          <span class="eyebrow">Academia</span>
+          <h2>Formamos jugadores con disciplina, respeto y trabajo en equipo</h2>
+          <p>Ducks Basketball Academy impulsa el desarrollo deportivo y humano de niños y jóvenes a través del basketball.</p>
+        </div>
+        <div class="academy-grid">
+          <div><b>Entrenamiento</b><small>Fundamentos, técnica, coordinación, condición física y disciplina deportiva.</small></div>
+          <div><b>Competencia</b><small>Participación en juegos, torneos y seguimiento por categoría.</small></div>
+          <div><b>Comunidad</b><small>Comunicación clara con papás, control administrativo y compromiso familiar.</small></div>
+        </div>
+      </section>
+
+      <section id="reglamento" class="academy-section rules-section">
+        <div class="section-headline">
+          <span class="eyebrow">Reglamento Ducks</span>
+          <h2>Lineamientos principales</h2>
+          <p>Este apartado queda preparado para integrar el reglamento oficial completo de Ducks Basketball Academy.</p>
+        </div>
+        <div class="rules-grid">
+          <article><b>Asistencia y puntualidad</b><small>Confirmar asistencia a entrenamientos, juegos y torneos. Llegar a tiempo fortalece la disciplina del equipo.</small></article>
+          <article><b>Uniforme y presentación</b><small>Usar la playera o uniforme indicado por la academia en entrenamientos y partidos.</small></article>
+          <article><b>Respeto y conducta</b><small>Promover respeto a compañeros, entrenadores, árbitros, rivales y familias.</small></article>
+          <article><b>Pagos y comprobantes</b><small>Mantener mensualidades y cuotas al corriente. Los comprobantes se cargan desde el Portal de Papás.</small></article>
+          <article><b>Comunicación oficial</b><small>La información administrativa, horarios y avisos se comunicarán por los canales oficiales de Ducks.</small></article>
+          <article><b>Compromiso familiar</b><small>El desarrollo del jugador requiere constancia, apoyo de papás y seguimiento administrativo.</small></article>
+        </div>
+      </section>
+
+      <section id="categorias" class="academy-section">
+        <div class="section-headline">
+          <span class="eyebrow">Categorías</span>
+          <h2>Equipos por edad y nivel</h2>
+          <p>Las categorías pueden ajustarse por temporada, torneo y desarrollo de cada jugador.</p>
+        </div>
+        <div class="category-pills">
+          <span>2018-2019</span><span>2016-2017</span><span>2015-2014</span><span>2013-2012</span><span>Libre / Desarrollo</span>
+        </div>
+      </section>
+
+      <section id="valores" class="academy-section">
+        <div class="section-headline">
+          <span class="eyebrow">Valores</span>
+          <h2>Más que basketball</h2>
+        </div>
+        <div class="academy-grid">
+          <div><b>Disciplina</b><small>Constancia, puntualidad y enfoque en cada entrenamiento.</small></div>
+          <div><b>Respeto</b><small>Compañerismo, juego limpio y convivencia sana.</small></div>
+          <div><b>Trabajo en equipo</b><small>Aprender a competir, colaborar y crecer juntos.</small></div>
+        </div>
+      </section>
+
+      <section id="contacto" class="academy-section contact-section">
+        <div class="section-headline">
+          <span class="eyebrow">Contacto</span>
+          <h2>Información de la academia</h2>
+          <p>Para dudas sobre pagos, entrenamientos, calendario o comprobantes, comunícate con Ducks Basketball Academy.</p>
+        </div>
+        <div class="contact-card">
+          <div class="contact-item">
+            <b>Dirección</b>
+            <p>${ACADEMY_ADDRESS}</p>
+          </div>
+          <div class="contact-item">
+            <b>WhatsApp</b>
+            <a class="whatsapp-link" target="_blank" rel="noopener" href="https://wa.me/${ACADEMY_WHATSAPP_DIGITS}">
+              <span class="wa-icon">☘</span>
+              <span>${ACADEMY_WHATSAPP}</span>
+            </a>
+            <small>Actualiza el número en config.js usando window.DUCKS_ACADEMY_WHATSAPP.</small>
+          </div>
+        </div>
+      </section>
     </main>
   </div>`;
 }
@@ -277,13 +359,13 @@ async function loadAdminData(){
   const py=await sb.from('payments').select('*').order('created_at',{ascending:false});
   if(py.error){toast('Error cargando pagos: '+py.error.message); payments=[];} else payments=py.data||[];
   const ac=await sb.from('parent_accounts_v213').select('*').order('display_name');
-  if(ac.error){toast('Ejecuta el SQL v2.15: '+ac.error.message); parentAccounts=[];} else parentAccounts=ac.data||[];
+  if(ac.error){toast('Ejecuta el SQL v2.16: '+ac.error.message); parentAccounts=[];} else parentAccounts=ac.data||[];
   const ln=await sb.from('parent_player_links_v213').select('*').order('created_at',{ascending:false});
   if(ln.error){parentLinks=[];} else parentLinks=ln.data||[];
 }
 async function refresh(){ if(mode==='admin'){await loadAdminData(); renderShell(); renderPage();} }
 function renderShell(){
-  app.innerHTML=`<div class="shell"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.15: cinta central con video de fondo.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
+  app.innerHTML=`<div class="shell"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.16: video limpio + academia y contacto.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
   document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page=b.dataset.page; if(page==='public'){renderPublicHome(); return;} renderPage();});
   document.getElementById('search').oninput=e=>{q=e.target.value; renderPage();};
   document.getElementById('authBtn').onclick=logout;
@@ -317,7 +399,7 @@ function renderParents(){
   const fams=suggestedFamilies();
   const playersOptions = players.map(p=>`<option value="${p.id}">${p.id} · ${esc(p.name)} · Tutor: ${esc(p.tutor||'')}</option>`).join('');
   const accountsOptions = parentAccounts.map(a=>`<option value="${a.id}">${esc(a.display_name)} · ${esc(a.login)}</option>`).join('');
-  document.getElementById('content').innerHTML=`<div class="notice success"><b>v2.15:</b> esta sección usa usuario y clave temporal simple para papás. Si no ves jugadores, entra a la sección Jugadores para validar que carguen correctamente.</div>
+  document.getElementById('content').innerHTML=`<div class="notice success"><b>v2.16:</b> esta sección usa usuario y clave temporal simple para papás. Si no ves jugadores, entra a la sección Jugadores para validar que carguen correctamente.</div>
   <div class="panel"><div class="panel-head"><h3>Crear cuenta de papá/tutor</h3></div><div class="modal-body"><form id="parentAccountForm" class="form-grid">
     <label class="label">Nombre visible<input id="accName" class="input" required placeholder="Nombre del papá, mamá o tutor"></label>
     <label class="label">Usuario<input id="accLogin" class="input" required placeholder="Correo, teléfono o usuario"></label>

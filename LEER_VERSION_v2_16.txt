@@ -1,0 +1,30 @@
+Ducks CRM Profesional v2.16
+
+Base funcional: v2.15/v2.13.
+
+Cambios visuales y de contenido:
+- Se mantiene el video en la cinta central.
+- Se elimina el logo grande de Ducks dentro de la cinta.
+- Se eliminan figuras decorativas de la cinta.
+- Se elimina el cuadro "Portal oficial de la academia".
+- Se elimina el botón "Entrar al Portal de Papás" dentro de la cinta.
+- El texto se distribuye en esquinas para no tapar el video.
+- Menú Academia ahora tiene submenús:
+  Quiénes somos,
+  Reglamento,
+  Categorías,
+  Valores.
+- Se agregó sección Reglamento con estructura preparada.
+- Se agregó contacto con dirección:
+  Parque Boulevares 1: Jesús Sotelo Inclán, Bulevares 1ra Secc, 20288 Aguascalientes, Ags.
+- Se agregó botón de WhatsApp.
+- No se modifica la lógica de papás, jugadores, pagos ni accesos.
+
+Nota:
+No localicé el archivo del reglamento en los archivos disponibles. El apartado Reglamento queda preparado para integrar el texto oficial completo.
+
+Instalación:
+1. No necesitas ejecutar SQL nuevo si v2.13 ya funciona.
+2. Sube todo el contenido del ZIP a GitHub raíz.
+3. Commit changes.
+4. Espera Vercel.
