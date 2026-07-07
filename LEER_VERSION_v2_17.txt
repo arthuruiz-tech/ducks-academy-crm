@@ -1,0 +1,27 @@
+Ducks CRM Profesional v2.17
+
+Base funcional: v2.16 / v2.13.
+
+Nuevo módulo:
+- Respaldos / Exportar información dentro del panel administrador.
+
+Incluye descargas:
+- Jugadores CSV
+- Pagos CSV
+- Cuentas de papás CSV
+- Relaciones papá-jugador CSV
+- Adeudos CSV
+- Respaldo completo JSON
+
+Notas:
+- Fotos y comprobantes se exportan como URL.
+- Para descargar físicamente los archivos, entra a Supabase Storage > ducks-files.
+- No requiere SQL nuevo si v2.13 ya funciona.
+- No modifica la lógica de papás, pagos, jugadores ni acceso.
+
+Instalación:
+1. No necesitas ejecutar SQL nuevo.
+2. Sube todo el contenido del ZIP a GitHub raíz.
+3. Commit changes.
+4. Espera Vercel.
+5. Entra como administrador y abre el módulo Respaldos.

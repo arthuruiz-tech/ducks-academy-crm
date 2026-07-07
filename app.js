@@ -1,4 +1,4 @@
-// Ducks CRM profesional v2.16 - video hero limpio y academia con submenús
+// Ducks CRM profesional v2.17 - módulo de respaldos y exportación
 const app = document.getElementById('app');
 let sb = null;
 let session = null;
@@ -66,6 +66,96 @@ function whatsappButtons(player){
 }
 async function copyReminder(id){ const p=players.find(x=>x.id===id); if(!p) return; await navigator.clipboard.writeText(reminderMessage(p)); toast('Mensaje de WhatsApp copiado'); }
 async function copyBank(value, label){ try{ await navigator.clipboard.writeText(String(value||'').replace(/\s+/g,' ')); toast(label + ' copiada'); }catch(e){ toast('Copia manualmente: ' + value); } }
+
+function csvEscape(value){
+  const s = String(value ?? '');
+  if(/[",\n\r]/.test(s)) return '"' + s.replace(/"/g,'""') + '"';
+  return s;
+}
+function toCSV(rows, headers){
+  const head = headers.map(h=>csvEscape(h.label)).join(',');
+  const body = rows.map(row=>headers.map(h=>csvEscape(typeof h.value === 'function' ? h.value(row) : row[h.key])).join(',')).join('\n');
+  return '\ufeff' + head + (body ? '\n' + body : '');
+}
+function downloadText(filename, text, type='text/csv;charset=utf-8;'){
+  const blob = new Blob([text], {type});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+function backupDate(){
+  return new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+}
+function exportCSV(kind){
+  const d = backupDate();
+  if(kind === 'players'){
+    const headers=[
+      {label:'ID',key:'id'}, {label:'Nombre',key:'name'}, {label:'Tutor',key:'tutor'}, {label:'WhatsApp',key:'phone'},
+      {label:'Categoria',key:'category'}, {label:'Estado',key:'status'}, {label:'Mensualidad',key:'monthly_fee'},
+      {label:'Dia pago',key:'payment_day'}, {label:'Numero uniforme',key:'uniform_number'}, {label:'Foto URL',key:'photo_url'}, {label:'Notas',key:'notes'}
+    ];
+    downloadText(`ducks_jugadores_${d}.csv`, toCSV(players, headers));
+  }
+  if(kind === 'payments'){
+    const headers=[
+      {label:'ID pago',key:'id'}, {label:'ID jugador',key:'player_id'}, {label:'Alumno',key:'student_name'},
+      {label:'Fecha pago',key:'payment_date'}, {label:'Periodo',key:'period'}, {label:'Monto',key:'amount'},
+      {label:'Metodo',key:'method'}, {label:'Enviado por',key:'submitted_by'}, {label:'Estatus',key:'confirmation_status'},
+      {label:'Confirmado en',key:'confirmed_at'}, {label:'Evidencia URL',key:'evidence_url'}, {label:'Evidencia nombre',key:'evidence_name'}, {label:'Notas',key:'notes'}
+    ];
+    downloadText(`ducks_pagos_${d}.csv`, toCSV(payments, headers));
+  }
+  if(kind === 'parents'){
+    const headers=[
+      {label:'ID cuenta',key:'id'}, {label:'Nombre',key:'display_name'}, {label:'Usuario',key:'login'},
+      {label:'WhatsApp',key:'phone'}, {label:'Clave temporal',key:'access_code'}, {label:'Activo',key:'active'}, {label:'Creado',key:'created_at'}
+    ];
+    downloadText(`ducks_cuentas_papas_${d}.csv`, toCSV(parentAccounts, headers));
+  }
+  if(kind === 'links'){
+    const rows = parentLinks.map(l=>{
+      const a = parentAccounts.find(x=>x.id===l.parent_account_id) || {};
+      const p = players.find(x=>x.id===l.player_id) || {};
+      return {...l, parent_name:a.display_name||'', parent_login:a.login||'', player_name:p.name||'', player_tutor:p.tutor||''};
+    });
+    const headers=[
+      {label:'ID relacion',key:'id'}, {label:'ID cuenta papa',key:'parent_account_id'}, {label:'Papa/Tutor',key:'parent_name'},
+      {label:'Usuario papa',key:'parent_login'}, {label:'ID jugador',key:'player_id'}, {label:'Jugador',key:'player_name'},
+      {label:'Tutor en jugador',key:'player_tutor'}, {label:'Activo',key:'active'}, {label:'Creado',key:'created_at'}
+    ];
+    downloadText(`ducks_relaciones_papa_jugador_${d}.csv`, toCSV(rows, headers));
+  }
+  if(kind === 'debts'){
+    const rows = players.map(p=>({ ...p, ...calc(p) }));
+    const headers=[
+      {label:'ID jugador',key:'id'}, {label:'Jugador',key:'name'}, {label:'Tutor',key:'tutor'}, {label:'WhatsApp',key:'phone'},
+      {label:'Categoria',key:'category'}, {label:'Estado jugador',key:'status'}, {label:'Ultimo pago',key:'last'},
+      {label:'Meses pendientes',key:'months'}, {label:'Adeudo actual',key:'amount'}, {label:'Estado pago',key:'status'}
+    ];
+    downloadText(`ducks_adeudos_${d}.csv`, toCSV(rows, headers));
+  }
+}
+function exportFullJSON(){
+  const d = backupDate();
+  const debts = players.map(p=>({player_id:p.id, player_name:p.name, tutor:p.tutor, phone:p.phone, category:p.category, ...calc(p)}));
+  const data = {
+    exported_at: new Date().toISOString(),
+    academy: 'Ducks Basketball Academy',
+    players,
+    payments,
+    parent_accounts: parentAccounts,
+    parent_player_links: parentLinks,
+    debts,
+    notes: 'Las fotos y comprobantes se respaldan como URLs hacia Supabase Storage.'
+  };
+  downloadText(`ducks_respaldo_completo_${d}.json`, JSON.stringify(data, null, 2), 'application/json;charset=utf-8;');
+}
+
 
 async function sha256Hex(text){
   const enc = new TextEncoder().encode(text);
@@ -359,19 +449,19 @@ async function loadAdminData(){
   const py=await sb.from('payments').select('*').order('created_at',{ascending:false});
   if(py.error){toast('Error cargando pagos: '+py.error.message); payments=[];} else payments=py.data||[];
   const ac=await sb.from('parent_accounts_v213').select('*').order('display_name');
-  if(ac.error){toast('Ejecuta el SQL v2.16: '+ac.error.message); parentAccounts=[];} else parentAccounts=ac.data||[];
+  if(ac.error){toast('Ejecuta el SQL v2.17: '+ac.error.message); parentAccounts=[];} else parentAccounts=ac.data||[];
   const ln=await sb.from('parent_player_links_v213').select('*').order('created_at',{ascending:false});
   if(ln.error){parentLinks=[];} else parentLinks=ln.data||[];
 }
 async function refresh(){ if(mode==='admin'){await loadAdminData(); renderShell(); renderPage();} }
 function renderShell(){
-  app.innerHTML=`<div class="shell"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.16: video limpio + academia y contacto.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
+  app.innerHTML=`<div class="shell"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.17: respaldos y exportación.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
   document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page=b.dataset.page; if(page==='public'){renderPublicHome(); return;} renderPage();});
   document.getElementById('search').oninput=e=>{q=e.target.value; renderPage();};
   document.getElementById('authBtn').onclick=logout;
 }
 function setTitle(t){ const el=document.getElementById('title'); if(el) el.textContent=t; document.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===page)); }
-function renderPage(){ if(page==='dashboard') renderDashboard(); if(page==='players') renderPlayers(); if(page==='parents') renderParents(); if(page==='payments') renderPayments(); if(page==='evidence') renderEvidence(); if(page==='whatsapp') renderWhatsApp(); if(page==='settings') renderSettings(); }
+function renderPage(){ if(page==='dashboard') renderDashboard(); if(page==='players') renderPlayers(); if(page==='parents') renderParents(); if(page==='payments') renderPayments(); if(page==='evidence') renderEvidence(); if(page==='whatsapp') renderWhatsApp(); if(page==='backups') renderBackups(); if(page==='settings') renderSettings(); }
 function filteredPlayers(){ const s=q.toLowerCase().trim(); return players.filter(p=>!s || [p.id,p.name,p.tutor,p.phone,p.category,p.uniform_number].join(' ').toLowerCase().includes(s)); }
 
 function renderDashboard(){
@@ -399,7 +489,7 @@ function renderParents(){
   const fams=suggestedFamilies();
   const playersOptions = players.map(p=>`<option value="${p.id}">${p.id} · ${esc(p.name)} · Tutor: ${esc(p.tutor||'')}</option>`).join('');
   const accountsOptions = parentAccounts.map(a=>`<option value="${a.id}">${esc(a.display_name)} · ${esc(a.login)}</option>`).join('');
-  document.getElementById('content').innerHTML=`<div class="notice success"><b>v2.16:</b> esta sección usa usuario y clave temporal simple para papás. Si no ves jugadores, entra a la sección Jugadores para validar que carguen correctamente.</div>
+  document.getElementById('content').innerHTML=`<div class="notice success"><b>v2.17:</b> esta sección usa usuario y clave temporal simple para papás. Si no ves jugadores, entra a la sección Jugadores para validar que carguen correctamente.</div>
   <div class="panel"><div class="panel-head"><h3>Crear cuenta de papá/tutor</h3></div><div class="modal-body"><form id="parentAccountForm" class="form-grid">
     <label class="label">Nombre visible<input id="accName" class="input" required placeholder="Nombre del papá, mamá o tutor"></label>
     <label class="label">Usuario<input id="accLogin" class="input" required placeholder="Correo, teléfono o usuario"></label>
@@ -479,6 +569,60 @@ function renderWhatsApp(){
   const rows=players.map(p=>({...p,c:calc(p)})).filter(p=>p.c.status==='Vencido'&&p.phone).sort((a,b)=>b.c.amount-a.c.amount);
   document.getElementById('content').innerHTML=`<div class="notice warning"><b>Enviar recordatorios:</b> cada botón abre WhatsApp con el mensaje listo.</div><div class="panel"><div class="panel-head"><h3>Jugadores vencidos con WhatsApp</h3></div><div class="tablewrap"><table><thead><tr><th>ID</th><th>Jugador</th><th>Tutor</th><th>WhatsApp</th><th>Meses</th><th>Adeudo</th><th>Acción</th></tr></thead><tbody>${rows.map(p=>`<tr><td>${p.id}</td><td><b>${esc(p.name)}</b></td><td>${esc(p.tutor||'')}</td><td>${esc(p.phone||'')}</td><td>${p.c.months}</td><td class="amount">${money(p.c.amount)}</td><td>${whatsappButtons(p)}</td></tr>`).join('')||'<tr><td colspan="7">No hay jugadores vencidos con WhatsApp registrado.</td></tr>'}</tbody></table></div></div>`;
 }
+
+function renderBackups(){
+  setTitle('Respaldos / Exportar información');
+  const debts = players.map(p=>calc(p));
+  const totalDebt = debts.reduce((sum,c)=>sum + Number(c.amount||0),0);
+  const overdue = debts.filter(c=>c.status==='Vencido').length;
+  const pendingEvidence = payments.filter(p=>p.confirmation_status==='Pendiente de confirmación').length;
+  document.getElementById('content').innerHTML=`<div class="notice success"><b>Respaldos rápidos:</b> descarga la información principal del CRM en CSV o JSON. Los comprobantes y fotos se exportan como liga URL hacia Supabase Storage.</div>
+  <div class="kpis">
+    <div class="kpi"><small>Jugadores</small><strong>${players.length}</strong></div>
+    <div class="kpi"><small>Pagos</small><strong>${payments.length}</strong></div>
+    <div class="kpi"><small>Cuentas papás</small><strong>${parentAccounts.length}</strong></div>
+    <div class="kpi"><small>Relaciones</small><strong>${parentLinks.length}</strong></div>
+    <div class="kpi orange"><small>Por confirmar</small><strong>${pendingEvidence}</strong></div>
+    <div class="kpi red"><small>Adeudo total</small><strong>${money(totalDebt)}</strong></div>
+  </div>
+
+  <div class="backup-grid">
+    <div class="backup-card">
+      <div><h3>Jugadores</h3><p>Datos generales, tutor, WhatsApp, categoría, mensualidad, uniforme y foto URL.</p></div>
+      <button class="btn green" onclick="exportCSV('players')">Descargar CSV</button>
+    </div>
+    <div class="backup-card">
+      <div><h3>Pagos</h3><p>Historial de pagos, estatus, método, evidencia URL, notas y confirmaciones.</p></div>
+      <button class="btn green" onclick="exportCSV('payments')">Descargar CSV</button>
+    </div>
+    <div class="backup-card">
+      <div><h3>Cuentas de papás</h3><p>Usuarios, nombres, WhatsApp, clave temporal y estado de cuenta.</p></div>
+      <button class="btn green" onclick="exportCSV('parents')">Descargar CSV</button>
+    </div>
+    <div class="backup-card">
+      <div><h3>Papá → jugador</h3><p>Relación entre cuentas de papás y jugadores asignados.</p></div>
+      <button class="btn green" onclick="exportCSV('links')">Descargar CSV</button>
+    </div>
+    <div class="backup-card">
+      <div><h3>Adeudos</h3><p>Reporte calculado con último pago, meses pendientes, adeudo y estatus.</p></div>
+      <button class="btn green" onclick="exportCSV('debts')">Descargar CSV</button>
+    </div>
+    <div class="backup-card featured">
+      <div><h3>Respaldo completo</h3><p>Archivo JSON con jugadores, pagos, cuentas, relaciones y adeudos calculados.</p></div>
+      <button class="btn" onclick="exportFullJSON()">Descargar JSON</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3>Recomendación de respaldo</h3></div>
+    <div class="modal-body">
+      <p><b>Frecuencia sugerida:</b> descarga respaldo completo una vez por semana y antes de hacer cambios importantes.</p>
+      <p><b>Comprobantes y fotos:</b> este módulo exporta las ligas. Para descargar físicamente los archivos, entra a Supabase Storage > ducks-files.</p>
+      <p><b>Restauración:</b> el CSV sirve para revisar y reimportar datos; el JSON sirve como copia completa de consulta.</p>
+    </div>
+  </div>`;
+}
+
 function renderSettings(){ setTitle('Configuración'); document.getElementById('content').innerHTML=`<div class="panel"><div class="panel-head"><h3>Configuración</h3></div><div class="modal-body"><div class="notice"><b>Link público:</b><br><a href="${window.DUCKS_PORTAL_URL||location.origin}" target="_blank">${window.DUCKS_PORTAL_URL||location.origin}</a></div><p>El acceso de papás se crea desde el módulo Papás.</p></div></div>`; }
 
 /* CRUD */
@@ -531,6 +675,6 @@ async function confirmPayment(id){const {error}=await sb.from('payments').update
 async function rejectPayment(id){const {error}=await sb.from('payments').update({confirmation_status:'Rechazado'}).eq('id',id); if(error)toast(error.message); else{toast('Pago rechazado'); await refresh();}}
 async function deletePayment(id){if(!confirm('¿Eliminar pago?'))return; const {error}=await sb.from('payments').delete().eq('id',id); if(error)toast(error.message); else{toast('Pago eliminado'); await refresh();}}
 
-window.renderPublicHome=renderPublicHome; window.renderParentLogin=renderParentLogin; window.renderAdminLogin=renderAdminLogin; window.renderLogin=renderAdminLogin; window.parentLogout=parentLogout; window.copyBank=copyBank; window.openParentPayment=openParentPayment; window.openPlayerForm=openPlayerForm; window.deletePlayer=deletePlayer; window.openPaymentForm=openPaymentForm; window.confirmPayment=confirmPayment; window.rejectPayment=rejectPayment; window.deletePayment=deletePayment; window.closeModal=closeModal; window.copyReminder=copyReminder; window.deleteParentLink=deleteParentLink; window.prefillParent=prefillParent; window.resetParentPassword=resetParentPassword;
+window.renderPublicHome=renderPublicHome; window.renderParentLogin=renderParentLogin; window.renderAdminLogin=renderAdminLogin; window.renderLogin=renderAdminLogin; window.parentLogout=parentLogout; window.copyBank=copyBank; window.openParentPayment=openParentPayment; window.openPlayerForm=openPlayerForm; window.deletePlayer=deletePlayer; window.openPaymentForm=openPaymentForm; window.confirmPayment=confirmPayment; window.rejectPayment=rejectPayment; window.deletePayment=deletePayment; window.closeModal=closeModal; window.copyReminder=copyReminder; window.deleteParentLink=deleteParentLink; window.prefillParent=prefillParent; window.exportCSV=exportCSV; window.exportFullJSON=exportFullJSON; window.resetParentPassword=resetParentPassword;
 
 init();

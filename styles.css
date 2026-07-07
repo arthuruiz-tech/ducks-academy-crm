@@ -764,3 +764,53 @@ html{scroll-behavior:smooth}
   .hero-corner.bottom-right p{font-size:15px}
   .submenu{position:absolute;left:0;transform:none}
 }
+
+
+/* v2.17 - Respaldos / Exportación */
+.backup-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(280px,1fr));
+  gap:14px;
+  margin:18px 0;
+}
+.backup-card{
+  background:linear-gradient(135deg,#FFFFFF,#F7FAFD);
+  border:1px solid rgba(11,34,63,.10);
+  border-radius:22px;
+  padding:18px;
+  box-shadow:0 12px 28px rgba(8,24,52,.06);
+  display:flex;
+  justify-content:space-between;
+  gap:14px;
+  align-items:center;
+}
+.backup-card h3{
+  margin:0 0 7px;
+  color:#061528;
+  font-size:20px;
+}
+.backup-card p{
+  margin:0;
+  color:#64748B;
+  line-height:1.4;
+}
+.backup-card.featured{
+  background:linear-gradient(135deg,#061528,#0B223F);
+  border-color:rgba(57,255,136,.22);
+}
+.backup-card.featured h3{
+  color:white;
+}
+.backup-card.featured p{
+  color:#D7DEE8;
+}
+.backup-card.featured .btn{
+  background:linear-gradient(135deg,#39FF88,#14D86C);
+  color:#061528;
+  font-weight:950;
+}
+@media(max-width:780px){
+  .backup-grid{grid-template-columns:1fr}
+  .backup-card{flex-direction:column;align-items:flex-start}
+  .backup-card .btn{width:100%}
+}
