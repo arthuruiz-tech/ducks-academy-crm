@@ -1,0 +1,14 @@
+Ducks CRM Profesional v2.24
+
+Corrección forzada:
+- Reemplaza cualquier botón/texto "Soy administrador" por imagen Ducks Administrador.
+- Oculta cualquier botón Regresar.
+- WhatsApp contacto: 4495498220.
+- No requiere SQL.
+
+Si después de subir no cambia:
+1. Verifica en GitHub que app.js y styles.css tengan fecha nueva.
+2. En Vercel > Deployments confirma que el último deploy esté en Ready y Production.
+3. En el navegador presiona Ctrl + F5.
+4. En celular cierra la app/PWA y vuelve a abrir.
+5. Si está instalada como PWA, desinstálala y vuelve a instalar para limpiar caché.
