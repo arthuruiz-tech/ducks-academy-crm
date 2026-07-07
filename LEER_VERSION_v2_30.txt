@@ -1,0 +1,7 @@
+Ducks CRM Profesional v2.30
+
+Cambios:
+- El botón Instalar App ahora incluye el ícono de la app.
+- El ícono de administrador tiene fondo blanco integrado solo detrás de la imagen, sin rectángulo blanco sobrante.
+- Se mantiene el menú global.
+- No requiere SQL nuevo.

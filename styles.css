@@ -1373,3 +1373,38 @@ nav button{
   .admin-image-btn,.global-admin{width:74px !important;min-width:74px !important;height:54px !important}
   .admin-image-btn img,.global-admin img{width:74px !important;height:54px !important}
 }
+
+
+/* v2.30 - Icono en botón Instalar App + admin con fondo blanco recortado */
+.install-app-icon{
+  width:24px !important;
+  height:24px !important;
+  object-fit:contain !important;
+  vertical-align:middle !important;
+  margin-right:7px !important;
+  border-radius:50% !important;
+  display:inline-block !important;
+}
+button[onclick="installDucksApp()"]{
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:2px !important;
+}
+
+/* El fondo blanco del administrador ahora viene dentro del PNG, sin rectángulo exterior */
+.admin-image-btn,
+.global-admin{
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  opacity:1 !important;
+}
+.admin-image-btn img,
+.global-admin img{
+  width:88px !important;
+  max-width:88px !important;
+  height:64px !important;
+  object-fit:contain !important;
+  filter:drop-shadow(0 6px 12px rgba(0,0,0,.32)) !important;
+}
