@@ -1,0 +1,7 @@
+Ducks CRM v2.32
+- Admin icon visible con fondo blanco contenido dentro de la imagen y colores reforzados.
+- Papás: Restablecer contraseña.
+- Papás: Salir y volver al Inicio.
+- WhatsApp incluye aplicación/portal: https://ducks-academy-crm.vercel.app
+- Mensaje termina con: 🏀 Ducks Basketball Academy
+- Requiere ejecutar PASO_7_SQL_CAMBIO_PASSWORD_PAPAS_v2_32.txt

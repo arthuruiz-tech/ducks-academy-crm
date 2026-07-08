@@ -14,7 +14,7 @@ async function forceFreshAssetsOnce(){
 }
 forceFreshAssetsOnce();
 
-// Ducks CRM profesional v2.31 - corrección login portal papás
+// Ducks CRM profesional v2.32 - portal papás contraseña salida WhatsApp admin
 const app = document.getElementById('app');
 let sb = null;
 let session = null;
@@ -99,9 +99,21 @@ function calc(player, payList=payments){
   return {last,months,amount,status};
 }
 function reminderMessage(player){
-  const c = calc(player);
-  const monthsText = c.months > 1 ? `, correspondiente a ${c.months} meses de adeudo.` : '.';
-  return `Hola, buen día. Les recordamos amablemente que está pendiente el pago de la mensualidad de Ducks Basketball Academy por ${money(c.amount)}${monthsText}\n\nPara facilitar el proceso, pueden ingresar al Portal de Papás:\n${window.DUCKS_PORTAL_URL || location.origin}\n\nAgradecemos mucho su apoyo para mantener el control administrativo. 🏀🦆`;
+  const c=calc(player);
+  const monthsText=c.months>1 ? `, correspondiente a ${c.months} meses de adeudo` : '';
+  return `Hola, buen día.
+
+Les recordamos amablemente que está pendiente el pago de Ducks Basketball Academy por ${money(c.amount)}${monthsText}.
+
+Para facilitar el proceso, pueden ingresar a la aplicación instalada o al Portal de Papás desde el siguiente enlace:
+
+https://ducks-academy-crm.vercel.app
+
+Ahí podrán consultar el adeudo, realizar el pago y subir su comprobante de forma rápida y segura.
+
+Agradecemos mucho su apoyo para mantener el control administrativo de la academia.
+
+🏀 Ducks Basketball Academy`;
 }
 function whatsappUrl(player){ const phone = String(player.phone||'').replace(/\D/g,''); return phone ? `https://wa.me/${phone}?text=${encodeURIComponent(reminderMessage(player))}` : ''; }
 function whatsappButtons(player){
@@ -497,6 +509,26 @@ function renderParentLogin(){
   </div>`;
   document.getElementById('parentLoginForm').onsubmit=parentLogin;
 }
+
+async function parentChangeOwnPassword(){
+  if(!parentToken){ toast('La sesión no está activa. Inicia sesión nuevamente.'); return; }
+  const p1=prompt('Escribe tu nueva contraseña (mínimo 4 caracteres):');
+  if(p1===null)return;
+  if(String(p1).trim().length<4){toast('La contraseña debe tener al menos 4 caracteres');return;}
+  const p2=prompt('Confirma tu nueva contraseña:');
+  if(p2===null)return;
+  if(p1!==p2){toast('Las contraseñas no coinciden');return;}
+  const {data,error}=await sb.rpc('ducks_parent_change_password_v232',{p_token:parentToken,p_new_password:String(p1).trim()});
+  if(error){toast('No se pudo cambiar la contraseña: '+error.message);return;}
+  const row=Array.isArray(data)?data[0]:data;
+  toast(row?.ok?'Contraseña actualizada correctamente':(row?.message||'No se pudo actualizar'));
+}
+function parentExitToHome(){
+  parentToken=''; parentProfile=null; parentPlayers=[]; parentPayments=[]; parentDocuments=[];
+  localStorage.removeItem('ducks_parent_token_v213');
+  renderPublicHome();
+}
+
 async function parentLogin(e){
   e.preventDefault();
 
@@ -566,7 +598,7 @@ function renderParentPortal(){
       <a class="academy-brand" href="#" onclick="renderParentPortal()"><img src="assets/logo.png"><span>Portal de Papás</span></a>
       <nav class="academy-links"><button onclick="renderParentPortal()">Mis hijos</button><button onclick="openParentPayment()">Subir comprobante</button></nav>
       <div class="header-actions"><button class="btn secondary academy-admin" onclick="parentLogout()">Cerrar sesión</button></div>
-    </div></header>
+    </div><div class="parent-session-actions"><button class="btn secondary" onclick="parentChangeOwnPassword()">🔑 Restablecer contraseña</button><button class="btn secondary parent-exit-btn" onclick="parentExitToHome()">Salir</button></div></header>
     <main class="academy-main">
       <section class="academy-ribbon private-ribbon"><div class="court-lines"></div><div class="ribbon-content"><img class="ribbon-logo small" src="assets/logo.png"><div class="ribbon-text"><span class="ribbon-kicker">Acceso privado</span><h1>Bienvenido al Portal de Papás</h1><p>${esc(parentProfile?.display_name||parentProfile?.login||'')}</p></div></div></section>
       <section class="parent-card"><div class="parent-title"><img src="assets/logo.png"><div><h1>Mis jugadores</h1><div class="sub">Solo información asignada a tu familia</div></div></div>${parentPlayers.length?`<div class="family-grid">${cards}</div>`:`<div class="notice warning">Tu cuenta aún no tiene jugadores asignados. Contacta a administración.</div>`}</section>
@@ -689,7 +721,7 @@ async function loadAdminData(){
   const py=await sb.from('payments').select('*').order('created_at',{ascending:false});
   if(py.error){toast('Error cargando pagos: '+py.error.message); payments=[];} else payments=py.data||[];
   const ac=await sb.from('parent_accounts_v213').select('*').order('display_name');
-  if(ac.error){toast('Ejecuta el SQL v2.31: '+ac.error.message); parentAccounts=[];} else parentAccounts=ac.data||[];
+  if(ac.error){toast('Ejecuta el SQL v2.32: '+ac.error.message); parentAccounts=[];} else parentAccounts=ac.data||[];
   const ln=await sb.from('parent_player_links_v213').select('*').order('created_at',{ascending:false});
   if(ln.error){parentLinks=[];} else parentLinks=ln.data||[];
   const dc=await sb.from('player_documents_v218').select('*').order('created_at',{ascending:false});
@@ -697,7 +729,7 @@ async function loadAdminData(){
 }
 async function refresh(){ if(mode==='admin'){await loadAdminData(); renderShell(); renderPage();} }
 function renderShell(){
-  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.31: administrador discreto + WhatsApp.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
+  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.32: administrador discreto + WhatsApp.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
   document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page=b.dataset.page; if(page==='public'){renderPublicHome(); return;} renderPage();});
   document.getElementById('search').oninput=e=>{q=e.target.value; renderPage();};
   document.getElementById('authBtn').onclick=logout;
@@ -736,7 +768,7 @@ function renderParents(){
   const fams=suggestedFamilies();
   const playersOptions = players.map(p=>`<option value="${p.id}">${p.id} · ${esc(p.name)} · Tutor: ${esc(p.tutor||'')}</option>`).join('');
   const accountsOptions = parentAccounts.map(a=>`<option value="${a.id}">${esc(a.display_name)} · ${esc(a.login)}</option>`).join('');
-  document.getElementById('content').innerHTML=`<div class="notice success"><b>v2.31:</b> al crear una cuenta se ligan automáticamente los jugadores que coincidan por teléfono o tutor. Si no ves jugadores, entra a la sección Jugadores para validar que carguen correctamente.</div>
+  document.getElementById('content').innerHTML=`<div class="notice success"><b>v2.32:</b> al crear una cuenta se ligan automáticamente los jugadores que coincidan por teléfono o tutor. Si no ves jugadores, entra a la sección Jugadores para validar que carguen correctamente.</div>
   <div class="panel"><div class="panel-head"><h3>Crear cuenta de papá/tutor</h3></div><div class="modal-body"><form id="parentAccountForm" class="form-grid">
     <label class="label">Nombre visible<input id="accName" class="input" required placeholder="Nombre del papá, mamá o tutor"></label>
     <label class="label">Usuario<input id="accLogin" class="input" required placeholder="Correo, teléfono o usuario"></label>
@@ -994,3 +1026,5 @@ async function deletePayment(id){if(!confirm('¿Eliminar pago?'))return; const {
 window.renderPublicHome=renderPublicHome; window.renderParentLogin=renderParentLogin; window.renderAdminLogin=renderAdminLogin; window.renderLogin=renderAdminLogin; window.parentLogout=parentLogout; window.copyBank=copyBank; window.openParentPayment=openParentPayment; window.openParentDocument=openParentDocument; window.installDucksApp=installDucksApp; window.goBackSmart=goBackSmart; window.openPlayerForm=openPlayerForm; window.deletePlayer=deletePlayer; window.openPaymentForm=openPaymentForm; window.confirmPayment=confirmPayment; window.rejectPayment=rejectPayment; window.deletePayment=deletePayment; window.closeModal=closeModal; window.copyReminder=copyReminder; window.deleteParentLink=deleteParentLink; window.prefillParent=prefillParent; window.exportCSV=exportCSV; window.exportFullJSON=exportFullJSON; window.exportDocumentsCSV=exportDocumentsCSV; window.resetParentPassword=resetParentPassword; window.autoLinkAccountFromButton=autoLinkAccountFromButton;
 
 init();
+
+window.parentChangeOwnPassword=parentChangeOwnPassword; window.parentExitToHome=parentExitToHome;
