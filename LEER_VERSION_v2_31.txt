@@ -1,0 +1,20 @@
+Ducks CRM Profesional v2.31
+
+Corrección crítica:
+- Corrige el login del Portal de Papás para que no muestre información de otra cuenta.
+- Limpia sesión anterior antes de entrar con otro papá/tutor.
+- Corrige la función ducks_parent_login_v213 para evitar coincidencias por teléfonos vacíos.
+- Prioriza coincidencia exacta por usuario.
+
+IMPORTANTE:
+Esta versión SÍ requiere ejecutar SQL:
+PASO_6_SQL_CORREGIR_LOGIN_PAPAS_v2_31.txt
+
+Orden:
+1. Ejecuta el SQL en Supabase SQL Editor.
+2. Sube el ZIP a GitHub raíz.
+3. Commit changes.
+4. Espera Vercel.
+5. Cierra sesión del Portal de Papás.
+6. Prueba con Araceli.
+7. Cierra sesión y prueba con otro usuario.

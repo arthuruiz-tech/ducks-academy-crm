@@ -1,0 +1,70 @@
+-- Ducks CRM v2.31 - Corrección de login Portal de Papás
+-- Ejecutar completo en Supabase > SQL Editor.
+
+create or replace function public.ducks_parent_login_v213(
+  p_login text,
+  p_password text
+)
+returns table(ok boolean, message text, token uuid)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_account public.parent_accounts_v213%rowtype;
+  v_token uuid;
+  v_input text;
+  v_digits text;
+begin
+  v_input := lower(trim(coalesce(p_login,'')));
+  v_digits := regexp_replace(coalesce(p_login,''), '\D', '', 'g');
+
+  -- 1) Prioridad: usuario exacto.
+  select * into v_account
+  from public.parent_accounts_v213
+  where active = true
+    and lower(login) = v_input
+  limit 1;
+
+  -- 2) Teléfono solo si hay dígitos suficientes. Evita coincidencias vacías.
+  if not found and length(v_digits) >= 7 then
+    select * into v_account
+    from public.parent_accounts_v213
+    where active = true
+      and (
+        regexp_replace(coalesce(login,''), '\D', '', 'g') = v_digits
+        or regexp_replace(coalesce(phone,''), '\D', '', 'g') = v_digits
+        or regexp_replace(coalesce(login,''), '\D', '', 'g') = right(v_digits, 10)
+        or regexp_replace(coalesce(phone,''), '\D', '', 'g') = right(v_digits, 10)
+      )
+      and (
+        length(regexp_replace(coalesce(login,''), '\D', '', 'g')) >= 7
+        or length(regexp_replace(coalesce(phone,''), '\D', '', 'g')) >= 7
+      )
+    limit 1;
+  end if;
+
+  if not found then
+    return query select false, 'Usuario o contraseña incorrectos.', null::uuid;
+    return;
+  end if;
+
+  if trim(v_account.access_code) <> trim(coalesce(p_password,'')) then
+    return query select false, 'Usuario o contraseña incorrectos.', null::uuid;
+    return;
+  end if;
+
+  delete from public.parent_sessions_v213
+  where parent_account_id = v_account.id;
+
+  insert into public.parent_sessions_v213(parent_account_id)
+  values (v_account.id)
+  returning parent_sessions_v213.token into v_token;
+
+  return query select true, 'OK', v_token;
+end;
+$$;
+
+grant execute on function public.ducks_parent_login_v213(text,text) to anon, authenticated;
+
+select 'OK - Ducks CRM v2.31 login de papás corregido correctamente' as resultado;
