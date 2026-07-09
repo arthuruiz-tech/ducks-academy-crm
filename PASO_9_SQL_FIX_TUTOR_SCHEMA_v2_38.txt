@@ -1,0 +1,52 @@
+-- Ducks CRM v2.38 - Corrección tutor_2 / tutor_phone_2 y refrescar schema cache
+-- Ejecuta TODO este SQL en Supabase > SQL Editor.
+-- Este SQL es seguro: no borra datos.
+
+-- 1) Agregar columnas faltantes para segundo tutor
+alter table public.players
+  add column if not exists tutor_2 text;
+
+alter table public.players
+  add column if not exists tutor_phone_2 text;
+
+-- 2) Asegurar historial de cambios de jugadores
+create table if not exists public.player_change_history_v237 (
+  id uuid primary key default gen_random_uuid(),
+  player_id text not null,
+  action text not null default 'update',
+  changed_by text,
+  before_data jsonb,
+  after_data jsonb,
+  changes jsonb,
+  created_at timestamptz not null default now()
+);
+
+alter table public.player_change_history_v237 enable row level security;
+
+drop policy if exists "admin manage player history v237" on public.player_change_history_v237;
+
+create policy "admin manage player history v237"
+on public.player_change_history_v237
+for all
+to authenticated
+using (true)
+with check (true);
+
+create index if not exists idx_player_change_history_v237_player_id
+on public.player_change_history_v237(player_id);
+
+create index if not exists idx_player_change_history_v237_created_at
+on public.player_change_history_v237(created_at desc);
+
+-- 3) Refrescar schema cache de Supabase / PostgREST
+notify pgrst, 'reload schema';
+
+-- 4) Verificación rápida
+select
+  'OK - columnas tutor_2 y tutor_phone_2 disponibles. Si el portal sigue igual, espera 10 segundos y recarga con Ctrl+F5.' as resultado,
+  column_name
+from information_schema.columns
+where table_schema = 'public'
+  and table_name = 'players'
+  and column_name in ('tutor_2','tutor_phone_2')
+order by column_name;

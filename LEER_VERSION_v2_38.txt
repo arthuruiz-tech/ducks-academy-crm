@@ -1,0 +1,21 @@
+Ducks CRM Profesional v2.38
+
+Corrección del error:
+Could not find the 'tutor_2' column of 'players' in the schema cache
+
+Causa:
+Supabase no tiene la columna tutor_2 / tutor_phone_2 o no refrescó el schema cache.
+
+Qué hacer:
+1. Ejecuta en Supabase SQL Editor:
+   PASO_9_SQL_FIX_TUTOR_SCHEMA_v2_38.txt
+2. Espera 10 segundos.
+3. Sube esta versión a GitHub.
+4. Espera Vercel Ready / Production.
+5. Recarga el portal con Ctrl + F5.
+6. Intenta editar nuevamente el tutor del jugador.
+
+Esta versión mantiene:
+- edición de jugadores,
+- historial de cambios,
+- dos tutores por jugador.
