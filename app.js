@@ -14,7 +14,7 @@ async function forceFreshAssetsOnce(){
 }
 forceFreshAssetsOnce();
 
-// Ducks CRM profesional v2.36 - jugador prioritario y banco compacto
+// Ducks CRM profesional v2.37 - edición jugadores e historial
 const app = document.getElementById('app');
 let sb = null;
 let session = null;
@@ -30,6 +30,7 @@ let parentPlayers = [];
 let parentPayments = [];
 let parentDocuments = [];
 let documents = [];
+let playerHistory = [];
 let q = '';
 
 const BANK_ACCOUNT = '157 889 8256';
@@ -78,6 +79,55 @@ async function autoLinkPlayersToAccount(account){
     if(!error) linked++;
   }
   return {matches: matches.length, linked};
+}
+
+
+const PLAYER_EDIT_FIELDS = [
+  'id','name','tutor','phone','tutor_2','tutor_phone_2','category','status',
+  'monthly_fee','payment_day','uniform_number','photo_url','notes'
+];
+function compactPlayerSnapshot(p){
+  const o = {};
+  PLAYER_EDIT_FIELDS.forEach(k => o[k] = p?.[k] ?? '');
+  return o;
+}
+function playerDiffBeforeAfter(before, after){
+  const changes = [];
+  PLAYER_EDIT_FIELDS.forEach(k=>{
+    if(k === 'id') return;
+    const a = String(before?.[k] ?? '');
+    const b = String(after?.[k] ?? '');
+    if(a !== b) changes.push({field:k, old_value:a, new_value:b});
+  });
+  return changes;
+}
+async function savePlayerHistory(playerId, before, after, action='update'){
+  try{
+    const changes = playerDiffBeforeAfter(before, after);
+    if(action === 'update' && !changes.length) return;
+    const userEmail = session?.user?.email || 'Admin';
+    const row = {
+      player_id: playerId,
+      action,
+      changed_by: userEmail,
+      before_data: before || {},
+      after_data: after || {},
+      changes
+    };
+    await sb.from('player_change_history_v237').insert(row);
+  }catch(err){
+    console.warn('No se pudo guardar historial de jugador:', err);
+  }
+}
+function fieldLabel(k){
+  const map = {
+    name:'Nombre', tutor:'Tutor principal', phone:'WhatsApp principal',
+    tutor_2:'Tutor secundario', tutor_phone_2:'WhatsApp secundario',
+    category:'Categoría', status:'Estado', monthly_fee:'Mensualidad',
+    payment_day:'Día de pago', uniform_number:'Número uniforme',
+    photo_url:'Foto', notes:'Notas'
+  };
+  return map[k] || k;
 }
 
 function nextId(){ const max=players.reduce((m,p)=>Math.max(m,Number(String(p.id||'').replace(/\D/g,''))||0),0); return 'D'+String(max+1).padStart(3,'0'); }
@@ -841,21 +891,23 @@ async function loadAdminData(){
   const py=await sb.from('payments').select('*').order('created_at',{ascending:false});
   if(py.error){toast('Error cargando pagos: '+py.error.message); payments=[];} else payments=py.data||[];
   const ac=await sb.from('parent_accounts_v213').select('*').order('display_name');
-  if(ac.error){toast('Ejecuta el SQL v2.36: '+ac.error.message); parentAccounts=[];} else parentAccounts=ac.data||[];
+  if(ac.error){toast('Ejecuta el SQL v2.37: '+ac.error.message); parentAccounts=[];} else parentAccounts=ac.data||[];
   const ln=await sb.from('parent_player_links_v213').select('*').order('created_at',{ascending:false});
   if(ln.error){parentLinks=[];} else parentLinks=ln.data||[];
   const dc=await sb.from('player_documents_v218').select('*').order('created_at',{ascending:false});
   if(dc.error){documents=[];} else documents=dc.data||[];
+  const hs=await sb.from('player_change_history_v237').select('*').order('created_at',{ascending:false}).limit(500);
+  if(hs.error){playerHistory=[];} else playerHistory=hs.data||[];
 }
 async function refresh(){ if(mode==='admin'){await loadAdminData(); renderShell(); renderPage();} }
 function renderShell(){
-  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.36: administrador discreto + WhatsApp.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
+  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="history">🕘 Historial</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.37: administrador discreto + WhatsApp.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
   document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page=b.dataset.page; if(page==='public'){renderPublicHome(); return;} renderPage();});
   document.getElementById('search').oninput=e=>{q=e.target.value; renderPage();};
   document.getElementById('authBtn').onclick=logout;
 }
 function setTitle(t){ const el=document.getElementById('title'); if(el) el.textContent=t; document.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===page)); }
-function renderPage(){ if(mode==='admin') rememberScreen('admin:'+page); if(page==='dashboard') renderDashboard(); if(page==='players') renderPlayers(); if(page==='parents') renderParents(); if(page==='payments') renderPayments(); if(page==='evidence') renderEvidence(); if(page==='whatsapp') renderWhatsApp(); if(page==='documents') renderDocuments(); if(page==='backups') renderBackups(); if(page==='settings') renderSettings(); }
+function renderPage(){ if(mode==='admin') rememberScreen('admin:'+page); if(page==='dashboard') renderDashboard(); if(page==='players') renderPlayers(); if(page==='parents') renderParents(); if(page==='payments') renderPayments(); if(page==='evidence') renderEvidence(); if(page==='whatsapp') renderWhatsApp(); if(page==='documents') renderDocuments(); if(page==='history') renderPlayerHistory(); if(page==='backups') renderBackups(); if(page==='settings') renderSettings(); }
 function filteredPlayers(){ const s=q.toLowerCase().trim(); return players.filter(p=>!s || [p.id,p.name,p.tutor,p.phone,p.category,p.uniform_number].join(' ').toLowerCase().includes(s)); }
 
 function renderDashboard(){
@@ -867,7 +919,7 @@ function renderDashboard(){
 function renderPlayers(){
   setTitle('Jugadores');
   const list=filteredPlayers();
-  document.getElementById('content').innerHTML=`<div class="panel"><div class="panel-head"><h3>Base de jugadores</h3><button class="btn green" onclick="openPlayerForm()">+ Nuevo jugador</button></div><div class="cards">${list.map(p=>{const c=calc(p);return `<div class="card">${thumb(p.photo_url)}<h4>${esc(p.name)}</h4><p><span class="uniform">#${esc(p.uniform_number||'-')}</span></p><p><b>ID:</b> ${p.id} · <b>Categoría:</b> ${esc(p.category||'')}</p><p><b>Tutor principal:</b> ${esc(p.tutor||'')}</p><p><b>WhatsApp principal:</b> ${esc(p.phone||'')}</p>${p.tutor_2||p.tutor_phone_2?`<p><b>Tutor secundario:</b> ${esc(p.tutor_2||'')} · ${esc(p.tutor_phone_2||'')}</p>`:''}<p><b>Adeudo:</b> <span class="amount">${money(c.amount)}</span> · <span class="status ${c.status}">${c.status}</span></p><div class="actions"><button class="btn secondary" onclick="openPlayerForm('${p.id}')">Editar</button><button class="btn green" onclick="openPaymentForm('${p.id}')">Pago</button>${whatsappButtons(p)}<button class="btn red" onclick="deletePlayer('${p.id}')">Eliminar</button></div></div>`}).join('')||'<div class="card">Sin jugadores. Si aquí no aparecen, revisa que estés logueado como administrador y que la tabla players tenga permisos.'}</div></div>`;
+  document.getElementById('content').innerHTML=`<div class="panel"><div class="panel-head"><h3>Base de jugadores</h3><button class="btn green" onclick="openPlayerForm()">+ Nuevo jugador</button></div><div class="cards">${list.map(p=>{const c=calc(p);return `<div class="card">${thumb(p.photo_url)}<h4>${esc(p.name)}</h4><p><span class="uniform">#${esc(p.uniform_number||'-')}</span></p><p><b>ID:</b> ${p.id} · <b>Categoría:</b> ${esc(p.category||'')}</p><p><b>Tutor principal:</b> ${esc(p.tutor||'')}</p><p><b>WhatsApp principal:</b> ${esc(p.phone||'')}</p>${p.tutor_2||p.tutor_phone_2?`<p><b>Tutor secundario:</b> ${esc(p.tutor_2||'')} · ${esc(p.tutor_phone_2||'')}</p>`:''}<p><b>Adeudo:</b> <span class="amount">${money(c.amount)}</span> · <span class="status ${c.status}">${c.status}</span></p><div class="actions"><button class="btn secondary" onclick="openPlayerForm('${p.id}')">Editar</button><button class="btn secondary" onclick="openPlayerHistory('${p.id}')">Historial</button><button class="btn green" onclick="openPaymentForm('${p.id}')">Pago</button>${whatsappButtons(p)}<button class="btn red" onclick="deletePlayer('${p.id}')">Eliminar</button></div></div>`}).join('')||'<div class="card">Sin jugadores. Si aquí no aparecen, revisa que estés logueado como administrador y que la tabla players tenga permisos.'}</div></div>`;
 }
 function suggestedFamilies(){
   const m = new Map();
@@ -888,7 +940,7 @@ function renderParents(){
   const fams=suggestedFamilies();
   const playersOptions = players.map(p=>`<option value="${p.id}">${p.id} · ${esc(p.name)} · Tutor: ${esc(p.tutor||'')}</option>`).join('');
   const accountsOptions = parentAccounts.map(a=>`<option value="${a.id}">${esc(a.display_name)} · ${esc(a.login)}</option>`).join('');
-  document.getElementById('content').innerHTML=`<div class="notice success"><b>v2.36:</b> al crear una cuenta se ligan automáticamente los jugadores que coincidan por teléfono o tutor. Si no ves jugadores, entra a la sección Jugadores para validar que carguen correctamente.</div>
+  document.getElementById('content').innerHTML=`<div class="notice success"><b>v2.37:</b> al crear una cuenta se ligan automáticamente los jugadores que coincidan por teléfono o tutor. Si no ves jugadores, entra a la sección Jugadores para validar que carguen correctamente.</div>
   <div class="panel"><div class="panel-head"><h3>Crear cuenta de papá/tutor</h3></div><div class="modal-body"><form id="parentAccountForm" class="form-grid">
     <label class="label">Nombre visible<input id="accName" class="input" required placeholder="Nombre del papá, mamá o tutor"></label>
     <label class="label">Usuario<input id="accLogin" class="input" required placeholder="Correo, teléfono o usuario"></label>
@@ -1091,6 +1143,71 @@ function renderBackups(){
   </div>`;
 }
 
+
+function renderPlayerHistory(){
+  setTitle('Historial de cambios de jugadores');
+  const rows = playerHistory.map(h=>{
+    const p = players.find(x=>x.id===h.player_id) || {};
+    const changes = Array.isArray(h.changes) ? h.changes : [];
+    return {...h, player_name:p.name||h.after_data?.name||h.before_data?.name||'', changes_list:changes};
+  });
+  document.getElementById('content').innerHTML=`<div class="notice success"><b>Auditoría:</b> cada edición de jugador se guarda con fecha, usuario, datos anteriores y datos nuevos.</div>
+  <div class="panel">
+    <div class="panel-head"><h3>Últimos cambios</h3><button class="btn secondary" onclick="exportPlayerHistoryCSV()">Exportar CSV</button></div>
+    <div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Jugador</th><th>Acción</th><th>Cambió</th><th>Campos modificados</th><th>Detalle</th></tr></thead><tbody>
+      ${rows.map(h=>`<tr><td>${esc(String(h.created_at||'').replace('T',' ').slice(0,19))}</td><td><b>${esc(h.player_name)}</b><br><small>${esc(h.player_id)}</small></td><td>${esc(h.action||'')}</td><td>${esc(h.changed_by||'')}</td><td>${h.changes_list.length?h.changes_list.map(c=>`<span class="history-chip">${esc(fieldLabel(c.field))}</span>`).join(' '):'-'}</td><td><button class="btn secondary" onclick="openHistoryDetail('${h.id}')">Ver</button></td></tr>`).join('')||'<tr><td colspan="6">Aún no hay historial.</td></tr>'}
+    </tbody></table></div>
+  </div>`;
+}
+function openPlayerHistory(playerId){
+  page='history';
+  renderPlayerHistory();
+  setTimeout(()=>{
+    const rows = playerHistory.filter(h=>h.player_id===playerId);
+    if(!rows.length){ toast('Este jugador aún no tiene historial.'); return; }
+    openHistoryDetail(rows[0].id);
+  },80);
+}
+function openHistoryDetail(historyId){
+  const h = playerHistory.find(x=>x.id===historyId);
+  if(!h){ toast('Historial no encontrado'); return; }
+  const p = players.find(x=>x.id===h.player_id) || {};
+  const changes = Array.isArray(h.changes) ? h.changes : [];
+  const modal=document.createElement('div');
+  modal.className='modalbg open';
+  modal.id='historyModal';
+  modal.innerHTML=`<div class="modal"><div class="modal-head"><h3>Detalle de cambio</h3><button class="btn secondary" onclick="closeModal('historyModal')">Cerrar</button></div><div class="modal-body">
+    <div class="history-summary">
+      <b>${esc(p.name||h.after_data?.name||h.before_data?.name||'Jugador')}</b>
+      <span>${esc(String(h.created_at||'').replace('T',' ').slice(0,19))}</span>
+      <small>Modificado por: ${esc(h.changed_by||'')}</small>
+    </div>
+    <div class="tablewrap"><table><thead><tr><th>Campo</th><th>Antes</th><th>Después</th></tr></thead><tbody>
+      ${changes.map(c=>`<tr><td><b>${esc(fieldLabel(c.field))}</b></td><td>${esc(c.old_value)}</td><td>${esc(c.new_value)}</td></tr>`).join('')||'<tr><td colspan="3">Sin diferencias registradas.</td></tr>'}
+    </tbody></table></div>
+  </div></div>`;
+  document.body.appendChild(modal);
+}
+function exportPlayerHistoryCSV(){
+  const d = backupDate();
+  const rows = [];
+  playerHistory.forEach(h=>{
+    const p = players.find(x=>x.id===h.player_id) || {};
+    const changes = Array.isArray(h.changes) ? h.changes : [];
+    if(!changes.length){
+      rows.push({...h, player_name:p.name||'', field:'', old_value:'', new_value:''});
+    }else{
+      changes.forEach(c=>rows.push({...h, player_name:p.name||'', field:fieldLabel(c.field), old_value:c.old_value, new_value:c.new_value}));
+    }
+  });
+  const headers=[
+    {label:'Fecha',key:'created_at'}, {label:'ID jugador',key:'player_id'}, {label:'Jugador',key:'player_name'},
+    {label:'Acción',key:'action'}, {label:'Cambió',key:'changed_by'}, {label:'Campo',key:'field'},
+    {label:'Antes',key:'old_value'}, {label:'Después',key:'new_value'}
+  ];
+  downloadText(`ducks_historial_jugadores_${d}.csv`, toCSV(rows, headers));
+}
+
 function renderSettings(){ setTitle('Configuración'); document.getElementById('content').innerHTML=`<div class="panel"><div class="panel-head"><h3>Configuración</h3></div><div class="modal-body"><div class="notice"><b>Link público:</b><br><a href="${window.DUCKS_PORTAL_URL||location.origin}" target="_blank">${window.DUCKS_PORTAL_URL||location.origin}</a></div><p>El acceso de papás se crea desde el módulo Papás.</p></div></div>`; }
 
 /* CRUD */
@@ -1119,11 +1236,39 @@ async function savePlayerForm(e, oldPlayer){
   let photo_url=oldPlayer?.photo_url||'';
   try{
     if(file) photo_url=await uploadFile(file,'fotos');
-    const row={id,name:document.getElementById('pName').value.trim(),tutor:document.getElementById('pTutor').value.trim(),phone:normalizePhone(document.getElementById('pPhone').value),tutor_2:document.getElementById('pTutor2')?.value.trim()||'',tutor_phone_2:normalizePhone(document.getElementById('pPhone2')?.value||''),category:document.getElementById('pCategory').value.trim(),status:document.getElementById('pStatus').value,monthly_fee:Number(document.getElementById('pFee').value||0),payment_day:Number(document.getElementById('pDay').value||1),uniform_number:document.getElementById('pUniform').value.trim(),photo_url,notes:document.getElementById('pNotes').value.trim()};
-    const result=oldPlayer?await sb.from('players').update(row).eq('id',oldPlayer.id):await sb.from('players').insert(row);
+    const row={
+      id,
+      name:document.getElementById('pName').value.trim(),
+      tutor:document.getElementById('pTutor').value.trim(),
+      phone:normalizePhone(document.getElementById('pPhone').value),
+      tutor_2:document.getElementById('pTutor2')?.value.trim()||'',
+      tutor_phone_2:normalizePhone(document.getElementById('pPhone2')?.value||''),
+      category:document.getElementById('pCategory').value.trim(),
+      status:document.getElementById('pStatus').value,
+      monthly_fee:Number(document.getElementById('pFee').value||0),
+      payment_day:Number(document.getElementById('pDay').value||1),
+      uniform_number:document.getElementById('pUniform').value.trim(),
+      photo_url,
+      notes:document.getElementById('pNotes').value.trim()
+    };
+
+    const beforeSnapshot = oldPlayer ? compactPlayerSnapshot(oldPlayer) : {};
+    const afterSnapshot = compactPlayerSnapshot(row);
+
+    const result = oldPlayer
+      ? await sb.from('players').update(row).eq('id',oldPlayer.id)
+      : await sb.from('players').insert(row);
+
     if(result.error) throw result.error;
-    toast(oldPlayer?'Jugador actualizado':'Jugador agregado'); closeModal('playerModal'); await refresh();
-  }catch(err){toast('Error: '+err.message);}
+
+    await savePlayerHistory(id, beforeSnapshot, afterSnapshot, oldPlayer ? 'update' : 'create');
+
+    toast(oldPlayer ? 'Jugador actualizado. Historial guardado.' : 'Jugador agregado. Historial guardado.');
+    closeModal('playerModal');
+    await refresh();
+  }catch(err){
+    toast('Error: '+err.message);
+  }
 }
 async function deletePlayer(id){const p=players.find(x=>x.id===id); if(!p)return; if(!confirm(`¿Eliminar a ${p.name}? También se eliminarán sus pagos.`))return; const {error}=await sb.from('players').delete().eq('id',id); if(error)toast(error.message); else{toast('Jugador eliminado'); await refresh();}}
 function openPaymentForm(playerId=''){
@@ -1152,3 +1297,5 @@ window.parentChangeOwnPassword=parentChangeOwnPassword; window.parentExitToHome=
 window.openParentPayNow=openParentPayNow;
 
 window.copyDefaultPaymentData=copyDefaultPaymentData;
+
+window.openPlayerHistory=openPlayerHistory; window.openHistoryDetail=openHistoryDetail; window.exportPlayerHistoryCSV=exportPlayerHistoryCSV;

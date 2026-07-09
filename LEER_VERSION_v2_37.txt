@@ -1,0 +1,28 @@
+Ducks CRM Profesional v2.37
+
+Corrección / mejora:
+- Permite editar todos los datos disponibles del jugador desde el módulo Jugadores.
+- Guarda historial de cambios en Supabase.
+- Registra:
+  jugador,
+  acción,
+  usuario/admin que cambió,
+  datos anteriores,
+  datos nuevos,
+  campos modificados,
+  fecha.
+- Agrega botón Historial en cada jugador.
+- Agrega módulo Historial en el panel administrador.
+- Permite exportar historial CSV.
+
+IMPORTANTE:
+Esta versión SÍ requiere ejecutar SQL nuevo:
+PASO_8_SQL_HISTORIAL_CAMBIOS_JUGADORES_v2_37.txt
+
+Orden:
+1. Ejecuta el SQL en Supabase.
+2. Sube todos los archivos del ZIP a GitHub raíz.
+3. Commit changes.
+4. Espera Vercel.
+5. Entra a administrador > Jugadores > Editar.
+6. Guarda cambios y revisa Historial.

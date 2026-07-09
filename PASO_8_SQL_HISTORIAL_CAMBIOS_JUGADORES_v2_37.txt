@@ -1,0 +1,32 @@
+-- Ducks CRM v2.37 - Historial de cambios de jugadores
+-- Ejecutar completo en Supabase > SQL Editor.
+
+create table if not exists public.player_change_history_v237 (
+  id uuid primary key default gen_random_uuid(),
+  player_id text not null,
+  action text not null default 'update',
+  changed_by text,
+  before_data jsonb,
+  after_data jsonb,
+  changes jsonb,
+  created_at timestamptz not null default now()
+);
+
+alter table public.player_change_history_v237 enable row level security;
+
+drop policy if exists "admin manage player history v237" on public.player_change_history_v237;
+
+create policy "admin manage player history v237"
+on public.player_change_history_v237
+for all
+to authenticated
+using (true)
+with check (true);
+
+create index if not exists idx_player_change_history_v237_player_id
+on public.player_change_history_v237(player_id);
+
+create index if not exists idx_player_change_history_v237_created_at
+on public.player_change_history_v237(created_at desc);
+
+select 'OK - historial de cambios de jugadores v2.37 instalado correctamente' as resultado;

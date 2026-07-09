@@ -1620,3 +1620,35 @@ button[onclick="installDucksApp()"]{
   .pay-now-hero h2{font-size:28px !important}
   .pay-now-hero strong{font-size:34px !important}
 }
+
+
+/* v2.37 - Historial de cambios de jugadores */
+.history-chip{
+  display:inline-block;
+  background:#E8FFF0;
+  color:#064E3B;
+  border:1px solid rgba(57,255,136,.35);
+  border-radius:999px;
+  padding:4px 8px;
+  font-size:12px;
+  font-weight:850;
+  margin:2px;
+}
+.history-summary{
+  background:linear-gradient(135deg,#061528,#0B223F);
+  color:white;
+  border-radius:18px;
+  padding:16px;
+  margin-bottom:14px;
+}
+.history-summary b{
+  display:block;
+  font-size:22px;
+  color:#39FF88;
+}
+.history-summary span,
+.history-summary small{
+  display:block;
+  color:#D7DEE8;
+  margin-top:4px;
+}
