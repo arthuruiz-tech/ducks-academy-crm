@@ -1420,3 +1420,139 @@ button[onclick="installDucksApp()"]{
 /* v2.33 - Botón cambiar contraseña visible en Portal de Papás */
 .parent-account-actions{display:flex;justify-content:space-between;align-items:center;gap:16px;background:linear-gradient(135deg,#061528,#0B223F);color:white;border:1px solid rgba(57,255,136,.22);border-radius:22px;padding:18px;margin:16px 0;box-shadow:0 16px 34px rgba(6,21,40,.18)}
 .parent-account-actions h3{margin:0 0 6px;color:#39FF88;font-size:22px}.parent-account-actions p{margin:0;color:#D7DEE8}.parent-account-buttons{display:flex;gap:10px;flex-wrap:wrap}.parent-account-buttons .btn{font-size:15px!important;font-weight:900!important;padding:12px 15px!important;white-space:nowrap}@media(max-width:760px){.parent-account-actions{flex-direction:column;align-items:flex-start}.parent-account-buttons{width:100%}.parent-account-buttons .btn{width:100%}}
+
+
+/* v2.34 - Pagar ahora BBVA / CoDi */
+.pay-now-main-btn{
+  font-size:17px !important;
+  font-weight:950 !important;
+  box-shadow:0 14px 28px rgba(57,255,136,.22) !important;
+}
+.pay-now-modal{
+  max-width:880px !important;
+}
+.pay-now-hero{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:16px;
+  background:linear-gradient(135deg,#061528,#0B223F);
+  color:white;
+  border-radius:22px;
+  padding:20px;
+  margin-bottom:14px;
+}
+.pay-now-hero small{
+  color:#39FF88;
+  font-weight:950;
+  text-transform:uppercase;
+  letter-spacing:.7px;
+}
+.pay-now-hero h2{
+  margin:5px 0;
+  color:white;
+  font-size:28px;
+}
+.pay-now-hero p{
+  margin:0;
+  color:#D7DEE8;
+}
+.pay-now-hero strong{
+  font-size:34px;
+  color:#39FF88;
+  white-space:nowrap;
+}
+.pay-method-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin:14px 0;
+}
+.pay-method-card{
+  border:1px solid rgba(11,34,63,.12);
+  border-radius:18px;
+  padding:16px;
+  background:#fff;
+}
+.pay-method-card.codi{
+  background:linear-gradient(135deg,#F0FFF7,#FFFFFF);
+  border-color:rgba(57,255,136,.28);
+}
+.pay-method-card span{
+  display:inline-block;
+  background:#061528;
+  color:#39FF88;
+  border-radius:999px;
+  padding:5px 10px;
+  font-size:12px;
+  font-weight:950;
+  margin-bottom:8px;
+}
+.pay-method-card h3{
+  margin:0 0 8px;
+  color:#061528;
+}
+.pay-method-card p{
+  color:#64748B;
+  margin:0;
+  line-height:1.45;
+}
+.bank-card.embedded{
+  margin-top:12px;
+  box-shadow:none;
+}
+.pay-next-actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:16px;
+}
+.pay-next-actions .btn{
+  flex:1;
+  min-width:220px;
+  font-size:16px !important;
+  font-weight:950 !important;
+  padding:14px !important;
+}
+@media(max-width:760px){
+  .pay-now-hero{
+    flex-direction:column;
+    align-items:flex-start;
+  }
+  .pay-method-grid{
+    grid-template-columns:1fr;
+  }
+  .pay-next-actions .btn{
+    width:100%;
+    min-width:0;
+  }
+}
+
+
+/* v2.35 - CLABE BBVA predeterminada */
+.transfer-default{
+  border:2px solid rgba(57,255,136,.45) !important;
+}
+.default-clabe-box{
+  margin-top:14px;
+  padding:14px;
+  border-radius:16px;
+  background:#061528;
+  color:#fff;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.default-clabe-box small{
+  color:#39FF88;
+  font-weight:900;
+}
+.default-clabe-box strong{
+  font-size:20px;
+  letter-spacing:.5px;
+  word-break:break-all;
+}
+.default-clabe-box .btn{
+  width:100%;
+  margin-top:4px;
+}

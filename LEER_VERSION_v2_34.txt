@@ -1,0 +1,18 @@
+Ducks CRM Profesional v2.34
+
+Nuevo en Portal de Papás:
+- Botón grande "Pagar ahora" por cada hijo.
+- Muestra monto exacto del adeudo.
+- Muestra método recomendado CoDi / BBVA.
+- Muestra respaldo por transferencia SPEI.
+- Permite copiar:
+  monto,
+  cuenta,
+  CLABE,
+  concepto,
+  beneficiario,
+  todos los datos.
+- Después del pago, el papá puede usar "Ya pagué / Subir comprobante".
+- El administrador sigue confirmando el pago.
+
+No requiere SQL nuevo si ya tienes v2.33/v2.32 funcionando.

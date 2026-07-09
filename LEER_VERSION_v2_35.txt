@@ -1,0 +1,10 @@
+Ducks CRM Profesional v2.35
+
+Cambios:
+- Transferencia BBVA es ahora el método predeterminado.
+- La CLABE aparece directamente y de forma destacada en Pagar ahora.
+- Botón Copiar CLABE.
+- Botón Copiar datos para pagar: copia banco, CLABE, beneficiario, monto y concepto.
+- El monto sigue calculándose según el adeudo del jugador.
+- Después del pago: Ya pagué / Subir comprobante.
+- No requiere SQL nuevo.
