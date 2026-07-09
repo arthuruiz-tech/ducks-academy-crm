@@ -1,0 +1,11 @@
+Ducks CRM Profesional v2.36
+
+Cambios:
+- En Portal de Papás, la información del jugador ahora tiene mayor prioridad visual:
+  foto más grande,
+  nombre más grande,
+  KPIs más visibles.
+- Los datos bancarios son más compactos.
+- En la ventana Pagar ahora, el jugador y monto son más grandes.
+- Banco/CLABE quedan visibles pero menos dominantes.
+- No requiere SQL nuevo.

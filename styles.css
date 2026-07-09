@@ -1556,3 +1556,67 @@ button[onclick="installDucksApp()"]{
   width:100%;
   margin-top:4px;
 }
+
+
+/* v2.36 - Más prioridad al jugador y datos bancarios compactos */
+.player-priority-card{
+  border:2px solid rgba(57,255,136,.18) !important;
+  background:linear-gradient(135deg,#FFFFFF,#F7FBFF) !important;
+}
+.player-priority-card .family-head{gap:18px !important}
+.player-priority-card .family-head img{
+  width:108px !important;
+  height:108px !important;
+  border-radius:24px !important;
+}
+.player-priority-card .family-head h2{
+  font-size:30px !important;
+  line-height:1.05 !important;
+  color:#061528 !important;
+}
+.player-priority-card .family-head p{
+  font-size:16px !important;
+  font-weight:800 !important;
+}
+.player-priority-card .family-kpis div{
+  padding:14px !important;
+  border-radius:18px !important;
+}
+.player-priority-card .family-kpis small{font-size:12px !important}
+.player-priority-card .family-kpis b{font-size:19px !important}
+
+/* Datos bancarios compactos */
+.bank-card{padding:14px !important;border-radius:18px !important}
+.bank-card .bank-head{margin-bottom:8px !important}
+.bank-card .bank-head h2{font-size:20px !important;margin:4px 0 !important}
+.bank-card .bank-head p{font-size:13px !important;line-height:1.35 !important}
+.bank-card .bank-head img{width:56px !important;height:56px !important}
+.bank-grid{gap:8px !important}
+.bank-item{padding:10px !important;border-radius:14px !important}
+.bank-item small{font-size:10px !important}
+.bank-item strong{font-size:14px !important;line-height:1.25 !important}
+.bank-item .btn{font-size:12px !important;padding:8px 10px !important}
+
+/* Pagar ahora: jugador y monto más importantes */
+.pay-now-hero{padding:24px !important;border-radius:24px !important}
+.pay-now-hero h2{font-size:34px !important}
+.pay-now-hero strong{font-size:40px !important}
+.pay-method-grid{gap:10px !important;margin:10px 0 !important}
+.pay-method-card{padding:12px !important;border-radius:15px !important}
+.pay-method-card h3{font-size:18px !important}
+.pay-method-card p{font-size:13px !important}
+.default-clabe-box{padding:10px !important;border-radius:12px !important}
+.default-clabe-box strong{font-size:16px !important}
+.pay-now-modal .bank-card.embedded{
+  transform:scale(.96);
+  transform-origin:top center;
+  margin-bottom:-10px;
+}
+.pay-next-actions{margin-top:10px !important}
+@media(max-width:760px){
+  .player-priority-card .family-head img{width:92px !important;height:92px !important}
+  .player-priority-card .family-head h2{font-size:25px !important}
+  .player-priority-card .family-kpis{grid-template-columns:1fr !important}
+  .pay-now-hero h2{font-size:28px !important}
+  .pay-now-hero strong{font-size:34px !important}
+}
