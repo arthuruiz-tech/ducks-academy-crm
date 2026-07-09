@@ -1416,3 +1416,7 @@ button[onclick="installDucksApp()"]{
 .admin-image-btn,.global-admin{background:transparent!important;opacity:1!important}
 .admin-image-btn img,.global-admin img{opacity:1!important;filter:drop-shadow(0 5px 10px rgba(0,0,0,.30))!important}
 @media(max-width:760px){.parent-session-actions{width:100%!important;justify-content:center!important}}
+
+/* v2.33 - Botón cambiar contraseña visible en Portal de Papás */
+.parent-account-actions{display:flex;justify-content:space-between;align-items:center;gap:16px;background:linear-gradient(135deg,#061528,#0B223F);color:white;border:1px solid rgba(57,255,136,.22);border-radius:22px;padding:18px;margin:16px 0;box-shadow:0 16px 34px rgba(6,21,40,.18)}
+.parent-account-actions h3{margin:0 0 6px;color:#39FF88;font-size:22px}.parent-account-actions p{margin:0;color:#D7DEE8}.parent-account-buttons{display:flex;gap:10px;flex-wrap:wrap}.parent-account-buttons .btn{font-size:15px!important;font-weight:900!important;padding:12px 15px!important;white-space:nowrap}@media(max-width:760px){.parent-account-actions{flex-direction:column;align-items:flex-start}.parent-account-buttons{width:100%}.parent-account-buttons .btn{width:100%}}

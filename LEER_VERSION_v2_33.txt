@@ -1,0 +1,10 @@
+Ducks CRM Profesional v2.33
+
+Corrección:
+- Ahora el botón Cambiar contraseña aparece claramente dentro del Portal de Papás en una sección visible llamada Mi cuenta.
+- También incluye botón Salir para volver al inicio.
+- Mantiene WhatsApp y privacidad.
+
+IMPORTANTE:
+Ejecuta en Supabase el archivo PASO_7_SQL_CAMBIO_PASSWORD_PAPAS_v2_33.txt.
+Si ya ejecutaste el SQL de v2.32, puedes ejecutarlo otra vez sin problema.

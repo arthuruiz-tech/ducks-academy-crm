@@ -14,7 +14,7 @@ async function forceFreshAssetsOnce(){
 }
 forceFreshAssetsOnce();
 
-// Ducks CRM profesional v2.32 - portal papás contraseña salida WhatsApp admin
+// Ducks CRM profesional v2.33 - botón contraseña visible portal papás
 const app = document.getElementById('app');
 let sb = null;
 let session = null;
@@ -574,6 +574,35 @@ async function loadParentData(){
   if(!docs.error && docs.data?.ok){ parentDocuments = docs.data.documents || []; }
   else { parentDocuments = []; }
 }
+
+async function parentChangeOwnPassword(){
+  if(!parentToken){ toast('La sesión no está activa. Inicia sesión nuevamente.'); return; }
+  const p1=prompt('Escribe tu nueva contraseña (mínimo 4 caracteres):');
+  if(p1===null)return;
+  if(String(p1).trim().length<4){toast('La contraseña debe tener al menos 4 caracteres');return;}
+  const p2=prompt('Confirma tu nueva contraseña:');
+  if(p2===null)return;
+  if(p1!==p2){toast('Las contraseñas no coinciden');return;}
+  const {data,error}=await sb.rpc('ducks_parent_change_password_v232',{p_token:parentToken,p_new_password:String(p1).trim()});
+  if(error){toast('No se pudo cambiar la contraseña: '+error.message);return;}
+  const row=Array.isArray(data)?data[0]:data;
+  toast(row?.ok?'Contraseña actualizada correctamente':(row?.message||'No se pudo actualizar'));
+}
+function parentExitToHome(){
+  parentToken=''; parentProfile=null; parentPlayers=[]; parentPayments=[]; parentDocuments=[];
+  localStorage.removeItem('ducks_parent_token_v213');
+  renderPublicHome();
+}
+function parentPortalActions(){
+  return `<section class="parent-account-actions">
+    <div><h3>Mi cuenta</h3><p>Cambia tu contraseña o cierra sesión para regresar al inicio.</p></div>
+    <div class="parent-account-buttons">
+      <button class="btn green" onclick="parentChangeOwnPassword()">🔑 Cambiar contraseña</button>
+      <button class="btn secondary" onclick="parentExitToHome()">Salir</button>
+    </div>
+  </section>`;
+}
+
 function renderParentPortal(){
   mode='parentPortal'; rememberScreen('parentPortal:');
   const cards = parentPlayers.map(p=>{
@@ -598,9 +627,10 @@ function renderParentPortal(){
       <a class="academy-brand" href="#" onclick="renderParentPortal()"><img src="assets/logo.png"><span>Portal de Papás</span></a>
       <nav class="academy-links"><button onclick="renderParentPortal()">Mis hijos</button><button onclick="openParentPayment()">Subir comprobante</button></nav>
       <div class="header-actions"><button class="btn secondary academy-admin" onclick="parentLogout()">Cerrar sesión</button></div>
-    </div><div class="parent-session-actions"><button class="btn secondary" onclick="parentChangeOwnPassword()">🔑 Restablecer contraseña</button><button class="btn secondary parent-exit-btn" onclick="parentExitToHome()">Salir</button></div></header>
+    </div></header>
     <main class="academy-main">
       <section class="academy-ribbon private-ribbon"><div class="court-lines"></div><div class="ribbon-content"><img class="ribbon-logo small" src="assets/logo.png"><div class="ribbon-text"><span class="ribbon-kicker">Acceso privado</span><h1>Bienvenido al Portal de Papás</h1><p>${esc(parentProfile?.display_name||parentProfile?.login||'')}</p></div></div></section>
+      ${parentPortalActions()}
       <section class="parent-card"><div class="parent-title"><img src="assets/logo.png"><div><h1>Mis jugadores</h1><div class="sub">Solo información asignada a tu familia</div></div></div>${parentPlayers.length?`<div class="family-grid">${cards}</div>`:`<div class="notice warning">Tu cuenta aún no tiene jugadores asignados. Contacta a administración.</div>`}</section>
       <section class="bank-card"><div class="bank-head"><div><span class="bank-chip">BBVA MX</span><h2>Datos para depósito o transferencia</h2><p>Copia la cuenta o CLABE, realiza tu pago y después adjunta el comprobante.</p></div><img src="assets/logo.png"></div><div class="bank-grid"><div class="bank-item"><small>Cuenta</small><strong>${BANK_ACCOUNT}</strong><button type="button" class="btn secondary" onclick="copyBank(BANK_ACCOUNT,'Cuenta')">Copiar cuenta</button></div><div class="bank-item"><small>CLABE</small><strong>${BANK_CLABE}</strong><button type="button" class="btn secondary" onclick="copyBank(BANK_CLABE,'CLABE')">Copiar CLABE</button></div><div class="bank-item full"><small>Beneficiario / referencia</small><strong>${BANK_BENEFICIARY}</strong><button type="button" class="btn secondary" onclick="copyBank(BANK_BENEFICIARY,'Beneficiario')">Copiar beneficiario</button></div></div></section>
     </main>
@@ -721,7 +751,7 @@ async function loadAdminData(){
   const py=await sb.from('payments').select('*').order('created_at',{ascending:false});
   if(py.error){toast('Error cargando pagos: '+py.error.message); payments=[];} else payments=py.data||[];
   const ac=await sb.from('parent_accounts_v213').select('*').order('display_name');
-  if(ac.error){toast('Ejecuta el SQL v2.32: '+ac.error.message); parentAccounts=[];} else parentAccounts=ac.data||[];
+  if(ac.error){toast('Ejecuta el SQL v2.33: '+ac.error.message); parentAccounts=[];} else parentAccounts=ac.data||[];
   const ln=await sb.from('parent_player_links_v213').select('*').order('created_at',{ascending:false});
   if(ln.error){parentLinks=[];} else parentLinks=ln.data||[];
   const dc=await sb.from('player_documents_v218').select('*').order('created_at',{ascending:false});
@@ -729,7 +759,7 @@ async function loadAdminData(){
 }
 async function refresh(){ if(mode==='admin'){await loadAdminData(); renderShell(); renderPage();} }
 function renderShell(){
-  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.32: administrador discreto + WhatsApp.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
+  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.33: administrador discreto + WhatsApp.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
   document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page=b.dataset.page; if(page==='public'){renderPublicHome(); return;} renderPage();});
   document.getElementById('search').oninput=e=>{q=e.target.value; renderPage();};
   document.getElementById('authBtn').onclick=logout;
@@ -768,7 +798,7 @@ function renderParents(){
   const fams=suggestedFamilies();
   const playersOptions = players.map(p=>`<option value="${p.id}">${p.id} · ${esc(p.name)} · Tutor: ${esc(p.tutor||'')}</option>`).join('');
   const accountsOptions = parentAccounts.map(a=>`<option value="${a.id}">${esc(a.display_name)} · ${esc(a.login)}</option>`).join('');
-  document.getElementById('content').innerHTML=`<div class="notice success"><b>v2.32:</b> al crear una cuenta se ligan automáticamente los jugadores que coincidan por teléfono o tutor. Si no ves jugadores, entra a la sección Jugadores para validar que carguen correctamente.</div>
+  document.getElementById('content').innerHTML=`<div class="notice success"><b>v2.33:</b> al crear una cuenta se ligan automáticamente los jugadores que coincidan por teléfono o tutor. Si no ves jugadores, entra a la sección Jugadores para validar que carguen correctamente.</div>
   <div class="panel"><div class="panel-head"><h3>Crear cuenta de papá/tutor</h3></div><div class="modal-body"><form id="parentAccountForm" class="form-grid">
     <label class="label">Nombre visible<input id="accName" class="input" required placeholder="Nombre del papá, mamá o tutor"></label>
     <label class="label">Usuario<input id="accLogin" class="input" required placeholder="Correo, teléfono o usuario"></label>
