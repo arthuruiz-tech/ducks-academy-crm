@@ -456,9 +456,10 @@ function renderPublicHome(){
           </div>
         </div>
       </section>
-      <section class="quick-parent-card">
-        <div><h2>Pagos y comprobantes</h2><p>El Portal de Papás es privado. Cada familia entra con usuario y contraseña para ver únicamente la información de sus hijos.</p></div>
-        <div class="quick-actions"><button class="btn green" onclick="renderParentLogin()">Entrar al Portal de Papás</button><button class="btn secondary" onclick="installDucksApp()"><img class="install-app-icon" src="assets/pwa-icon-192.png" alt=""> Instalar App</button></div>
+      <section class="quick-parent-card parent-entry-card">
+        <img class="parent-entry-image" src="assets/portal-papas-cover.png" alt="Portal de Papás Ducks">
+        <div class="parent-entry-content"><h2>Pagos y comprobantes</h2><p>El Portal de Papás es privado. Cada familia entra con usuario y contraseña para ver únicamente la información de sus hijos.</p>
+        <div class="quick-actions"><button class="btn green" onclick="renderParentLogin()">Entrar al Portal de Papás</button><button class="btn secondary" onclick="installDucksApp()"><img class="install-app-icon" src="assets/pwa-icon-192.png" alt=""> Instalar App</button></div></div>
       </section>
       <section id="calendario" class="academy-section"><h2>Calendario de Juegos</h2><p>Próximamente aquí podrás consultar juegos, torneos, horarios, sedes y categorías.</p><div class="coming-soon"><span>🏀</span><b>Calendario en preparación</b><small>Consulta avisos oficiales de la academia mientras se activa este módulo.</small></div></section>
       <section id="academia" class="academy-section">
