@@ -1,0 +1,6 @@
+DUCKS CRM v2.41
+Corrección del Portal de Papás:
+- Foto vertical completa en proporción 2:3.
+- Tamaño 190 x 285 px en escritorio.
+- Ajuste responsivo en pantallas medianas y móviles.
+- Se actualizó la versión de caché de styles.css y app.js a 2.41.0 para evitar que el navegador conserve el diseño anterior.

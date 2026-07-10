@@ -1661,3 +1661,57 @@ button[onclick="installDucksApp()"]{
 .player-card-top .family-head{align-items:flex-start}
 .player-card-top .family-kpis{margin-bottom:0}
 @media(max-width:700px){.player-card-top{grid-template-columns:1fr}.player-photo-side{order:-1}.player-photo-side img{width:min(100%,260px);height:300px}.player-card-top .family-head{text-align:center;justify-content:center}}
+
+/* v2.40 - Portal de Papás: fotografía vertical tipo tarjeta deportiva */
+.player-card-top{grid-template-columns:minmax(0,1fr) minmax(240px,300px);gap:22px;align-items:start}
+.player-photo-side{display:flex;align-items:flex-start;justify-content:center}
+.player-photo-side img{width:100%;max-width:280px;height:auto;aspect-ratio:2/3;object-fit:contain;object-position:center;border-radius:18px;border:1px solid rgba(6,21,40,.10);box-shadow:0 12px 28px rgba(6,21,40,.14);background:#f8fafc}
+@media(max-width:900px){.player-card-top{grid-template-columns:minmax(0,1fr) minmax(210px,260px)}}
+@media(max-width:700px){.player-card-top{grid-template-columns:1fr}.player-photo-side{order:-1}.player-photo-side img{width:min(100%,280px);height:auto;aspect-ratio:2/3;object-fit:contain}.player-card-top .family-head{text-align:center;justify-content:center}}
+
+/* v2.41 - Corrección definitiva de foto vertical en Portal de Papás */
+.player-priority-card .player-card-top{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) 190px !important;
+  gap:20px !important;
+  align-items:start !important;
+}
+.player-priority-card .player-photo-side{
+  width:190px !important;
+  min-width:190px !important;
+  height:auto !important;
+  display:flex !important;
+  align-items:flex-start !important;
+  justify-content:center !important;
+  overflow:visible !important;
+}
+.player-priority-card .player-photo-side img{
+  display:block !important;
+  width:190px !important;
+  height:285px !important;
+  max-width:none !important;
+  aspect-ratio:auto !important;
+  object-fit:contain !important;
+  object-position:center center !important;
+  border-radius:18px !important;
+  background:#f8fafc !important;
+}
+@media(max-width:760px){
+  .player-priority-card .player-card-top{
+    grid-template-columns:minmax(0,1fr) 165px !important;
+    gap:14px !important;
+  }
+  .player-priority-card .player-photo-side{
+    width:165px !important;
+    min-width:165px !important;
+  }
+  .player-priority-card .player-photo-side img{
+    width:165px !important;
+    height:248px !important;
+  }
+}
+@media(max-width:520px){
+  .player-priority-card .player-card-top{grid-template-columns:1fr !important}
+  .player-priority-card .player-photo-side{order:-1;width:100% !important;min-width:0 !important}
+  .player-priority-card .player-photo-side img{width:190px !important;height:285px !important}
+}
