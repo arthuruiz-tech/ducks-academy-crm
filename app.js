@@ -660,8 +660,13 @@ function renderParentPortal(){
     const c=calc(p,parentPayments);
     const history=parentPayments.filter(x=>x.player_id===p.id).slice(0,8);
     return `<div class="family-player-card player-priority-card">
-      <div class="family-head"><img src="${playerPhotoUrl(p)}"><div><h2>${esc(p.name)}</h2><p>${esc(p.category||'')} · Uniforme #${esc(p.uniform_number||'-')}</p><span class="status ${c.status}">${c.status}</span></div></div>
-      <div class="family-kpis"><div><small>Último pago</small><b>${esc(c.last||'Sin registro')}</b></div><div><small>Meses pendientes</small><b>${c.months}</b></div><div><small>Adeudo actual</small><b class="amount">${money(c.amount)}</b></div></div>
+      <div class="player-card-top">
+        <div class="player-info-side">
+          <div class="family-head"><div><h2>${esc(p.name)}</h2><p>${esc(p.category||'')} · Uniforme #${esc(p.uniform_number||'-')}</p><span class="status ${c.status}">${c.status}</span></div></div>
+          <div class="family-kpis"><div><small>Último pago</small><b>${esc(c.last||'Sin registro')}</b></div><div><small>Meses pendientes</small><b>${c.months}</b></div><div><small>Adeudo actual</small><b class="amount">${money(c.amount)}</b></div></div>
+        </div>
+        <div class="player-photo-side"><img src="${playerPhotoUrl(p)}" alt="Foto de ${esc(p.name)}"></div>
+      </div>
       <details class="history-box"><summary>Ver historial y comprobantes</summary>${history.length?`<table class="mini-table"><thead><tr><th>Fecha</th><th>Monto</th><th>Estatus</th><th>Evidencia</th></tr></thead><tbody>${history.map(h=>`<tr><td>${esc(h.payment_date)}</td><td>${money(h.amount)}</td><td><span class="status ${statusClass(h.confirmation_status)}">${esc(h.confirmation_status)}</span></td><td>${h.evidence_url?`<a target="_blank" href="${h.evidence_url}">Ver</a>`:'-'}</td></tr>`).join('')}</tbody></table>`:'<p class="sub">Sin pagos registrados.</p>'}</details>
       <div class="doc-actions">
         <button class="btn green pay-now-main-btn" onclick="openParentPayNow('${p.id}')">💳 Pagar ahora</button>
