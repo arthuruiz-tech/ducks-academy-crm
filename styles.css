@@ -1514,6 +1514,23 @@ button[onclick="installDucksApp()"]{
   font-weight:950 !important;
   padding:14px !important;
 }
+.pay-close-footer{
+  margin-top:14px;
+  padding-top:12px;
+  border-top:1px solid rgba(11,34,63,.10);
+  display:flex;
+  justify-content:center;
+}
+.pay-close-btn{
+  width:100%;
+  max-width:340px;
+  font-size:16px !important;
+  font-weight:900 !important;
+  padding:14px 18px !important;
+}
+.pay-now-head{
+  justify-content:flex-start !important;
+}
 @media(max-width:760px){
   .pay-now-hero{
     flex-direction:column;
@@ -1525,6 +1542,9 @@ button[onclick="installDucksApp()"]{
   .pay-next-actions .btn{
     width:100%;
     min-width:0;
+  }
+  .pay-close-btn{
+    max-width:none;
   }
 }
 
@@ -1724,3 +1744,55 @@ button[onclick="installDucksApp()"]{
 .parent-entry-content p{font-size:17px;max-width:620px;margin:0 auto 20px !important}
 .parent-entry-content .quick-actions{display:grid;gap:10px;width:100%}
 @media(max-width:760px){.parent-entry-card{grid-template-columns:1fr !important}.parent-entry-image{height:auto;min-height:0;aspect-ratio:1/1;object-fit:cover}.parent-entry-content{padding:20px 16px}.parent-entry-content h2{font-size:25px}}
+
+
+/* v2.44 - Pagar ahora debajo del menú y cierre fijo */
+.pay-now-overlay{
+  inset:82px 0 0 0 !important;
+  align-items:flex-start !important;
+  justify-content:center !important;
+  padding:12px 18px 18px !important;
+  overflow:hidden !important;
+}
+.pay-now-overlay .pay-now-modal{
+  max-height:calc(100dvh - 100px) !important;
+  margin:0 auto !important;
+}
+.pay-now-overlay .modal-body{
+  min-height:0 !important;
+  overflow-y:auto !important;
+  overscroll-behavior:contain;
+}
+.pay-close-footer{
+  flex:0 0 auto !important;
+  margin:0 !important;
+  padding:12px 16px 14px !important;
+  border-top:1px solid rgba(11,34,63,.12) !important;
+  background:#ffffff !important;
+  box-shadow:0 -10px 22px rgba(6,21,40,.08);
+  display:flex !important;
+  justify-content:center !important;
+  position:relative !important;
+  z-index:5 !important;
+}
+.pay-close-btn{
+  width:100% !important;
+  max-width:380px !important;
+  min-height:48px;
+}
+@media(max-width:760px){
+  .pay-now-overlay{
+    inset:116px 0 0 0 !important;
+    padding:8px 8px 10px !important;
+  }
+  .pay-now-overlay .pay-now-modal{
+    max-height:calc(100dvh - 124px) !important;
+    border-radius:16px !important;
+  }
+  .pay-close-footer{
+    padding:10px 12px 12px !important;
+  }
+  .pay-close-btn{
+    max-width:none !important;
+  }
+}

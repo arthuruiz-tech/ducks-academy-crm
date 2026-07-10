@@ -784,12 +784,11 @@ function openParentPayNow(playerId=''){
   const amount = c.amount > 0 ? c.amount : Number(player.monthly_fee || 0);
   const concept = paymentConcept(player);
   const modal=document.createElement('div');
-  modal.className='modalbg open';
+  modal.className='modalbg open pay-now-overlay';
   modal.id='payNowModal';
   modal.innerHTML=`<div class="modal pay-now-modal">
-    <div class="modal-head">
+    <div class="modal-head pay-now-head">
       <h3>Pagar ahora</h3>
-      <button class="btn secondary" onclick="closeModal('payNowModal')">Cerrar</button>
     </div>
     <div class="modal-body">
       <div class="pay-now-hero">
@@ -837,6 +836,10 @@ function openParentPayNow(playerId=''){
         <button class="btn green" onclick="closeModal('payNowModal'); openParentPayment('${player.id}')">Ya pagué / Subir comprobante</button>
         <button class="btn secondary" onclick="copyBank('CLABE: ${BANK_CLABE}\\nMonto: ${money(amount)}\\nConcepto: ${esc(concept)}\\nBeneficiario: ${BANK_BENEFICIARY}','Datos de pago')">Copiar todo</button>
       </div>
+
+    </div>
+    <div class="pay-close-footer">
+      <button class="btn secondary pay-close-btn" onclick="closeModal('payNowModal')">Cerrar ventana</button>
     </div>
   </div>`;
   document.body.appendChild(modal);

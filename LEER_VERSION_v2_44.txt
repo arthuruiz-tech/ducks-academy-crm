@@ -1,0 +1,18 @@
+Ducks CRM Profesional v2.44
+
+Cambios:
+- La ventana “Pagar ahora” siempre se abre debajo del menú principal.
+- El menú permanece visible mientras la ventana de pago está abierta.
+- El contenido del pago se desplaza internamente.
+- El botón “Cerrar ventana” queda fijo en la parte inferior del modal.
+- Adaptación especial para computadora y celular.
+- Actualización de caché para reflejar el cambio correctamente.
+
+No requiere SQL nuevo.
+
+Publicación:
+1. Descomprime este ZIP.
+2. Sube todos los archivos y carpetas directamente a la raíz de GitHub.
+3. Haz Commit changes.
+4. Espera a que Vercel indique Ready.
+5. Recarga la página con Ctrl + F5.
