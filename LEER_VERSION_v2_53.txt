@@ -1,0 +1,23 @@
+DUCKS CRM PROFESIONAL v2.53
+
+CORRECCIONES PRINCIPALES
+
+1. La fecha actual se calcula siempre con la zona horaria America/Mexico_City.
+   Esto evita que un pago del 10 de julio se registre como 11 de julio por UTC.
+
+2. Los formularios de pago de administrador, papás y pago familiar ya no permiten fechas futuras.
+
+3. Un jugador nuevo ya no genera un mes de adeudo al momento de registrarlo.
+   El primer cobro aparece hasta llegar a su siguiente día de pago programado.
+
+4. El cálculo usa la fecha real de registro y, para jugadores anteriores,
+   conserva la fecha de creación más antigua cuando la migración colocó una fecha posterior.
+
+5. Los pagos confirmados cubren el mes de su fecha de pago.
+   El siguiente cobro se genera hasta el día de pago del mes siguiente.
+
+6. Los horarios del historial y documentos se muestran con hora de Aguascalientes.
+
+ARCHIVOS SQL
+- PASO_10_SQL_FECHA_REGISTRO_v2_52.txt: ahora es seguro para copiar completo en SQL Editor.
+- PASO_11_SQL_CORREGIR_PAGO_10_JULIO_2026.sql: corrige el pago que quedó como 11 de julio.

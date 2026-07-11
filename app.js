@@ -1,6 +1,6 @@
 
 async function forceFreshAssetsOnce(){
-  const key = 'ducks_cache_fix_v2_52_done';
+  const key = 'ducks_cache_fix_v2_53_done';
   if(localStorage.getItem(key)==='yes') return;
   try{
     if('caches' in window){
@@ -14,7 +14,7 @@ async function forceFreshAssetsOnce(){
 }
 forceFreshAssetsOnce();
 
-// Ducks CRM profesional v2.52 - fecha de registro y día de pago obligatorios
+// Ducks CRM profesional v2.53 - zona horaria México y adeudos desde la fecha real de vencimiento
 const app = document.getElementById('app');
 let sb = null;
 let session = null;
@@ -50,12 +50,82 @@ const DOCUMENT_TYPES = ['Acta de nacimiento','CURP','Fotografía','Certificado m
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),4000); }
 function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
 function money(n){return Number(n||0).toLocaleString('es-MX',{style:'currency',currency:'MXN'});}
-function todayISO(){
-  const d=new Date();
-  const y=d.getFullYear();
-  const m=String(d.getMonth()+1).padStart(2,'0');
-  const day=String(d.getDate()).padStart(2,'0');
-  return `${y}-${m}-${day}`;
+const ACADEMY_TIME_ZONE = 'America/Mexico_City';
+function academyDateParts(value=new Date()){
+  const d=value instanceof Date ? value : new Date(value);
+  if(Number.isNaN(d.getTime())) return null;
+  const parts=new Intl.DateTimeFormat('en-US',{
+    timeZone:ACADEMY_TIME_ZONE,year:'numeric',month:'2-digit',day:'2-digit'
+  }).formatToParts(d);
+  const map=Object.fromEntries(parts.map(x=>[x.type,x.value]));
+  return {year:Number(map.year),month:Number(map.month),day:Number(map.day)};
+}
+function datePartsISO(parts){
+  if(!parts) return '';
+  return `${parts.year}-${String(parts.month).padStart(2,'0')}-${String(parts.day).padStart(2,'0')}`;
+}
+function todayISO(){ return datePartsISO(academyDateParts(new Date())); }
+function timestampDateISO(value){
+  if(!value) return '';
+  const raw=String(value);
+  if(/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  return datePartsISO(academyDateParts(raw)) || raw.slice(0,10);
+}
+function parseISODate(value){
+  const m=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(!m) return null;
+  const parts={year:Number(m[1]),month:Number(m[2]),day:Number(m[3])};
+  if(parts.month<1||parts.month>12||parts.day<1||parts.day>31) return null;
+  return parts;
+}
+function dateSerial(parts){ return parts ? Math.floor(Date.UTC(parts.year,parts.month-1,parts.day)/86400000) : NaN; }
+function compareDateParts(a,b){ return dateSerial(a)-dateSerial(b); }
+function daysInMonth(year,month){ return new Date(Date.UTC(year,month,0)).getUTCDate(); }
+function dueDateForMonth(year,month,paymentDay){
+  return {year,month,day:Math.min(Math.max(1,Number(paymentDay)||1),daysInMonth(year,month))};
+}
+function shiftYearMonth(year,month,delta){
+  const d=new Date(Date.UTC(year,month-1+delta,1));
+  return {year:d.getUTCFullYear(),month:d.getUTCMonth()+1};
+}
+function nextScheduledDateAfter(reference,paymentDay){
+  let due=dueDateForMonth(reference.year,reference.month,paymentDay);
+  if(compareDateParts(due,reference)<=0){
+    const next=shiftYearMonth(reference.year,reference.month,1);
+    due=dueDateForMonth(next.year,next.month,paymentDay);
+  }
+  return due;
+}
+function nextMonthScheduledDate(reference,paymentDay){
+  const next=shiftYearMonth(reference.year,reference.month,1);
+  return dueDateForMonth(next.year,next.month,paymentDay);
+}
+function dueDatesThrough(firstDue,today,paymentDay){
+  let cursor=firstDue;
+  let count=0;
+  let lastDue=null;
+  while(cursor && compareDateParts(cursor,today)<=0 && count<600){
+    count++;
+    lastDue=cursor;
+    const next=shiftYearMonth(cursor.year,cursor.month,1);
+    cursor=dueDateForMonth(next.year,next.month,paymentDay);
+  }
+  return {count,lastDue,nextDue:cursor};
+}
+function effectiveRegistrationISO(player){
+  const registration=parseISODate(player?.registration_date);
+  const created=parseISODate(timestampDateISO(player?.created_at));
+  if(registration && created) return datePartsISO(compareDateParts(registration,created)<=0?registration:created);
+  return datePartsISO(registration||created)||todayISO();
+}
+function formatAcademyDateTime(value){
+  if(!value) return '';
+  const d=new Date(value);
+  if(Number.isNaN(d.getTime())) return String(value).replace('T',' ').slice(0,19);
+  return new Intl.DateTimeFormat('es-MX',{
+    timeZone:ACADEMY_TIME_ZONE,year:'numeric',month:'2-digit',day:'2-digit',
+    hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false
+  }).format(d);
 }
 function period(date){return String(date||'').slice(0,7);}
 function statusClass(s){return String(s||'').replace(/\s+/g,'');}
@@ -181,44 +251,46 @@ function calc(player, payList=payments){
     });
   const latest=confirmed[0]||null;
   const last=latest?.payment_date||'';
-  const now=new Date();
-  const lastD=last?new Date(last+'T00:00:00'):null;
+  const today=parseISODate(todayISO());
   const active=String(player.status||'').toLowerCase()==='activo';
   const fee=Number(player.monthly_fee||0);
   const paymentDay=Math.max(1,Math.min(31,Number(player.payment_day||1)));
-  const elapsedMonths=lastD
-    ? Math.max(0,(now.getFullYear()-lastD.getFullYear())*12+(now.getMonth()-lastD.getMonth()))
-    : 0;
 
   if(!active){
     return {last,months:0,amount:0,status:'Inactivo',credit:0,isOverdue:false,paymentDay};
   }
 
-  const savedBalance=latest?paymentBalanceAfter(latest):null;
-  if(savedBalance!==null && Number.isFinite(savedBalance)){
-    const rawBalance=savedBalance+(elapsedMonths*fee);
-    const amount=Math.max(0,Math.round(rawBalance*100)/100);
-    const credit=Math.max(0,Math.round((-rawBalance)*100)/100);
-    const months=amount>0 && fee>0 ? Math.max(1,Math.ceil(amount/fee)) : 0;
-    const isOverdue=amount>0 && (
-      savedBalance>0 ||
-      elapsedMonths>1 ||
-      (elapsedMonths>=1 && now.getDate()>paymentDay)
-    );
-    return {
-      last,months,amount,
-      status:amount<=0?'Pagado':(isOverdue?'Vencido':'Pendiente'),
-      credit,isOverdue,paymentDay,balanceAfter:savedBalance
-    };
+  let firstDue=null;
+  if(latest){
+    const lastDate=parseISODate(last);
+    firstDue=lastDate ? nextMonthScheduledDate(lastDate,paymentDay) : null;
+  }else{
+    const registration=parseISODate(effectiveRegistrationISO(player))||today;
+    firstDue=nextScheduledDateAfter(registration,paymentDay);
   }
 
-  let months=!lastD?1:elapsedMonths;
-  months=Math.max(0,months);
-  const amount=months*fee;
-  const isOverdue=amount>0 && (months>1 || (months===1 && now.getDate()>paymentDay));
-  let status='Pagado';
-  if(amount>0) status=isOverdue?'Vencido':'Pendiente';
-  return {last,months,amount,status,credit:0,isOverdue,paymentDay};
+  const schedule=firstDue&&today ? dueDatesThrough(firstDue,today,paymentDay) : {count:0,lastDue:null,nextDue:firstDue};
+  const savedBalance=latest?paymentBalanceAfter(latest):null;
+  const openingBalance=savedBalance!==null&&Number.isFinite(savedBalance)?savedBalance:0;
+  const rawBalance=openingBalance+(schedule.count*fee);
+  const amount=Math.max(0,Math.round(rawBalance*100)/100);
+  const credit=Math.max(0,Math.round((-rawBalance)*100)/100);
+  const months=amount>0&&fee>0?Math.max(1,Math.ceil(amount/fee)):0;
+  const isPastLastDue=!!(schedule.lastDue&&today&&compareDateParts(today,schedule.lastDue)>0);
+  const isOverdue=amount>0&&(
+    openingBalance>0 ||
+    schedule.count>1 ||
+    (schedule.count===1&&isPastLastDue)
+  );
+
+  return {
+    last,months,amount,
+    status:amount<=0?'Pagado':(isOverdue?'Vencido':'Pendiente'),
+    credit,isOverdue,paymentDay,
+    balanceAfter:savedBalance,
+    firstDue:firstDue?datePartsISO(firstDue):'',
+    nextDue:schedule.nextDue?datePartsISO(schedule.nextDue):''
+  };
 }
 function reminderMessage(player){
   const c=calc(player);
@@ -816,7 +888,7 @@ function openFamilyPayment(){
         <button type="button" class="btn green" onclick="copyBank(BANK_CLABE,'CLABE')">Copiar CLABE</button>
       </div>
       <form id="familyPayForm" class="form-grid family-pay-form">
-        <label class="label">Fecha de pago<input id="familyPayDate" class="input" type="date" value="${todayISO()}" required></label>
+        <label class="label">Fecha de pago<input id="familyPayDate" class="input" type="date" value="${todayISO()}" max="${todayISO()}" required></label>
         <label class="label">Método<select id="familyPayMethod" class="select" required><option>Transferencia</option><option>Depósito</option><option>Efectivo</option><option>Otro</option></select></label>
         <label class="label full">Un solo comprobante<input id="familyPayEvidence" class="input" type="file" accept="image/*,application/pdf" required></label>
         <label class="label full">Comentario opcional<textarea id="familyPayNotes" class="input" placeholder="Referencia bancaria o comentario..."></textarea></label>
@@ -841,6 +913,7 @@ async function submitFamilyPayment(e){
   try{
     const evidence_url=await uploadFile(file,'evidencias/familiares');
     const payDate=document.getElementById('familyPayDate').value;
+    if(payDate>todayISO()) throw new Error('La fecha de pago no puede ser posterior a la fecha actual de Aguascalientes.');
     const method=document.getElementById('familyPayMethod').value;
     const comment=document.getElementById('familyPayNotes').value.trim();
     const batchId=`FAM-${Date.now().toString(36).toUpperCase()}`;
@@ -911,7 +984,7 @@ function parentLogout(){ parentToken=''; parentProfile=null; parentPlayers=[]; p
 function renderParentDocuments(playerId){
   const docs = parentDocuments.filter(d=>d.player_id===playerId);
   if(!docs.length) return '<p class="sub">Aún no hay documentos cargados.</p>';
-  return `<table class="mini-table"><thead><tr><th>Tipo</th><th>Nombre</th><th>Fecha</th><th>Archivo</th></tr></thead><tbody>${docs.map(d=>`<tr><td>${esc(d.document_type||'')}</td><td>${esc(d.title||'')}</td><td>${esc(String(d.created_at||'').slice(0,10))}</td><td><a target="_blank" href="${d.file_url}">Ver</a></td></tr>`).join('')}</tbody></table>`;
+  return `<table class="mini-table"><thead><tr><th>Tipo</th><th>Nombre</th><th>Fecha</th><th>Archivo</th></tr></thead><tbody>${docs.map(d=>`<tr><td>${esc(d.document_type||'')}</td><td>${esc(d.title||'')}</td><td>${esc(timestampDateISO(d.created_at))}</td><td><a target="_blank" href="${d.file_url}">Ver</a></td></tr>`).join('')}</tbody></table>`;
 }
 function openParentDocument(playerId=''){
   if(!parentPlayers.length){toast('No tienes jugadores asignados.'); return;}
@@ -1065,7 +1138,7 @@ function openParentPayment(playerId=''){
   modal.innerHTML=`<div class="modal"><div class="modal-head"><h3>Subir comprobante</h3><button class="btn secondary" onclick="closeModal('parentPayModal')">Cerrar</button></div><div class="modal-body">
     <form id="parentPayForm" class="form-grid">
       <label class="label full">Jugador<select id="parentPayPlayer" class="select" required>${options}</select></label>
-      <label class="label">Fecha de pago<input id="parentPayDate" class="input" type="date" value="${todayISO()}" required></label>
+      <label class="label">Fecha de pago<input id="parentPayDate" class="input" type="date" value="${todayISO()}" max="${todayISO()}" required></label>
       <label class="label">Monto pagado<input id="parentPayAmount" class="input" type="number" min="0" step="50" value="${selected.monthly_fee||0}" required></label>
       <label class="label">Método<select id="parentPayMethod" class="select" required><option>Transferencia</option><option>Depósito</option><option>Efectivo</option><option>Otro</option></select></label>
       <label class="label full">Comprobante<input id="parentPayEvidence" class="input" type="file" accept="image/*,application/pdf" required></label>
@@ -1085,6 +1158,7 @@ async function submitParentPayment(e){
   try{
     const evidence_url=await uploadFile(file,'evidencias');
     const payDate=document.getElementById('parentPayDate').value;
+    if(payDate>todayISO()) throw new Error('La fecha de pago no puede ser posterior a la fecha actual de Aguascalientes.');
     const row={p_token:parentToken,p_player_id:player_id,p_payment_date:payDate,p_period:period(payDate),p_amount:Number(document.getElementById('parentPayAmount').value||0),p_method:document.getElementById('parentPayMethod').value,p_notes:document.getElementById('parentPayNotes').value,p_evidence_url:evidence_url,p_evidence_name:file.name};
     const {data,error}=await sb.rpc('ducks_parent_submit_payment_v213',row);
     if(error) throw error;
@@ -1126,7 +1200,7 @@ async function loadAdminData(){
 }
 async function refresh(){ if(mode==='admin'){await loadAdminData(); renderShell(); renderPage();} }
 function renderShell(){
-  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="history">🕘 Historial</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.52: registro y día de pago obligatorios.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
+  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="history">🕘 Historial</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.53: fecha de Aguascalientes y adeudos desde vencimiento.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
   document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page=b.dataset.page; if(page==='public'){renderPublicHome(); return;} renderPage();});
   document.getElementById('search').oninput=e=>{q=e.target.value; renderPage();};
   document.getElementById('authBtn').onclick=logout;
@@ -1144,7 +1218,7 @@ function renderDashboard(){
 function renderPlayers(){
   setTitle('Jugadores');
   const list=filteredPlayers();
-  document.getElementById('content').innerHTML=`<div class="panel"><div class="panel-head"><h3>Base de jugadores</h3><button class="btn green" onclick="openPlayerForm()">+ Nuevo jugador</button></div><div class="cards">${list.map(p=>{const c=calc(p);return `<div class="card">${thumb(p.photo_url)}<h4>${esc(p.name)}</h4><p><span class="uniform">#${esc(p.uniform_number||'-')}</span></p><p><b>ID:</b> ${p.id} · <b>Categoría:</b> ${esc(p.category||'')}</p><p><b>Registro:</b> ${esc(p.registration_date||String(p.created_at||'').slice(0,10)||'-')} · <b>Pago:</b> día ${esc(p.payment_day||'-')}</p><p><b>Tutor principal:</b> ${esc(p.tutor||'')}</p><p><b>WhatsApp principal:</b> ${esc(p.phone||'')}</p>${p.tutor_2||p.tutor_phone_2?`<p><b>Tutor secundario:</b> ${esc(p.tutor_2||'')} · ${esc(p.tutor_phone_2||'')}</p>`:''}<p><b>Adeudo:</b> <span class="amount">${money(c.amount)}</span> · <span class="status ${c.status}">${c.status}</span></p><div class="actions"><button class="btn secondary" onclick="openPlayerForm('${p.id}')">Editar</button><button class="btn secondary" onclick="openPlayerHistory('${p.id}')">Historial</button><button class="btn green" onclick="openPaymentForm('${p.id}')">Pago</button>${whatsappButtons(p)}<button class="btn red" onclick="deletePlayer('${p.id}')">Eliminar</button></div></div>`}).join('')||'<div class="card">Sin jugadores. Si aquí no aparecen, revisa que estés logueado como administrador y que la tabla players tenga permisos.'}</div></div>`;
+  document.getElementById('content').innerHTML=`<div class="panel"><div class="panel-head"><h3>Base de jugadores</h3><button class="btn green" onclick="openPlayerForm()">+ Nuevo jugador</button></div><div class="cards">${list.map(p=>{const c=calc(p);return `<div class="card">${thumb(p.photo_url)}<h4>${esc(p.name)}</h4><p><span class="uniform">#${esc(p.uniform_number||'-')}</span></p><p><b>ID:</b> ${p.id} · <b>Categoría:</b> ${esc(p.category||'')}</p><p><b>Registro:</b> ${esc(p.registration_date||timestampDateISO(p.created_at)||'-')} · <b>Pago:</b> día ${esc(p.payment_day||'-')}</p><p><b>Tutor principal:</b> ${esc(p.tutor||'')}</p><p><b>WhatsApp principal:</b> ${esc(p.phone||'')}</p>${p.tutor_2||p.tutor_phone_2?`<p><b>Tutor secundario:</b> ${esc(p.tutor_2||'')} · ${esc(p.tutor_phone_2||'')}</p>`:''}<p><b>Adeudo:</b> <span class="amount">${money(c.amount)}</span> · <span class="status ${c.status}">${c.status}</span></p><div class="actions"><button class="btn secondary" onclick="openPlayerForm('${p.id}')">Editar</button><button class="btn secondary" onclick="openPlayerHistory('${p.id}')">Historial</button><button class="btn green" onclick="openPaymentForm('${p.id}')">Pago</button>${whatsappButtons(p)}<button class="btn red" onclick="deletePlayer('${p.id}')">Eliminar</button></div></div>`}).join('')||'<div class="card">Sin jugadores. Si aquí no aparecen, revisa que estés logueado como administrador y que la tabla players tenga permisos.'}</div></div>`;
 }
 function suggestedFamilies(){
   const m = new Map();
@@ -1651,7 +1725,7 @@ function renderDocuments(){
   <div class="panel">
     <div class="panel-head"><h3>Documentos cargados</h3><button class="btn secondary" onclick="exportDocumentsCSV()">Exportar CSV</button></div>
     <div class="tablewrap"><table><thead><tr><th>Jugador</th><th>Tutor</th><th>Tipo</th><th>Documento</th><th>Subido por</th><th>Fecha</th><th>Archivo</th><th>Notas</th></tr></thead><tbody>
-      ${rows.map(d=>`<tr><td><b>${esc(d.player_name)}</b><br><small>${esc(d.player_id)}</small></td><td>${esc(d.tutor||'')}</td><td>${esc(d.document_type||'')}</td><td>${esc(d.title||'')}</td><td>${esc(d.parent_name||d.submitted_by||'')}<br><small>${esc(d.parent_login||'')}</small></td><td>${esc(String(d.created_at||'').slice(0,10))}</td><td><a class="btn secondary" target="_blank" href="${d.file_url}">Ver</a></td><td>${esc(d.notes||'')}</td></tr>`).join('')||'<tr><td colspan="8">Aún no hay documentos.</td></tr>'}
+      ${rows.map(d=>`<tr><td><b>${esc(d.player_name)}</b><br><small>${esc(d.player_id)}</small></td><td>${esc(d.tutor||'')}</td><td>${esc(d.document_type||'')}</td><td>${esc(d.title||'')}</td><td>${esc(d.parent_name||d.submitted_by||'')}<br><small>${esc(d.parent_login||'')}</small></td><td>${esc(timestampDateISO(d.created_at))}</td><td><a class="btn secondary" target="_blank" href="${d.file_url}">Ver</a></td><td>${esc(d.notes||'')}</td></tr>`).join('')||'<tr><td colspan="8">Aún no hay documentos.</td></tr>'}
     </tbody></table></div>
   </div>`;
 }
@@ -1741,7 +1815,7 @@ function renderPlayerHistory(){
   <div class="panel">
     <div class="panel-head"><h3>Últimos cambios</h3><button class="btn secondary" onclick="exportPlayerHistoryCSV()">Exportar CSV</button></div>
     <div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Jugador</th><th>Acción</th><th>Cambió</th><th>Campos modificados</th><th>Detalle</th></tr></thead><tbody>
-      ${rows.map(h=>`<tr><td>${esc(String(h.created_at||'').replace('T',' ').slice(0,19))}</td><td><b>${esc(h.player_name)}</b><br><small>${esc(h.player_id)}</small></td><td>${esc(h.action||'')}</td><td>${esc(h.changed_by||'')}</td><td>${h.changes_list.length?h.changes_list.map(c=>`<span class="history-chip">${esc(fieldLabel(c.field))}</span>`).join(' '):'-'}</td><td><button class="btn secondary" onclick="openHistoryDetail('${h.id}')">Ver</button></td></tr>`).join('')||'<tr><td colspan="6">Aún no hay historial.</td></tr>'}
+      ${rows.map(h=>`<tr><td>${esc(formatAcademyDateTime(h.created_at))}</td><td><b>${esc(h.player_name)}</b><br><small>${esc(h.player_id)}</small></td><td>${esc(h.action||'')}</td><td>${esc(h.changed_by||'')}</td><td>${h.changes_list.length?h.changes_list.map(c=>`<span class="history-chip">${esc(fieldLabel(c.field))}</span>`).join(' '):'-'}</td><td><button class="btn secondary" onclick="openHistoryDetail('${h.id}')">Ver</button></td></tr>`).join('')||'<tr><td colspan="6">Aún no hay historial.</td></tr>'}
     </tbody></table></div>
   </div>`;
 }
@@ -1765,7 +1839,7 @@ function openHistoryDetail(historyId){
   modal.innerHTML=`<div class="modal"><div class="modal-head"><h3>Detalle de cambio</h3><button class="btn secondary" onclick="closeModal('historyModal')">Cerrar</button></div><div class="modal-body">
     <div class="history-summary">
       <b>${esc(p.name||h.after_data?.name||h.before_data?.name||'Jugador')}</b>
-      <span>${esc(String(h.created_at||'').replace('T',' ').slice(0,19))}</span>
+      <span>${esc(formatAcademyDateTime(h.created_at))}</span>
       <small>Modificado por: ${esc(h.changed_by||'')}</small>
     </div>
     <div class="tablewrap"><table><thead><tr><th>Campo</th><th>Antes</th><th>Después</th></tr></thead><tbody>
@@ -1809,7 +1883,7 @@ async function uploadFile(file, folder){
 function closeModal(id){ const el=document.getElementById(id); if(el) el.remove(); }
 function openPlayerForm(id=''){
   const p=id?players.find(x=>x.id===id):null;
-  const registrationDate=p?(p.registration_date||String(p.created_at||'').slice(0,10)||todayISO()):'';
+  const registrationDate=p?(p.registration_date||timestampDateISO(p.created_at)||todayISO()):'';
   const modal=document.createElement('div'); modal.className='modalbg open'; modal.id='playerModal';
   modal.innerHTML=`<div class="modal"><div class="modal-head"><h3>${p?'Editar jugador':'Nuevo jugador'}</h3><button class="btn secondary" onclick="closeModal('playerModal')">Cerrar</button></div><div class="modal-body"><form id="playerForm" class="form-grid">
     <label class="label">ID jugador<input id="pId" class="input" value="${esc(p?.id||nextId())}" ${p?'readonly':''} required></label><label class="label">Nombre<input id="pName" class="input" value="${esc(p?.name||'')}" required></label><label class="label">Fecha de registro<input id="pRegistrationDate" class="input" type="date" max="${todayISO()}" value="${esc(registrationDate)}" required></label><label class="label">Día de pago<select id="pDay" class="select" required><option value="">Selecciona el día...</option>${paymentDayOptions(p?.payment_day||'')}</select></label><label class="label">Tutor principal<input id="pTutor" class="input" value="${esc(p?.tutor||'')}"></label><label class="label">WhatsApp principal<input id="pPhone" class="input" value="${esc(p?.phone||'')}"></label><label class="label">Tutor secundario<input id="pTutor2" class="input" value="${esc(p?.tutor_2||'')}" placeholder="Opcional"></label><label class="label">WhatsApp secundario<input id="pPhone2" class="input" value="${esc(p?.tutor_phone_2||'')}" placeholder="Opcional"></label><label class="label">Categoría<input id="pCategory" class="input" value="${esc(p?.category||'')}"></label><label class="label">Estado<select id="pStatus" class="select"><option ${p?.status==='Activo'?'selected':''}>Activo</option><option ${p?.status==='Inactivo'?'selected':''}>Inactivo</option><option ${p?.status==='Baja'?'selected':''}>Baja</option></select></label><label class="label">Mensualidad<input id="pFee" class="input" type="number" min="0" step="50" value="${esc(p?.monthly_fee||300)}"></label><label class="label">Número uniforme<input id="pUniform" class="input" value="${esc(p?.uniform_number||'')}"></label><label class="label">Foto<input id="pPhoto" class="input" type="file" accept="image/*"></label><label class="label full">Notas<textarea id="pNotes" class="input">${esc(p?.notes||'')}</textarea></label><div class="full actions"><button class="btn green">Guardar jugador</button></div></form></div></div>`;
@@ -1870,15 +1944,29 @@ async function deletePlayer(id){const p=players.find(x=>x.id===id); if(!p)return
 function openPaymentForm(playerId=''){
   const selected=playerId?players.find(p=>p.id===playerId):null;
   const modal=document.createElement('div'); modal.className='modalbg open'; modal.id='paymentModal';
-  modal.innerHTML=`<div class="modal"><div class="modal-head"><h3>Registrar pago confirmado</h3><button class="btn secondary" onclick="closeModal('paymentModal')">Cerrar</button></div><div class="modal-body"><form id="paymentForm" class="form-grid"><label class="label full">Jugador<select id="payPlayer" class="select" required><option value="">Selecciona...</option>${players.map(p=>`<option value="${p.id}" ${p.id===playerId?'selected':''}>${p.id} · ${esc(p.name)}</option>`).join('')}</select></label><label class="label">Fecha<input id="payDate" class="input" type="date" value="${todayISO()}" required></label><label class="label">Periodo<input id="payPeriod" class="input" value="${period(todayISO())}"></label><label class="label">Monto<input id="payAmount" class="input" type="number" min="0" step="50" value="${esc(selected?.monthly_fee||300)}" required></label><label class="label">Método<select id="payMethod" class="select"><option></option><option>Transferencia</option><option>Depósito</option><option>Efectivo</option><option>Tarjeta</option><option>Otro</option></select></label><label class="label">Evidencia opcional<input id="payEvidence" class="input" type="file" accept="image/*,application/pdf"></label><label class="label full">Notas<textarea id="payNotes" class="input"></textarea></label><div class="full actions"><button class="btn green">Guardar pago confirmado</button></div></form></div></div>`;
+  modal.innerHTML=`<div class="modal"><div class="modal-head"><h3>Registrar pago confirmado</h3><button class="btn secondary" onclick="closeModal('paymentModal')">Cerrar</button></div><div class="modal-body"><form id="paymentForm" class="form-grid"><label class="label full">Jugador<select id="payPlayer" class="select" required><option value="">Selecciona...</option>${players.map(p=>`<option value="${p.id}" ${p.id===playerId?'selected':''}>${p.id} · ${esc(p.name)}</option>`).join('')}</select></label><label class="label">Fecha<input id="payDate" class="input" type="date" value="${todayISO()}" max="${todayISO()}" required></label><label class="label">Periodo<input id="payPeriod" class="input" value="${period(todayISO())}"></label><label class="label">Monto<input id="payAmount" class="input" type="number" min="0" step="50" value="${esc(selected?.monthly_fee||300)}" required></label><label class="label">Método<select id="payMethod" class="select"><option></option><option>Transferencia</option><option>Depósito</option><option>Efectivo</option><option>Tarjeta</option><option>Otro</option></select></label><label class="label">Evidencia opcional<input id="payEvidence" class="input" type="file" accept="image/*,application/pdf"></label><label class="label full">Notas<textarea id="payNotes" class="input"></textarea></label><div class="full actions"><button class="btn green">Guardar pago confirmado</button></div></form></div></div>`;
   document.body.appendChild(modal);
   document.getElementById('payPlayer').onchange=()=>{const p=players.find(x=>x.id===document.getElementById('payPlayer').value); if(p) document.getElementById('payAmount').value=p.monthly_fee||0;};
   document.getElementById('paymentForm').onsubmit=savePaymentForm;
 }
 async function savePaymentForm(e){
   e.preventDefault();
-  const player_id=document.getElementById('payPlayer').value; const player=players.find(p=>p.id===player_id); const file=document.getElementById('payEvidence').files[0];
-  try{ const evidence_url=file?await uploadFile(file,'evidencias'):''; const row={player_id,student_name:player?.name||'',payment_date:document.getElementById('payDate').value,period:document.getElementById('payPeriod').value||period(document.getElementById('payDate').value),amount:Number(document.getElementById('payAmount').value||0),method:document.getElementById('payMethod').value,notes:document.getElementById('payNotes').value,confirmation_status:'Confirmado',evidence_url,evidence_name:file?.name||'',submitted_by:'Admin',confirmed_at:new Date().toISOString()}; const {error}=await sb.from('payments').insert(row); if(error) throw error; toast('Pago guardado y confirmado'); closeModal('paymentModal'); await refresh(); page='payments'; renderPage(); }catch(err){toast('Error: '+err.message);}
+  const player_id=document.getElementById('payPlayer').value;
+  const player=players.find(p=>p.id===player_id);
+  const file=document.getElementById('payEvidence').files[0];
+  try{
+    const payDate=document.getElementById('payDate').value;
+    if(payDate>todayISO()) throw new Error('La fecha de pago no puede ser posterior a la fecha actual de Aguascalientes.');
+    const evidence_url=file?await uploadFile(file,'evidencias'):'';
+    const row={player_id,student_name:player?.name||'',payment_date:payDate,period:document.getElementById('payPeriod').value||period(payDate),amount:Number(document.getElementById('payAmount').value||0),method:document.getElementById('payMethod').value,notes:document.getElementById('payNotes').value,confirmation_status:'Confirmado',evidence_url,evidence_name:file?.name||'',submitted_by:'Admin',confirmed_at:new Date().toISOString()};
+    const {error}=await sb.from('payments').insert(row);
+    if(error) throw error;
+    toast('Pago guardado y confirmado');
+    closeModal('paymentModal');
+    await refresh();
+    page='payments';
+    renderPage();
+  }catch(err){toast('Error: '+err.message);}
 }
 
 async function confirmFamilyPayment(batchId){
