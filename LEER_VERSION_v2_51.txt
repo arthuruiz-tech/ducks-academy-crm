@@ -1,0 +1,8 @@
+DUCKS CRM PROFESIONAL v2.51
+
+CAMBIO REALIZADO
+- La acción “Revisar monto y confirmar” se movió de la ventana Evidencias a la ventana Pagos.
+- Los pagos pendientes muestran ahora el botón de revisión y confirmación en la columna Acción de Pagos.
+- Los pagos familiares se revisan juntos desde Pagos.
+- La ventana Evidencias queda destinada a consultar el comprobante y rechazar evidencias inválidas.
+- Después de confirmar un pago, el CRM regresa automáticamente a Pagos.
