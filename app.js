@@ -1,6 +1,6 @@
 
 async function forceFreshAssetsOnce(){
-  const key = 'ducks_cache_fix_v2_53_done';
+  const key = 'ducks_cache_fix_v2_55_done';
   if(localStorage.getItem(key)==='yes') return;
   try{
     if('caches' in window){
@@ -14,7 +14,7 @@ async function forceFreshAssetsOnce(){
 }
 forceFreshAssetsOnce();
 
-// Ducks CRM profesional v2.53 - zona horaria México y adeudos desde la fecha real de vencimiento
+// Ducks CRM profesional v2.55 - historial protegido y altas nuevas sin adeudo inmediato
 const app = document.getElementById('app');
 let sb = null;
 let session = null;
@@ -112,11 +112,36 @@ function dueDatesThrough(firstDue,today,paymentDay){
   }
   return {count,lastDue,nextDue:cursor};
 }
+const REGISTRATION_BILLING_START={year:2026,month:7,day:10};
+function playerCreatedISO(player){
+  return timestampDateISO(player?.created_at);
+}
+function usesRegistrationBilling(player){
+  // Jugadores creados antes de esta fecha conservan exactamente el esquema histórico.
+  // Las altas nuevas usan la fecha de registro seleccionada por el administrador.
+  const created=parseISODate(playerCreatedISO(player));
+  return !!(created && compareDateParts(created,REGISTRATION_BILLING_START)>=0);
+}
 function effectiveRegistrationISO(player){
   const registration=parseISODate(player?.registration_date);
-  const created=parseISODate(timestampDateISO(player?.created_at));
-  if(registration && created) return datePartsISO(compareDateParts(registration,created)<=0?registration:created);
-  return datePartsISO(registration||created)||todayISO();
+  const created=parseISODate(playerCreatedISO(player));
+  const today=parseISODate(todayISO());
+
+  // En jugadores anteriores, la fecha oficial es su created_at original.
+  // La fecha masiva agregada por la migración no altera su historial ni sus adeudos.
+  if(!usesRegistrationBilling(player)){
+    return datePartsISO(created)||datePartsISO(registration)||todayISO();
+  }
+
+  // En altas nuevas, la fecha elegida manualmente es la fuente oficial.
+  if(registration){
+    if(today && compareDateParts(registration,today)>0){
+      if(created && compareDateParts(created,today)<=0) return datePartsISO(created);
+      return datePartsISO(today);
+    }
+    return datePartsISO(registration);
+  }
+  return datePartsISO(created)||todayISO();
 }
 function formatAcademyDateTime(value){
   if(!value) return '';
@@ -241,35 +266,86 @@ function paymentBalanceSummary(payment){
   if(balance<0) return `<span class="payment-balance credit">Crédito ${money(Math.abs(balance))}</span>`;
   return '<span class="payment-balance exact">Sin diferencia</span>';
 }
-function calc(player, payList=payments){
-  const confirmed = payList
+function confirmedPaymentsForPlayer(player,payList=payments){
+  // Nunca se filtran pagos por fecha de registro: el historial completo siempre cuenta.
+  return payList
     .filter(p=>p.player_id===player.id && p.confirmation_status==='Confirmado')
     .sort((a,b)=>{
       const ka=`${a.payment_date||''}|${a.confirmed_at||''}|${a.id||''}`;
       const kb=`${b.payment_date||''}|${b.confirmed_at||''}|${b.id||''}`;
       return kb.localeCompare(ka);
     });
+}
+function calcLegacyPlayer(player,payList=payments){
+  // Replica el cálculo histórico para no cambiar meses ni saldos de jugadores existentes.
+  const confirmed=confirmedPaymentsForPlayer(player,payList);
   const latest=confirmed[0]||null;
   const last=latest?.payment_date||'';
   const today=parseISODate(todayISO());
+  const lastDate=parseISODate(last);
   const active=String(player.status||'').toLowerCase()==='activo';
   const fee=Number(player.monthly_fee||0);
   const paymentDay=Math.max(1,Math.min(31,Number(player.payment_day||1)));
+  const elapsedMonths=lastDate&&today
+    ? Math.max(0,(today.year-lastDate.year)*12+(today.month-lastDate.month))
+    : 0;
+  const registrationDate=effectiveRegistrationISO(player);
 
   if(!active){
-    return {last,months:0,amount:0,status:'Inactivo',credit:0,isOverdue:false,paymentDay};
+    return {last,months:0,amount:0,status:'Inactivo',credit:0,isOverdue:false,paymentDay,registrationDate,billingMode:'legacy'};
+  }
+
+  const savedBalance=latest?paymentBalanceAfter(latest):null;
+  if(savedBalance!==null && Number.isFinite(savedBalance)){
+    const rawBalance=savedBalance+(elapsedMonths*fee);
+    const amount=Math.max(0,Math.round(rawBalance*100)/100);
+    const credit=Math.max(0,Math.round((-rawBalance)*100)/100);
+    const months=amount>0&&fee>0?Math.max(1,Math.ceil(amount/fee)):0;
+    const isOverdue=amount>0&&(
+      savedBalance>0 ||
+      elapsedMonths>1 ||
+      (elapsedMonths>=1&&today&&today.day>paymentDay)
+    );
+    return {
+      last,months,amount,
+      status:amount<=0?'Pagado':(isOverdue?'Vencido':'Pendiente'),
+      credit,isOverdue,paymentDay,registrationDate,balanceAfter:savedBalance,billingMode:'legacy'
+    };
+  }
+
+  let months=!lastDate?1:elapsedMonths;
+  months=Math.max(0,months);
+  const amount=months*fee;
+  const isOverdue=amount>0&&(months>1||(months===1&&today&&today.day>paymentDay));
+  return {
+    last,months,amount,status:amount>0?(isOverdue?'Vencido':'Pendiente'):'Pagado',
+    credit:0,isOverdue,paymentDay,registrationDate,billingMode:'legacy'
+  };
+}
+function calcRegistrationPlayer(player,payList=payments){
+  const today=parseISODate(todayISO());
+  const registration=parseISODate(effectiveRegistrationISO(player))||today;
+  const active=String(player.status||'').toLowerCase()==='activo';
+  const fee=Number(player.monthly_fee||0);
+  const paymentDay=Math.max(1,Math.min(31,Number(player.payment_day||1)));
+  const confirmed=confirmedPaymentsForPlayer(player,payList);
+  const latest=confirmed[0]||null;
+  const last=latest?.payment_date||'';
+
+  if(!active){
+    return {last,months:0,amount:0,status:'Inactivo',credit:0,isOverdue:false,paymentDay,registrationDate:datePartsISO(registration),billingMode:'registration'};
   }
 
   let firstDue=null;
   if(latest){
     const lastDate=parseISODate(last);
-    firstDue=lastDate ? nextMonthScheduledDate(lastDate,paymentDay) : null;
+    firstDue=lastDate?nextMonthScheduledDate(lastDate,paymentDay):nextScheduledDateAfter(registration,paymentDay);
   }else{
-    const registration=parseISODate(effectiveRegistrationISO(player))||today;
+    // El primer cobro siempre es posterior al alta, incluso si el alta cae en el día de pago.
     firstDue=nextScheduledDateAfter(registration,paymentDay);
   }
 
-  const schedule=firstDue&&today ? dueDatesThrough(firstDue,today,paymentDay) : {count:0,lastDue:null,nextDue:firstDue};
+  const schedule=firstDue&&today?dueDatesThrough(firstDue,today,paymentDay):{count:0,lastDue:null,nextDue:firstDue};
   const savedBalance=latest?paymentBalanceAfter(latest):null;
   const openingBalance=savedBalance!==null&&Number.isFinite(savedBalance)?savedBalance:0;
   const rawBalance=openingBalance+(schedule.count*fee);
@@ -287,10 +363,17 @@ function calc(player, payList=payments){
     last,months,amount,
     status:amount<=0?'Pagado':(isOverdue?'Vencido':'Pendiente'),
     credit,isOverdue,paymentDay,
+    registrationDate:datePartsISO(registration),
     balanceAfter:savedBalance,
     firstDue:firstDue?datePartsISO(firstDue):'',
-    nextDue:schedule.nextDue?datePartsISO(schedule.nextDue):''
+    nextDue:schedule.nextDue?datePartsISO(schedule.nextDue):'',
+    billingMode:'registration'
   };
+}
+function calc(player,payList=payments){
+  return usesRegistrationBilling(player)
+    ? calcRegistrationPlayer(player,payList)
+    : calcLegacyPlayer(player,payList);
 }
 function reminderMessage(player){
   const c=calc(player);
@@ -340,18 +423,28 @@ function downloadText(filename, text, type='text/csv;charset=utf-8;'){
   setTimeout(()=>URL.revokeObjectURL(url), 1000);
 }
 function backupDate(){
-  return new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+  const parts=new Intl.DateTimeFormat('en-US',{
+    timeZone:ACADEMY_TIME_ZONE,year:'numeric',month:'2-digit',day:'2-digit',
+    hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false
+  }).formatToParts(new Date());
+  const map=Object.fromEntries(parts.map(x=>[x.type,x.value]));
+  return `${map.year}-${map.month}-${map.day}_${map.hour}-${map.minute}-${map.second}`;
 }
 function exportCSV(kind){
   const d = backupDate();
   if(kind === 'players'){
+    const rows=players.map(p=>({
+      ...p,
+      registration_date:effectiveRegistrationISO(p),
+      billing_scheme:usesRegistrationBilling(p)?'Alta nueva':'Histórico protegido'
+    }));
     const headers=[
       {label:'ID',key:'id'}, {label:'Nombre',key:'name'}, {label:'Tutor',key:'tutor'}, {label:'WhatsApp',key:'phone'},
-      {label:'Categoria',key:'category'}, {label:'Estado',key:'status'}, {label:'Fecha registro',key:'registration_date'},
-      {label:'Mensualidad',key:'monthly_fee'}, {label:'Dia pago',key:'payment_day'}, {label:'Numero uniforme',key:'uniform_number'},
-      {label:'Foto URL',key:'photo_url'}, {label:'Notas',key:'notes'}
+      {label:'Categoria',key:'category'}, {label:'Estado',key:'status'}, {label:'Fecha registro efectiva',key:'registration_date'},
+      {label:'Esquema de cobro',key:'billing_scheme'}, {label:'Mensualidad',key:'monthly_fee'}, {label:'Dia pago',key:'payment_day'},
+      {label:'Numero uniforme',key:'uniform_number'}, {label:'Foto URL',key:'photo_url'}, {label:'Notas',key:'notes'}
     ];
-    downloadText(`ducks_jugadores_${d}.csv`, toCSV(players, headers));
+    downloadText(`ducks_jugadores_${d}.csv`, toCSV(rows, headers));
   }
   if(kind === 'payments'){
     const headers=[
@@ -1200,7 +1293,7 @@ async function loadAdminData(){
 }
 async function refresh(){ if(mode==='admin'){await loadAdminData(); renderShell(); renderPage();} }
 function renderShell(){
-  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="history">🕘 Historial</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.53: fecha de Aguascalientes y adeudos desde vencimiento.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
+  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="history">🕘 Historial</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.55: históricos protegidos y altas nuevas sin adeudo.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
   document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page=b.dataset.page; if(page==='public'){renderPublicHome(); return;} renderPage();});
   document.getElementById('search').oninput=e=>{q=e.target.value; renderPage();};
   document.getElementById('authBtn').onclick=logout;
@@ -1218,7 +1311,7 @@ function renderDashboard(){
 function renderPlayers(){
   setTitle('Jugadores');
   const list=filteredPlayers();
-  document.getElementById('content').innerHTML=`<div class="panel"><div class="panel-head"><h3>Base de jugadores</h3><button class="btn green" onclick="openPlayerForm()">+ Nuevo jugador</button></div><div class="cards">${list.map(p=>{const c=calc(p);return `<div class="card">${thumb(p.photo_url)}<h4>${esc(p.name)}</h4><p><span class="uniform">#${esc(p.uniform_number||'-')}</span></p><p><b>ID:</b> ${p.id} · <b>Categoría:</b> ${esc(p.category||'')}</p><p><b>Registro:</b> ${esc(p.registration_date||timestampDateISO(p.created_at)||'-')} · <b>Pago:</b> día ${esc(p.payment_day||'-')}</p><p><b>Tutor principal:</b> ${esc(p.tutor||'')}</p><p><b>WhatsApp principal:</b> ${esc(p.phone||'')}</p>${p.tutor_2||p.tutor_phone_2?`<p><b>Tutor secundario:</b> ${esc(p.tutor_2||'')} · ${esc(p.tutor_phone_2||'')}</p>`:''}<p><b>Adeudo:</b> <span class="amount">${money(c.amount)}</span> · <span class="status ${c.status}">${c.status}</span></p><div class="actions"><button class="btn secondary" onclick="openPlayerForm('${p.id}')">Editar</button><button class="btn secondary" onclick="openPlayerHistory('${p.id}')">Historial</button><button class="btn green" onclick="openPaymentForm('${p.id}')">Pago</button>${whatsappButtons(p)}<button class="btn red" onclick="deletePlayer('${p.id}')">Eliminar</button></div></div>`}).join('')||'<div class="card">Sin jugadores. Si aquí no aparecen, revisa que estés logueado como administrador y que la tabla players tenga permisos.'}</div></div>`;
+  document.getElementById('content').innerHTML=`<div class="panel"><div class="panel-head"><h3>Base de jugadores</h3><button class="btn green" onclick="openPlayerForm()">+ Nuevo jugador</button></div><div class="cards">${list.map(p=>{const c=calc(p);return `<div class="card">${thumb(p.photo_url)}<h4>${esc(p.name)}</h4><p><span class="uniform">#${esc(p.uniform_number||'-')}</span></p><p><b>ID:</b> ${p.id} · <b>Categoría:</b> ${esc(p.category||'')}</p><p><b>Registro:</b> ${esc(c.registrationDate||p.registration_date||timestampDateISO(p.created_at)||'-')} · <b>Pago:</b> día ${esc(p.payment_day||'-')}</p>${c.billingMode==='registration'?`<p><b>Primer/Próximo cobro:</b> ${esc(c.nextDue||c.firstDue||'-')}</p>`:`<p><b>Esquema:</b> Histórico protegido</p>`}<p><b>Tutor principal:</b> ${esc(p.tutor||'')}</p><p><b>WhatsApp principal:</b> ${esc(p.phone||'')}</p>${p.tutor_2||p.tutor_phone_2?`<p><b>Tutor secundario:</b> ${esc(p.tutor_2||'')} · ${esc(p.tutor_phone_2||'')}</p>`:''}<p><b>Adeudo:</b> <span class="amount">${money(c.amount)}</span> · <span class="status ${c.status}">${c.status}</span></p><div class="actions"><button class="btn secondary" onclick="openPlayerForm('${p.id}')">Editar</button><button class="btn secondary" onclick="openPlayerHistory('${p.id}')">Historial</button><button class="btn green" onclick="openPaymentForm('${p.id}')">Pago</button>${whatsappButtons(p)}<button class="btn red" onclick="deletePlayer('${p.id}')">Eliminar</button></div></div>`}).join('')||'<div class="card">Sin jugadores. Si aquí no aparecen, revisa que estés logueado como administrador y que la tabla players tenga permisos.'}</div></div>`;
 }
 function suggestedFamilies(){
   const m = new Map();
@@ -1883,10 +1976,14 @@ async function uploadFile(file, folder){
 function closeModal(id){ const el=document.getElementById(id); if(el) el.remove(); }
 function openPlayerForm(id=''){
   const p=id?players.find(x=>x.id===id):null;
-  const registrationDate=p?(p.registration_date||timestampDateISO(p.created_at)||todayISO()):'';
+  const registrationManaged=!p||usesRegistrationBilling(p);
+  const registrationDate=p?effectiveRegistrationISO(p):todayISO();
+  const registrationHelp=registrationManaged
+    ? '<small>Esta fecha inicia el calendario de cobros. El día del registro el saldo será $0.</small>'
+    : '<small>Jugador anterior: se conserva su fecha original de creación y su cálculo histórico. Este campo no se modifica.</small>';
   const modal=document.createElement('div'); modal.className='modalbg open'; modal.id='playerModal';
   modal.innerHTML=`<div class="modal"><div class="modal-head"><h3>${p?'Editar jugador':'Nuevo jugador'}</h3><button class="btn secondary" onclick="closeModal('playerModal')">Cerrar</button></div><div class="modal-body"><form id="playerForm" class="form-grid">
-    <label class="label">ID jugador<input id="pId" class="input" value="${esc(p?.id||nextId())}" ${p?'readonly':''} required></label><label class="label">Nombre<input id="pName" class="input" value="${esc(p?.name||'')}" required></label><label class="label">Fecha de registro<input id="pRegistrationDate" class="input" type="date" max="${todayISO()}" value="${esc(registrationDate)}" required></label><label class="label">Día de pago<select id="pDay" class="select" required><option value="">Selecciona el día...</option>${paymentDayOptions(p?.payment_day||'')}</select></label><label class="label">Tutor principal<input id="pTutor" class="input" value="${esc(p?.tutor||'')}"></label><label class="label">WhatsApp principal<input id="pPhone" class="input" value="${esc(p?.phone||'')}"></label><label class="label">Tutor secundario<input id="pTutor2" class="input" value="${esc(p?.tutor_2||'')}" placeholder="Opcional"></label><label class="label">WhatsApp secundario<input id="pPhone2" class="input" value="${esc(p?.tutor_phone_2||'')}" placeholder="Opcional"></label><label class="label">Categoría<input id="pCategory" class="input" value="${esc(p?.category||'')}"></label><label class="label">Estado<select id="pStatus" class="select"><option ${p?.status==='Activo'?'selected':''}>Activo</option><option ${p?.status==='Inactivo'?'selected':''}>Inactivo</option><option ${p?.status==='Baja'?'selected':''}>Baja</option></select></label><label class="label">Mensualidad<input id="pFee" class="input" type="number" min="0" step="50" value="${esc(p?.monthly_fee||300)}"></label><label class="label">Número uniforme<input id="pUniform" class="input" value="${esc(p?.uniform_number||'')}"></label><label class="label">Foto<input id="pPhoto" class="input" type="file" accept="image/*"></label><label class="label full">Notas<textarea id="pNotes" class="input">${esc(p?.notes||'')}</textarea></label><div class="full actions"><button class="btn green">Guardar jugador</button></div></form></div></div>`;
+    <label class="label">ID jugador<input id="pId" class="input" value="${esc(p?.id||nextId())}" ${p?'readonly':''} required></label><label class="label">Nombre<input id="pName" class="input" value="${esc(p?.name||'')}" required></label><label class="label">Fecha de registro<input id="pRegistrationDate" class="input" type="date" max="${todayISO()}" value="${esc(registrationDate)}" ${registrationManaged?'required':'readonly'}>${registrationHelp}</label><label class="label">Día de pago<select id="pDay" class="select" required><option value="">Selecciona el día...</option>${paymentDayOptions(p?.payment_day||'')}</select></label><label class="label">Tutor principal<input id="pTutor" class="input" value="${esc(p?.tutor||'')}"></label><label class="label">WhatsApp principal<input id="pPhone" class="input" value="${esc(p?.phone||'')}"></label><label class="label">Tutor secundario<input id="pTutor2" class="input" value="${esc(p?.tutor_2||'')}" placeholder="Opcional"></label><label class="label">WhatsApp secundario<input id="pPhone2" class="input" value="${esc(p?.tutor_phone_2||'')}" placeholder="Opcional"></label><label class="label">Categoría<input id="pCategory" class="input" value="${esc(p?.category||'')}"></label><label class="label">Estado<select id="pStatus" class="select"><option ${p?.status==='Activo'?'selected':''}>Activo</option><option ${p?.status==='Inactivo'?'selected':''}>Inactivo</option><option ${p?.status==='Baja'?'selected':''}>Baja</option></select></label><label class="label">Mensualidad<input id="pFee" class="input" type="number" min="0" step="50" value="${esc(p?.monthly_fee||300)}"></label><label class="label">Número uniforme<input id="pUniform" class="input" value="${esc(p?.uniform_number||'')}"></label><label class="label">Foto<input id="pPhoto" class="input" type="file" accept="image/*"></label><label class="label full">Notas<textarea id="pNotes" class="input">${esc(p?.notes||'')}</textarea></label><div class="full actions"><button class="btn green">Guardar jugador</button></div></form></div></div>`;
   document.body.appendChild(modal);
   document.getElementById('playerForm').onsubmit=(e)=>savePlayerForm(e,p);
 }
@@ -1906,7 +2003,6 @@ async function savePlayerForm(e, oldPlayer){
       tutor_phone_2:normalizePhone(document.getElementById('pPhone2')?.value||''),
       category:document.getElementById('pCategory').value.trim(),
       status:document.getElementById('pStatus').value,
-      registration_date:document.getElementById('pRegistrationDate').value,
       monthly_fee:Number(document.getElementById('pFee').value||0),
       payment_day:Number(document.getElementById('pDay').value),
       uniform_number:document.getElementById('pUniform').value.trim(),
@@ -1914,11 +2010,20 @@ async function savePlayerForm(e, oldPlayer){
       notes:document.getElementById('pNotes').value.trim()
     };
 
-    if(!row.registration_date){ toast('Selecciona la fecha de registro.'); return; }
+    const registrationManaged=!oldPlayer||usesRegistrationBilling(oldPlayer);
+    const selectedRegistration=document.getElementById('pRegistrationDate').value;
+    if(registrationManaged){
+      if(!selectedRegistration){ toast('Selecciona la fecha de registro.'); return; }
+      if(selectedRegistration>todayISO()){ toast('La fecha de registro no puede ser posterior a la fecha actual de Aguascalientes.'); return; }
+      row.registration_date=selectedRegistration;
+    }
     if(!Number.isInteger(row.payment_day) || row.payment_day<1 || row.payment_day>31){ toast('Selecciona un día de pago válido.'); return; }
 
     const beforeSnapshot = oldPlayer ? compactPlayerSnapshot(oldPlayer) : {};
-    const afterSnapshot = compactPlayerSnapshot(row);
+    const afterForHistory=oldPlayer&&!registrationManaged
+      ? {...oldPlayer,...row,registration_date:oldPlayer.registration_date}
+      : row;
+    const afterSnapshot = compactPlayerSnapshot(afterForHistory);
 
     const result = oldPlayer
       ? await sb.from('players').update(row).eq('id',oldPlayer.id)

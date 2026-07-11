@@ -1,0 +1,16 @@
+DUCKS CRM PROFESIONAL v2.54
+
+CORRECCIÓN DE FECHA DE REGISTRO Y ADEUDOS
+
+1. La fecha de registro seleccionada por el administrador es ahora la fecha oficial.
+   El CRM ya no la reemplaza por una fecha de creación anterior.
+
+2. Un jugador registrado hoy siempre inicia con $0 de adeudo.
+
+3. El primer cobro se genera únicamente en el primer día de pago posterior a la fecha de registro.
+
+4. Los pagos anteriores a la fecha de registro se ignoran para evitar heredar saldos si un ID fue reutilizado.
+
+5. En la tarjeta del jugador se muestra la fecha de registro y el primer/próximo cobro calculado.
+
+6. La fecha de registro de un jugador nuevo aparece precargada con la fecha actual de Aguascalientes, pero puede modificarse antes de guardar.

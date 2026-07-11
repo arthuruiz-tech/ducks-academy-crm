@@ -1,0 +1,19 @@
+DUCKS CRM PROFESIONAL v2.55
+
+CORRECCIÓN SEGURA DE FECHAS Y ADEUDOS
+
+1. Jugadores existentes creados antes del 10 de julio de 2026:
+   - Conservan el cálculo histórico de meses y adeudos.
+   - Conservan todos sus pagos registrados.
+   - Usan su fecha original created_at como referencia visual.
+   - La fecha de registro agregada por la migración no cambia sus saldos.
+
+2. Jugadores nuevos creados desde el 10 de julio de 2026:
+   - Usan la fecha de registro seleccionada manualmente.
+   - El día del alta muestran $0 de adeudo.
+   - Su primer cobro ocurre en el siguiente día de pago posterior al alta.
+
+3. Protección de historial:
+   - Ningún pago se filtra ni desaparece por modificar una fecha de registro.
+   - No se borran pagos, comprobantes, jugadores ni historial de cambios.
+   - No requiere ejecutar SQL adicional.

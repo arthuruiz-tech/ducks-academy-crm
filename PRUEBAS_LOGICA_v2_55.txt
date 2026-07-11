@@ -1,0 +1,11 @@
+PRUEBAS REALIZADAS - DUCKS CRM v2.55
+
+Fecha de referencia: 10 de julio de 2026, zona America/Mexico_City.
+
+APROBADO:
+- Jugador anterior sin pagos conserva 1 mes de adeudo según el cálculo histórico.
+- Jugador nuevo registrado hoy con día de pago 5 conserva $0 y primer cobro el 5 de agosto de 2026.
+- Jugador nuevo registrado hoy con día de pago 15 conserva $0 y primer cobro el 15 de julio de 2026.
+- Un pago anterior a la fecha de registro continúa dentro del historial y del cálculo.
+- Jugador anterior con último pago en junio conserva el mes pendiente calculado anteriormente.
+- Validación de sintaxis JavaScript completada sin errores.
