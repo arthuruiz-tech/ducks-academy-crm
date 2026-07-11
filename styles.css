@@ -1926,3 +1926,16 @@ button[onclick="installDucksApp()"]{
     min-width:0;
   }
 }
+
+
+/* v2.48 - Enviar usuario y contraseña por WhatsApp */
+.account-whatsapp-btn{
+  background:#20B85A !important;
+  border-color:#20B85A !important;
+  color:#ffffff !important;
+  font-weight:900 !important;
+}
+.account-whatsapp-btn:hover{
+  background:#159447 !important;
+  border-color:#159447 !important;
+}

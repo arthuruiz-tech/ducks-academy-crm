@@ -967,6 +967,7 @@ function renderParents(){
     <div class="full"><button class="btn green">Ligar jugador</button></div>
   </form></div></div>
   <div class="panel"><div class="panel-head"><h3>Cuentas creadas</h3></div><div class="tablewrap"><table><thead><tr><th>Nombre</th><th>Usuario</th><th>Clave temporal</th><th>WhatsApp</th><th>Activo</th><th>Acción</th></tr></thead><tbody>${parentAccounts.map(a=>`<tr><td><b>${esc(a.display_name)}</b></td><td>${esc(a.login)}</td><td><code>${esc(a.access_code||'')}</code></td><td>${esc(a.phone||'-')}</td><td>${a.active?'Sí':'No'}</td><td><div class="account-action-buttons">
+  <button class="btn green account-whatsapp-btn" onclick="sendParentCredentialsWhatsApp('${a.id}')">📲 WhatsApp</button>
   <button class="btn secondary" onclick="editParentAccount('${a.id}')">Modificar</button>
   <button class="btn secondary" onclick="autoLinkAccountFromButton('${a.id}')">Auto ligar</button>
   <button class="btn secondary" onclick="resetParentPassword('${a.id}')">Reset contraseña</button>
@@ -1032,6 +1033,57 @@ async function autoLinkAccountFromButton(accountId){
   }
 }
 
+
+
+function parentCredentialsMessage(account){
+  const portalUrl = window.DUCKS_PORTAL_URL || 'https://ducks-academy-crm.vercel.app';
+  return `Hola, buen día.
+
+Ya está disponible tu acceso privado al Portal de Papás de Ducks Basketball Academy.
+
+Usuario: ${account.login || ''}
+Contraseña temporal: ${account.access_code || ''}
+
+Puedes ingresar desde la aplicación instalada o desde el siguiente enlace:
+
+${portalUrl}
+
+Dentro del portal podrás consultar la información de tus hijos, pagos, adeudos, calendario, documentos y subir comprobantes.
+
+Por seguridad, te recomendamos cambiar tu contraseña después de iniciar sesión.
+
+🏀 Ducks Basketball Academy`;
+}
+
+async function sendParentCredentialsWhatsApp(accountId){
+  const account = parentAccounts.find(a=>a.id===accountId);
+  if(!account){ toast('Cuenta no encontrada'); return; }
+
+  if(!String(account.login||'').trim()){
+    toast('La cuenta no tiene usuario asignado.');
+    return;
+  }
+  if(!String(account.access_code||'').trim()){
+    toast('La cuenta no tiene contraseña temporal. Usa Reset contraseña primero.');
+    return;
+  }
+
+  const message = parentCredentialsMessage(account);
+  const phone = String(account.phone||'').replace(/\D/g,'');
+
+  if(!phone){
+    try{
+      await navigator.clipboard.writeText(message);
+      toast('La cuenta no tiene WhatsApp. El mensaje de acceso fue copiado.');
+    }catch{
+      toast('Agrega el WhatsApp del papá para enviar sus datos de acceso.');
+    }
+    return;
+  }
+
+  const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+  window.open(whatsappUrl,'_blank','noopener');
+}
 
 function editParentAccount(accountId){
   const acc = parentAccounts.find(a=>a.id===accountId);
@@ -1428,7 +1480,7 @@ async function confirmPayment(id){const {error}=await sb.from('payments').update
 async function rejectPayment(id){const {error}=await sb.from('payments').update({confirmation_status:'Rechazado'}).eq('id',id); if(error)toast(error.message); else{toast('Pago rechazado'); await refresh();}}
 async function deletePayment(id){if(!confirm('¿Eliminar pago?'))return; const {error}=await sb.from('payments').delete().eq('id',id); if(error)toast(error.message); else{toast('Pago eliminado'); await refresh();}}
 
-window.renderPublicHome=renderPublicHome; window.renderParentLogin=renderParentLogin; window.renderAdminLogin=renderAdminLogin; window.renderLogin=renderAdminLogin; window.parentLogout=parentLogout; window.copyBank=copyBank; window.openParentPayment=openParentPayment; window.openParentDocument=openParentDocument; window.installDucksApp=installDucksApp; window.goBackSmart=goBackSmart; window.openPlayerForm=openPlayerForm; window.deletePlayer=deletePlayer; window.openPaymentForm=openPaymentForm; window.confirmPayment=confirmPayment; window.rejectPayment=rejectPayment; window.deletePayment=deletePayment; window.closeModal=closeModal; window.copyReminder=copyReminder; window.deleteParentLink=deleteParentLink; window.prefillParent=prefillParent; window.exportCSV=exportCSV; window.exportFullJSON=exportFullJSON; window.exportDocumentsCSV=exportDocumentsCSV; window.resetParentPassword=resetParentPassword; window.autoLinkAccountFromButton=autoLinkAccountFromButton; window.editParentAccount=editParentAccount; window.saveParentAccountChanges=saveParentAccountChanges; window.deleteParentAccount=deleteParentAccount;
+window.renderPublicHome=renderPublicHome; window.renderParentLogin=renderParentLogin; window.renderAdminLogin=renderAdminLogin; window.renderLogin=renderAdminLogin; window.parentLogout=parentLogout; window.copyBank=copyBank; window.openParentPayment=openParentPayment; window.openParentDocument=openParentDocument; window.installDucksApp=installDucksApp; window.goBackSmart=goBackSmart; window.openPlayerForm=openPlayerForm; window.deletePlayer=deletePlayer; window.openPaymentForm=openPaymentForm; window.confirmPayment=confirmPayment; window.rejectPayment=rejectPayment; window.deletePayment=deletePayment; window.closeModal=closeModal; window.copyReminder=copyReminder; window.deleteParentLink=deleteParentLink; window.prefillParent=prefillParent; window.exportCSV=exportCSV; window.exportFullJSON=exportFullJSON; window.exportDocumentsCSV=exportDocumentsCSV; window.resetParentPassword=resetParentPassword; window.autoLinkAccountFromButton=autoLinkAccountFromButton; window.editParentAccount=editParentAccount; window.saveParentAccountChanges=saveParentAccountChanges; window.deleteParentAccount=deleteParentAccount; window.sendParentCredentialsWhatsApp=sendParentCredentialsWhatsApp;
 
 init();
 

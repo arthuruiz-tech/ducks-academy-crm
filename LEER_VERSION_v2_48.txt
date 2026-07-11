@@ -1,0 +1,33 @@
+Ducks CRM Profesional v2.48
+
+Nueva función en Papás > Cuentas creadas:
+- Botón 📲 WhatsApp en cada cuenta.
+- Envía directamente al papá:
+  nombre del portal,
+  usuario,
+  contraseña temporal,
+  dirección de la aplicación/portal,
+  recomendación para cambiar su contraseña.
+- Si la cuenta no tiene número de WhatsApp, el mensaje se copia al portapapeles.
+- Si no tiene contraseña, el CRM solicita usar Reset contraseña primero.
+
+Mensaje utilizado:
+
+Hola, buen día.
+
+Ya está disponible tu acceso privado al Portal de Papás de Ducks Basketball Academy.
+
+Usuario: [usuario]
+Contraseña temporal: [contraseña]
+
+Puedes ingresar desde la aplicación instalada o desde:
+https://ducks-academy-crm.vercel.app
+
+Dentro del portal podrás consultar la información de tus hijos, pagos, adeudos,
+calendario, documentos y subir comprobantes.
+
+Por seguridad, te recomendamos cambiar tu contraseña después de iniciar sesión.
+
+🏀 Ducks Basketball Academy
+
+No requiere SQL nuevo.
