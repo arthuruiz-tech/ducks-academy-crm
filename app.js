@@ -1,6 +1,6 @@
 
 async function forceFreshAssetsOnce(){
-  const key = 'ducks_cache_fix_v2_57_done';
+  const key = 'ducks_cache_fix_v2_59_done';
   if(localStorage.getItem(key)==='yes') return;
   try{
     if('caches' in window){
@@ -14,7 +14,7 @@ async function forceFreshAssetsOnce(){
 }
 forceFreshAssetsOnce();
 
-// Ducks CRM profesional v2.57 - fechas reales, cumpleaños y avisos administrativos
+// Ducks CRM profesional v2.59 - cuestionario digital propio y solicitudes de ingreso
 const app = document.getElementById('app');
 let sb = null;
 let session = null;
@@ -32,6 +32,8 @@ let parentDocuments = [];
 let documents = [];
 let playerHistory = [];
 let adminNotifications = [];
+let registrationApplications = [];
+let registrationModuleReady = false;
 let notificationsReady = false;
 let notificationChannel = null;
 let q = '';
@@ -574,6 +576,7 @@ function exportFullJSON(){
     players,
     payments,
     admin_notifications: adminNotifications,
+    registration_applications: registrationApplications,
     parent_accounts: parentAccounts,
     parent_player_links: parentLinks,
     debts,
@@ -589,6 +592,7 @@ function unreadNotificationCount(){
 function notificationTypeIcon(type){
   if(type==='birthday') return '🎂';
   if(type==='evidence') return '📎';
+  if(type==='registration') return '📝';
   return '💳';
 }
 function updateNotificationBadges(){
@@ -667,7 +671,9 @@ function setupNotificationRealtime(){
       updateNotificationBadges();
       toast(`${notificationTypeIcon(incoming.type)} ${incoming.title}`);
       showSystemNotification(incoming);
-      if(mode==='admin'&&(page==='notifications'||page==='dashboard')) renderPage();
+      if(incoming.type==='registration'){
+        loadRegistrationApplications().then(()=>{if(mode==='admin'&&(page==='registrations'||page==='dashboard')) renderPage();});
+      }else if(mode==='admin'&&(page==='notifications'||page==='dashboard')) renderPage();
     })
     .subscribe();
 }
@@ -698,7 +704,8 @@ async function openNotificationTarget(id){
   await markNotificationRead(id);
   q=n.player_id||'';
   const search=document.getElementById('search'); if(search) search.value=q;
-  page=n.type==='evidence'?'evidence':(n.type==='payment'?'payments':'players');
+  page=n.type==='evidence'?'evidence':(n.type==='payment'?'payments':(n.type==='registration'?'registrations':'players'));
+  if(n.type==='registration') await loadRegistrationApplications();
   renderPage();
 }
 function notificationSetupNotice(){
@@ -711,7 +718,7 @@ function renderNotifications(){
     const search=q.toLowerCase().trim();
     return !search||[n.title,n.message,n.player_id,n.type].join(' ').toLowerCase().includes(search);
   });
-  document.getElementById('content').innerHTML=`${notificationSetupNotice()}<div class="panel"><div class="panel-head"><div><h3>Centro de avisos</h3><p class="sub">Cumpleaños, pagos reportados y evidencias enviadas por papás.</p></div><div class="actions"><button class="btn secondary" onclick="requestAdminNotificationPermission()">🔔 Activar avisos del dispositivo</button><button class="btn green" onclick="markAllNotificationsRead()">Marcar todos como leídos</button></div></div><div class="notification-list">${list.map(n=>`<article class="notification-card ${n.read_at?'read':'unread'}"><div class="notification-icon">${notificationTypeIcon(n.type)}</div><div class="notification-content"><div class="notification-title-row"><h4>${esc(n.title)}</h4><span>${esc(formatAcademyDateTime(n.created_at))}</span></div><p>${esc(n.message)}</p><small>${esc(n.player_id||'')}</small></div><div class="notification-actions"><button class="btn secondary" onclick="openNotificationTarget('${n.id}')">Abrir</button>${n.read_at?'':'<button class="btn green" onclick="markNotificationRead(\''+n.id+'\')">Leído</button>'}</div></article>`).join('')||'<div class="notice success">No hay avisos registrados.</div>'}</div></div>`;
+  document.getElementById('content').innerHTML=`${notificationSetupNotice()}<div class="panel"><div class="panel-head"><div><h3>Centro de avisos</h3><p class="sub">Cumpleaños, pagos, evidencias y nuevas solicitudes de ingreso.</p></div><div class="actions"><button class="btn secondary" onclick="requestAdminNotificationPermission()">🔔 Activar avisos del dispositivo</button><button class="btn green" onclick="markAllNotificationsRead()">Marcar todos como leídos</button></div></div><div class="notification-list">${list.map(n=>`<article class="notification-card ${n.read_at?'read':'unread'}"><div class="notification-icon">${notificationTypeIcon(n.type)}</div><div class="notification-content"><div class="notification-title-row"><h4>${esc(n.title)}</h4><span>${esc(formatAcademyDateTime(n.created_at))}</span></div><p>${esc(n.message)}</p><small>${esc(n.player_id||'')}</small></div><div class="notification-actions"><button class="btn secondary" onclick="openNotificationTarget('${n.id}')">Abrir</button>${n.read_at?'':'<button class="btn green" onclick="markNotificationRead(\''+n.id+'\')">Leído</button>'}</div></article>`).join('')||'<div class="notice success">No hay avisos registrados.</div>'}</div></div>`;
 }
 
 
@@ -841,6 +848,7 @@ function publicQuickMenu(){
       <nav class="global-links">
         <button onclick="renderPublicHome()">Inicio</button>
         <button onclick="renderParentLogin()">Portal de Papás</button>
+        <button class="registration-menu-btn" onclick="renderRegistrationForm()">Nuevo ingreso</button>
         <button onclick="renderPublicHome();setTimeout(()=>document.getElementById('calendario')?.scrollIntoView({behavior:'smooth'}),120)">Calendario</button>
         <button onclick="renderPublicHome();setTimeout(()=>document.getElementById('academia')?.scrollIntoView({behavior:'smooth'}),120)">Academia</button>
         <button onclick="renderPublicHome();setTimeout(()=>document.getElementById('contacto')?.scrollIntoView({behavior:'smooth'}),120)">Contacto</button>
@@ -856,6 +864,7 @@ function adminQuickMenu(){
       <button onclick="renderPublicHome()" class="admin-home-btn">🏠 Inicio público</button>
       <button onclick="page='dashboard';renderPage()">Dashboard</button>
       <button onclick="page='notifications';renderPage()">Avisos <span class="notification-badge hidden" data-notification-badge>0</span></button>
+      <button onclick="page='registrations';renderPage()">Solicitudes</button>
       <button onclick="page='players';renderPage()">Jugadores</button>
       <button onclick="page='parents';renderPage()">Papás</button>
       <button onclick="page='payments';renderPage()">Pagos</button>
@@ -874,7 +883,7 @@ function renderPublicHome(){
       <a class="academy-brand" href="#inicio"><img src="assets/logo.png"><span>Ducks Basketball Academy</span></a>
       <nav class="academy-links">
         <a href="#inicio">Inicio</a>
-        <button type="button" class="primary-menu-btn" onclick="renderParentLogin()">Portal de Papás</button><button type="button" onclick="installDucksApp()"><img class="install-app-icon" src="assets/pwa-icon-192.png" alt=""> Instalar App</button>
+        <button type="button" class="primary-menu-btn" onclick="renderParentLogin()">Portal de Papás</button><button type="button" class="registration-menu-btn" onclick="renderRegistrationForm()">Nuevo ingreso</button><button type="button" onclick="installDucksApp()"><img class="install-app-icon" src="assets/pwa-icon-192.png" alt=""> Instalar App</button>
         <a href="#calendario">Calendario</a>
         <div class="menu-drop">
           <a href="#academia">Academia</a>
@@ -905,6 +914,15 @@ function renderPublicHome(){
           <div class="hero-corner bottom-right">
             <p>Entrenamiento, valores y desarrollo para niños y jóvenes.</p>
           </div>
+        </div>
+      </section>
+      <section class="registration-home-card">
+        <div class="registration-home-icon">📝</div>
+        <div class="registration-home-copy">
+          <span class="eyebrow">Nuevos jugadores</span>
+          <h2>Cuestionario de ingreso y salud deportiva</h2>
+          <p>Completa el registro digital de tu hijo directamente en el portal Ducks. No necesitas Google Forms ni descargar otra aplicación.</p>
+          <div class="quick-actions"><button class="btn green" onclick="renderRegistrationForm()">Registrar nuevo jugador</button><button class="btn secondary" onclick="renderRegistrationForm();setTimeout(()=>window.print(),350)">Imprimir formato</button></div>
         </div>
       </section>
       <section class="quick-parent-card parent-entry-card">
@@ -991,6 +1009,95 @@ function renderPublicHome(){
 }
 
 /* Portal papás limpio v210 */
+
+function registrationYesNo(name, question, detailId='', detailLabel='Si la respuesta es sí, explica brevemente'){
+  return `<fieldset class="registration-question"><legend>${esc(question)} <span class="required-star">*</span></legend><div class="radio-cards"><label><input type="radio" name="${name}" value="Si" required onchange="toggleRegistrationDetail('${name}','${detailId}')"><span>Sí</span></label><label><input type="radio" name="${name}" value="No" required onchange="toggleRegistrationDetail('${name}','${detailId}')"><span>No</span></label></div>${detailId?`<label id="${detailId}Wrap" class="label registration-detail hidden">${esc(detailLabel)}<textarea id="${detailId}" name="${detailId}" class="input" rows="3"></textarea></label>`:''}</fieldset>`;
+}
+function toggleRegistrationDetail(name, detailId){
+  if(!detailId) return;
+  const selected=document.querySelector(`input[name="${name}"]:checked`)?.value;
+  const wrap=document.getElementById(detailId+'Wrap');
+  const input=document.getElementById(detailId);
+  if(!wrap||!input) return;
+  const show=selected==='Si';
+  wrap.classList.toggle('hidden',!show);
+  input.required=show;
+  if(!show) input.value='';
+}
+function renderRegistrationForm(){
+  mode='public'; rememberScreen('public:registration');
+  app.innerHTML=`${publicQuickMenu()}<div class="public-site with-global-menu registration-page"><main class="academy-main registration-main">
+    <section class="registration-form-shell" id="registrationPrintable">
+      <div class="registration-form-header"><img src="assets/logo.png" alt="Ducks"><div><span class="eyebrow">Academia Ducks Basketball</span><h1>Cuestionario de ingreso y salud deportiva</h1><p>La información será revisada únicamente por la administración y el entrenador de Ducks.</p></div></div>
+      <form id="registrationApplicationForm" class="registration-form">
+        <section class="registration-section"><h2>Datos del jugador</h2><div class="form-grid">
+          <label class="label full">Nombre completo del niño o niña<input class="input" name="child_name" maxlength="140" required></label>
+          <label class="label">Fecha de nacimiento<input class="input" name="birth_date" type="date" max="${todayISO()}" required></label>
+          <label class="label">Género<select class="select" name="gender" required><option value="">Selecciona...</option><option>Femenino</option><option>Masculino</option><option>Prefiero no especificar</option></select></label>
+          <label class="label">Nombre del padre, madre o tutor<input class="input" name="parent_name" maxlength="140" required></label>
+          <label class="label">WhatsApp del padre, madre o tutor<input class="input" name="parent_phone" inputmode="tel" maxlength="30" required></label>
+          <label class="label full">Correo electrónico<input class="input" name="parent_email" type="email" maxlength="160" placeholder="Opcional"></label>
+        </div></section>
+        <section class="registration-section"><h2>Historial médico</h2><p class="section-help">Responde con honestidad. Esta información ayuda al entrenador a conocer condiciones relevantes para la práctica del basketball.</p>
+          ${registrationYesNo('chronic_condition','¿El niño ha sido diagnosticado con alguna condición médica crónica? (Ej. asma, diabetes, epilepsia, etc.)','chronic_condition_detail')}
+          ${registrationYesNo('recent_injury','¿El niño ha tenido alguna lesión reciente o cirugía?','recent_injury_detail')}
+          ${registrationYesNo('regular_medication','¿El niño toma algún medicamento regularmente?','regular_medication_detail')}
+          ${registrationYesNo('chest_pain','¿El niño ha experimentado alguna vez dolor en el pecho al hacer ejercicio?')}
+          ${registrationYesNo('fainting_dizziness','¿El niño ha perdido el conocimiento o ha tenido mareos durante el ejercicio?')}
+        </section>
+        <section class="registration-section"><h2>Hábitos de vida</h2>
+          <fieldset class="registration-question"><legend>¿Cuántas horas de sueño tiene el niño por noche? <span class="required-star">*</span></legend><div class="number-scale">${Array.from({length:10},(_,i)=>`<label><input type="radio" name="sleep_hours" value="${i+1}" required><span>${i+1}</span></label>`).join('')}</div></fieldset>
+          <fieldset class="registration-question"><legend>¿Con qué frecuencia realiza el niño actividad física? (días por semana) <span class="required-star">*</span></legend><div class="number-scale seven">${Array.from({length:7},(_,i)=>`<label><input type="radio" name="activity_days" value="${i+1}" required><span>${i+1}</span></label>`).join('')}</div></fieldset>
+          <label class="label">¿Qué otro tipo de actividades físicas o deportes realiza el niño?<textarea class="input" name="other_activities" rows="3" maxlength="800"></textarea></label>
+        </section>
+        <section class="registration-section"><h2>Evaluación general</h2>
+          ${registrationYesNo('physical_limitation','¿El niño tiene alguna condición física que pueda limitar su participación en actividades físicas?','physical_limitation_detail')}
+          ${registrationYesNo('other_concern','¿Hay alguna otra condición o preocupación que deba ser considerada antes de que el niño participe en actividades físicas?','other_concern_detail')}
+          <label class="label">Comentarios adicionales<textarea class="input" name="comments" rows="4" maxlength="1200"></textarea></label>
+        </section>
+        <section class="registration-section consent-section"><h2>Consentimiento</h2><label class="consent-check"><input type="checkbox" name="consent" required><span>Confirmo que la información proporcionada es correcta y doy mi consentimiento para que el niño participe en actividades físicas bajo la supervisión de Academia Ducks Basketball.</span></label><label class="label">Nombre completo de quien autoriza<input class="input" name="consent_name" maxlength="140" required></label><p class="privacy-note">Al enviar este formulario autorizas el uso administrativo de los datos para la inscripción, atención deportiva y contacto de la academia. La información no es pública.</p></section>
+        <div class="registration-submit-bar"><button type="button" class="btn secondary" onclick="renderPublicHome()">Cancelar</button><button type="button" class="btn secondary" onclick="window.print()">Imprimir / guardar PDF</button><button class="btn green" id="registrationSubmitBtn">Enviar solicitud</button></div>
+      </form>
+    </section>
+  </main></div>`;
+  document.getElementById('registrationApplicationForm').onsubmit=submitRegistrationApplication;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function formBooleanValue(fd,name){return fd.get(name)==='Si';}
+async function submitRegistrationApplication(e){
+  e.preventDefault();
+  if(!sb){toast('No hay conexión con la base de datos. Recarga el portal.');return;}
+  const form=e.currentTarget;
+  const fd=new FormData(form);
+  const birth=String(fd.get('birth_date')||'');
+  if(!birth||birth>todayISO()){toast('Revisa la fecha de nacimiento.');return;}
+  const btn=document.getElementById('registrationSubmitBtn');
+  btn.disabled=true; btn.textContent='Enviando...';
+  const answers={
+    chronic_condition:formBooleanValue(fd,'chronic_condition'), chronic_condition_detail:String(fd.get('chronic_condition_detail')||'').trim(),
+    recent_injury:formBooleanValue(fd,'recent_injury'), recent_injury_detail:String(fd.get('recent_injury_detail')||'').trim(),
+    regular_medication:formBooleanValue(fd,'regular_medication'), regular_medication_detail:String(fd.get('regular_medication_detail')||'').trim(),
+    chest_pain:formBooleanValue(fd,'chest_pain'), fainting_dizziness:formBooleanValue(fd,'fainting_dizziness'),
+    sleep_hours:Number(fd.get('sleep_hours')||0), activity_days:Number(fd.get('activity_days')||0),
+    other_activities:String(fd.get('other_activities')||'').trim(), physical_limitation:formBooleanValue(fd,'physical_limitation'),
+    physical_limitation_detail:String(fd.get('physical_limitation_detail')||'').trim(), other_concern:formBooleanValue(fd,'other_concern'),
+    other_concern_detail:String(fd.get('other_concern_detail')||'').trim(), comments:String(fd.get('comments')||'').trim()
+  };
+  const payload={child_name:String(fd.get('child_name')||'').trim(),birth_date:birth,gender:String(fd.get('gender')||''),parent_name:String(fd.get('parent_name')||'').trim(),parent_phone:normalizePhone(fd.get('parent_phone')||''),parent_email:String(fd.get('parent_email')||'').trim(),consent_name:String(fd.get('consent_name')||'').trim(),consent:Boolean(fd.get('consent')),answers};
+  try{
+    const {data,error}=await sb.rpc('submit_ducks_registration_v259',{p_payload:payload});
+    if(error) throw error;
+    const result=Array.isArray(data)?data[0]:data;
+    const folio=result?.folio||'Solicitud enviada';
+    app.innerHTML=`${publicQuickMenu()}<div class="public-site with-global-menu"><main class="academy-main"><section class="registration-success-card"><div class="success-mark">✓</div><h1>Solicitud enviada correctamente</h1><p>Gracias. La administración de Ducks recibió el cuestionario de <b>${esc(payload.child_name)}</b>.</p><div class="folio-box"><small>Folio de seguimiento</small><strong>${esc(folio)}</strong></div><p>Nos pondremos en contacto al WhatsApp registrado para continuar con el proceso de ingreso.</p><div class="actions"><button class="btn green" onclick="renderPublicHome()">Volver al inicio</button><button class="btn secondary" onclick="window.print()">Guardar comprobante</button></div></section></main></div>`;
+    window.scrollTo({top:0,behavior:'smooth'});
+  }catch(err){
+    const missing=/submit_ducks_registration_v259|schema cache|does not exist/i.test(err.message||'');
+    toast(missing?'Falta activar el cuestionario en Supabase. Ejecuta PASO_13_SQL_CUESTIONARIO_v2_59.sql.':'No se pudo enviar: '+err.message);
+    btn.disabled=false; btn.textContent='Enviar solicitud';
+  }
+}
+
 function renderParentLogin(){
   mode='parentLogin'; rememberScreen('parentLogin:');
   app.innerHTML=`${publicQuickMenu()}<div class="public-site with-global-menu">
@@ -1491,6 +1598,12 @@ async function login(e){
   session=data.session; mode='admin'; page='dashboard'; renderShell(); await loadAdminData(); renderPage();
 }
 async function logout(){ if(notificationChannel){await sb.removeChannel(notificationChannel);notificationChannel=null;} await sb.auth.signOut(); session=null; adminNotifications=[]; renderPublicHome(); }
+async function loadRegistrationApplications(){
+  if(!sb){registrationApplications=[];registrationModuleReady=false;return;}
+  const rg=await sb.from('registration_applications_v259').select('*').order('submitted_at',{ascending:false}).limit(500);
+  if(rg.error){registrationApplications=[];registrationModuleReady=false;}
+  else{registrationApplications=rg.data||[];registrationModuleReady=true;}
+}
 async function loadAdminData(){
   const pr=await sb.from('players').select('*').order('id');
   if(pr.error){toast('Error cargando jugadores: '+pr.error.message); players=[];} else players=pr.data||[];
@@ -1505,29 +1618,76 @@ async function loadAdminData(){
   const hs=await sb.from('player_change_history_v237').select('*').order('created_at',{ascending:false}).limit(500);
   if(hs.error){playerHistory=[];} else playerHistory=hs.data||[];
   await persistRegistrationBillingMarkers();
+  await loadRegistrationApplications();
   await loadAdminNotifications();
   setupNotificationRealtime();
 }
 async function refresh(){ if(mode==='admin'){await loadAdminData(); renderShell(); renderPage();} }
 function renderShell(){
-  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="notifications">🔔 Avisos <span class="notification-badge hidden" data-notification-badge>0</span></button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="history">🕘 Historial</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.57: fechas reales, cumpleaños y avisos de pagos.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><button class="btn secondary notification-bell" onclick="page='notifications';renderPage()">🔔 <span class="notification-badge hidden" data-notification-badge>0</span></button><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
+  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="notifications">🔔 Avisos <span class="notification-badge hidden" data-notification-badge>0</span></button><button data-page="registrations">📝 Solicitudes de ingreso</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="history">🕘 Historial</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.59: cuestionario digital y solicitudes de ingreso.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><button class="btn secondary notification-bell" onclick="page='notifications';renderPage()">🔔 <span class="notification-badge hidden" data-notification-badge>0</span></button><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
   document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page=b.dataset.page; if(page==='public'){renderPublicHome(); return;} renderPage();});
   document.getElementById('search').oninput=e=>{q=e.target.value; renderPage();};
   document.getElementById('authBtn').onclick=logout;
   updateNotificationBadges();
 }
 function setTitle(t){ const el=document.getElementById('title'); if(el) el.textContent=t; document.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===page)); }
-function renderPage(){ if(mode==='admin') rememberScreen('admin:'+page); if(page==='dashboard') renderDashboard(); if(page==='notifications') renderNotifications(); if(page==='players') renderPlayers(); if(page==='parents') renderParents(); if(page==='payments') renderPayments(); if(page==='evidence') renderEvidence(); if(page==='whatsapp') renderWhatsApp(); if(page==='documents') renderDocuments(); if(page==='history') renderPlayerHistory(); if(page==='backups') renderBackups(); if(page==='settings') renderSettings(); }
+function renderPage(){ if(mode==='admin') rememberScreen('admin:'+page); if(page==='dashboard') renderDashboard(); if(page==='notifications') renderNotifications(); if(page==='registrations') renderRegistrations(); if(page==='players') renderPlayers(); if(page==='parents') renderParents(); if(page==='payments') renderPayments(); if(page==='evidence') renderEvidence(); if(page==='whatsapp') renderWhatsApp(); if(page==='documents') renderDocuments(); if(page==='history') renderPlayerHistory(); if(page==='backups') renderBackups(); if(page==='settings') renderSettings(); }
 function filteredPlayers(){ const s=q.toLowerCase().trim(); return players.filter(p=>!s || [p.id,p.name,p.tutor,p.phone,p.category,p.birth_date,p.registration_date,p.payment_day,p.uniform_number].join(' ').toLowerCase().includes(s)); }
 
 function renderDashboard(){
   setTitle('Dashboard ejecutivo');
-  const rows=players.map(p=>({...p,c:calc(p)})); const active=rows.filter(p=>p.status==='Activo').length; const debtors=rows.filter(p=>p.c.amount>0); const overdue=rows.filter(p=>p.c.status==='Vencido').length; const pendingEvidence=payments.filter(p=>p.confirmation_status==='Pendiente de confirmación').length; const totalDebt=debtors.reduce((a,p)=>a+p.c.amount,0); const birthdays=birthdayPlayersToday(); const unread=unreadNotificationCount();
+  const rows=players.map(p=>({...p,c:calc(p)})); const active=rows.filter(p=>p.status==='Activo').length; const debtors=rows.filter(p=>p.c.amount>0); const overdue=rows.filter(p=>p.c.status==='Vencido').length; const pendingEvidence=payments.filter(p=>p.confirmation_status==='Pendiente de confirmación').length; const totalDebt=debtors.reduce((a,p)=>a+p.c.amount,0); const birthdays=birthdayPlayersToday(); const unread=unreadNotificationCount(); const pendingRegistrations=registrationApplications.filter(r=>r.status==='Pendiente').length;
   const birthdayBanner=birthdays.length?`<div class="notice birthday-notice"><b>🎂 Cumpleaños de hoy:</b> ${birthdays.map(p=>`${esc(p.name)} (${playerAge(p)} años)`).join(', ')}</div>`:'';
   const recentNotices=adminNotifications.filter(n=>!n.read_at).slice(0,3);
-  document.getElementById('content').innerHTML=`${iosInstallBanner()}${notificationSetupNotice()}${birthdayBanner}<div class="kpis"><div class="kpi"><small>Jugadores</small><strong>${players.length}</strong></div><div class="kpi green"><small>Activos</small><strong>${active}</strong></div><div class="kpi orange"><small>Con adeudo</small><strong>${debtors.length}</strong></div><div class="kpi red"><small>Vencidos</small><strong>${overdue}</strong></div><div class="kpi orange"><small>Por confirmar</small><strong>${pendingEvidence}</strong></div><div class="kpi"><small>Avisos nuevos</small><strong>${unread}</strong></div><div class="kpi"><small>Cumpleaños hoy</small><strong>${birthdays.length}</strong></div><div class="kpi red"><small>Adeudo total</small><strong>${money(totalDebt)}</strong></div></div>${recentNotices.length?`<div class="panel compact-notifications"><div class="panel-head"><h3>Avisos recientes</h3><button class="btn secondary" onclick="page='notifications';renderPage()">Ver todos</button></div>${recentNotices.map(n=>`<button class="dashboard-notification" onclick="openNotificationTarget('${n.id}')"><span>${notificationTypeIcon(n.type)}</span><div><b>${esc(n.title)}</b><small>${esc(n.message)}</small></div></button>`).join('')}</div>`:''}
+  document.getElementById('content').innerHTML=`${iosInstallBanner()}${notificationSetupNotice()}${birthdayBanner}<div class="kpis"><div class="kpi"><small>Jugadores</small><strong>${players.length}</strong></div><div class="kpi green"><small>Activos</small><strong>${active}</strong></div><div class="kpi orange"><small>Con adeudo</small><strong>${debtors.length}</strong></div><div class="kpi red"><small>Vencidos</small><strong>${overdue}</strong></div><div class="kpi orange"><small>Por confirmar</small><strong>${pendingEvidence}</strong></div><div class="kpi green"><small>Solicitudes nuevas</small><strong>${pendingRegistrations}</strong></div><div class="kpi"><small>Avisos nuevos</small><strong>${unread}</strong></div><div class="kpi"><small>Cumpleaños hoy</small><strong>${birthdays.length}</strong></div><div class="kpi red"><small>Adeudo total</small><strong>${money(totalDebt)}</strong></div></div>${recentNotices.length?`<div class="panel compact-notifications"><div class="panel-head"><h3>Avisos recientes</h3><button class="btn secondary" onclick="page='notifications';renderPage()">Ver todos</button></div>${recentNotices.map(n=>`<button class="dashboard-notification" onclick="openNotificationTarget('${n.id}')"><span>${notificationTypeIcon(n.type)}</span><div><b>${esc(n.title)}</b><small>${esc(n.message)}</small></div></button>`).join('')}</div>`:''}
   <div class="panel"><div class="panel-head"><h3>Jugadores con adeudo</h3></div><div class="tablewrap"><table><thead><tr><th>Foto</th><th>ID</th><th>Jugador</th><th>Núm.</th><th>Tutor</th><th>Último pago</th><th>Meses</th><th>Adeudo</th><th>Estado</th><th>WhatsApp</th></tr></thead><tbody>${debtors.sort((a,b)=>b.c.amount-a.c.amount).map(p=>`<tr><td>${thumb(p.photo_url)}</td><td>${p.id}</td><td><b>${esc(p.name)}</b><br><small>${esc(p.category||'')}</small></td><td><span class="uniform">#${esc(p.uniform_number||'-')}</span></td><td>${esc(p.tutor||'')}</td><td>${esc(p.c.last||'')}</td><td>${p.c.months}</td><td class="amount">${money(p.c.amount)}</td><td><span class="status ${p.c.status}">${p.c.status}</span></td><td>${whatsappButtons(p)}</td></tr>`).join('')||'<tr><td colspan="10">Sin adeudos</td></tr>'}</tbody></table></div></div>`;
 }
+
+function registrationModuleNotice(){return registrationModuleReady?'':`<div class="notice warning"><b>Falta activar solicitudes:</b> ejecuta en Supabase el archivo <b>PASO_13_SQL_CUESTIONARIO_v2_59.sql</b>.</div>`;}
+function registrationStatusClass(status){return status==='Pendiente'?'Pendiente':status==='Convertida'?'Confirmado':status==='Rechazada'?'Rechazado':'Registrado';}
+function registrationAnswer(app,key){return app?.answers?.[key];}
+function yesNoText(v){return v===true?'Sí':v===false?'No':'-';}
+function renderRegistrations(){
+  setTitle('Solicitudes de ingreso');
+  const search=q.toLowerCase().trim();
+  const list=registrationApplications.filter(r=>!search||[r.folio,r.child_name,r.parent_name,r.parent_phone,r.parent_email,r.status].join(' ').toLowerCase().includes(search));
+  document.getElementById('content').innerHTML=`${registrationModuleNotice()}<div class="panel"><div class="panel-head"><div><h3>Cuestionarios recibidos</h3><p class="sub">Revisa la información de salud, contacta a la familia y convierte la solicitud en jugador cuando sea aprobada.</p></div><button class="btn secondary" onclick="renderPublicHome();setTimeout(()=>renderRegistrationForm(),100)">Ver formulario público</button></div><div class="tablewrap"><table><thead><tr><th>Folio</th><th>Fecha</th><th>Jugador</th><th>Tutor</th><th>WhatsApp</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>${list.map(r=>`<tr><td><b>${esc(r.folio||'')}</b></td><td>${esc(formatAcademyDateTime(r.submitted_at))}</td><td><b>${esc(r.child_name)}</b>${r.medical_alert?'<span class="medical-alert-chip">Revisión médica</span>':''}<br><small>${esc(formatDateDMY(r.birth_date))} · ${esc(r.gender||'')}</small></td><td>${esc(r.parent_name||'')}</td><td>${esc(r.parent_phone||'')}</td><td><span class="status ${registrationStatusClass(r.status)}">${esc(r.status)}</span></td><td><div class="actions"><button class="btn secondary" onclick="openRegistrationDetail('${r.id}')">Revisar</button>${r.status==='Pendiente'?`<button class="btn green" onclick="openRegistrationConvert('${r.id}')">Crear jugador</button><button class="btn red" onclick="updateRegistrationStatus('${r.id}','Rechazada')">Rechazar</button>`:''}</div></td></tr>`).join('')||'<tr><td colspan="7">No hay solicitudes.</td></tr>'}</tbody></table></div></div>`;
+}
+function openRegistrationDetail(id){
+  const r=registrationApplications.find(x=>String(x.id)===String(id)); if(!r)return;
+  const a=r.answers||{};
+  const detail=(label,value,extra='')=>`<div class="application-detail-row"><b>${esc(label)}</b><span>${esc(value)}</span>${extra?`<small>${esc(extra)}</small>`:''}</div>`;
+  const modal=document.createElement('div');modal.className='modalbg open';modal.id='registrationDetailModal';
+  modal.innerHTML=`<div class="modal wide-modal"><div class="modal-head"><h3>${esc(r.folio)} · ${esc(r.child_name)}</h3><button class="btn secondary" onclick="closeModal('registrationDetailModal')">Cerrar</button></div><div class="modal-body application-detail" id="applicationPrintable"><div class="application-summary"><div><small>Fecha de envío</small><b>${esc(formatAcademyDateTime(r.submitted_at))}</b></div><div><small>Estado</small><b>${esc(r.status)}</b></div><div><small>Tutor</small><b>${esc(r.parent_name)}</b></div><div><small>WhatsApp</small><b>${esc(r.parent_phone)}</b></div></div><h4>Datos del jugador</h4>${detail('Nombre',r.child_name)}${detail('Fecha de nacimiento',formatDateDMY(r.birth_date))}${detail('Género',r.gender)}<h4>Historial médico</h4>${detail('Condición médica crónica',yesNoText(a.chronic_condition),a.chronic_condition_detail)}${detail('Lesión reciente o cirugía',yesNoText(a.recent_injury),a.recent_injury_detail)}${detail('Medicamento regular',yesNoText(a.regular_medication),a.regular_medication_detail)}${detail('Dolor de pecho al hacer ejercicio',yesNoText(a.chest_pain))}${detail('Pérdida de conocimiento o mareos',yesNoText(a.fainting_dizziness))}<h4>Hábitos y evaluación</h4>${detail('Horas de sueño por noche',a.sleep_hours||'-')}${detail('Días de actividad física por semana',a.activity_days||'-')}${detail('Otros deportes o actividades',a.other_activities||'-')}${detail('Condición física limitante',yesNoText(a.physical_limitation),a.physical_limitation_detail)}${detail('Otra condición o preocupación',yesNoText(a.other_concern),a.other_concern_detail)}${detail('Comentarios',a.comments||'-')}<h4>Consentimiento</h4>${detail('Nombre de quien autoriza',r.consent_name||r.parent_name)}<div class="actions"><button class="btn secondary" onclick="window.print()">Imprimir / guardar PDF</button>${r.status==='Pendiente'?`<button class="btn green" onclick="closeModal('registrationDetailModal');openRegistrationConvert('${r.id}')">Crear jugador</button><button class="btn red" onclick="updateRegistrationStatus('${r.id}','Rechazada')">Rechazar</button>`:''}</div></div></div>`;
+  document.body.appendChild(modal);
+}
+async function updateRegistrationStatus(id,status){
+  const r=registrationApplications.find(x=>String(x.id)===String(id));if(!r)return;
+  if(status==='Rechazada'&&!confirm(`¿Rechazar la solicitud de ${r.child_name}?`))return;
+  const {error}=await sb.from('registration_applications_v259').update({status,reviewed_at:new Date().toISOString()}).eq('id',id);
+  if(error){toast('No se pudo actualizar: '+error.message);return;}
+  toast('Solicitud actualizada'); closeModal('registrationDetailModal'); await refresh(); page='registrations';renderPage();
+}
+function openRegistrationConvert(id){
+  const r=registrationApplications.find(x=>String(x.id)===String(id));if(!r)return;
+  const modal=document.createElement('div');modal.className='modalbg open';modal.id='registrationConvertModal';
+  modal.innerHTML=`<div class="modal"><div class="modal-head"><h3>Crear jugador desde solicitud</h3><button class="btn secondary" onclick="closeModal('registrationConvertModal')">Cerrar</button></div><div class="modal-body"><div class="notice success"><b>${esc(r.child_name)}</b><br>Los datos personales y la fecha de nacimiento se copiarán automáticamente. El jugador iniciará con $0 de adeudo.</div><form id="registrationConvertForm" class="form-grid"><label class="label">ID jugador<input id="rcId" class="input" value="${esc(nextId())}" required></label><label class="label">Fecha de registro<input id="rcRegistrationDate" class="input" type="date" max="${todayISO()}" value="${todayISO()}" required></label><label class="label">Día de pago<select id="rcPaymentDay" class="select" required><option value="">Selecciona...</option>${paymentDayOptions('')}</select></label><label class="label">Mensualidad<input id="rcFee" class="input" type="number" min="0" step="50" value="300" required></label><label class="label">Categoría<input id="rcCategory" class="input"></label><label class="label">Número de uniforme<input id="rcUniform" class="input"></label><div class="full actions"><button class="btn green">Crear jugador</button></div></form></div></div>`;
+  document.body.appendChild(modal);document.getElementById('registrationConvertForm').onsubmit=e=>convertRegistrationToPlayer(e,id);
+}
+async function convertRegistrationToPlayer(e,applicationId){
+  e.preventDefault();const r=registrationApplications.find(x=>String(x.id)===String(applicationId));if(!r)return;
+  const id=document.getElementById('rcId').value.trim();const registration_date=document.getElementById('rcRegistrationDate').value;const payment_day=Number(document.getElementById('rcPaymentDay').value);
+  if(players.some(p=>String(p.id).toUpperCase()===id.toUpperCase())){toast('Ese ID ya existe.');return;}
+  if(!registration_date||registration_date>todayISO()){toast('Revisa la fecha de registro.');return;}
+  const row={id,name:r.child_name,birth_date:r.birth_date,registration_date,tutor:r.parent_name,phone:normalizePhone(r.parent_phone),tutor_2:'',tutor_phone_2:'',category:document.getElementById('rcCategory').value.trim(),status:'Activo',monthly_fee:Number(document.getElementById('rcFee').value||0),payment_day,uniform_number:document.getElementById('rcUniform').value.trim(),photo_url:'',notes:withRegistrationBillingMarker(`Alta desde cuestionario ${r.folio}.`)};
+  try{
+    const insert=await sb.from('players').insert(row);if(insert.error)throw insert.error;
+    await savePlayerHistory(id,{},compactPlayerSnapshot(row),'create');
+    const upd=await sb.from('registration_applications_v259').update({status:'Convertida',converted_player_id:id,reviewed_at:new Date().toISOString()}).eq('id',applicationId);if(upd.error)throw upd.error;
+    toast('Jugador creado correctamente con saldo inicial de $0.');closeModal('registrationConvertModal');await refresh();page='players';q=id;renderPage();
+  }catch(err){toast('No se pudo crear el jugador: '+err.message);}
+}
+
 function renderPlayers(){
   setTitle('Jugadores');
   const list=filteredPlayers();
@@ -2325,7 +2485,7 @@ async function confirmPayment(id){ openPaymentReview(id); }
 async function rejectPayment(id){const {error}=await sb.from('payments').update({confirmation_status:'Rechazado'}).eq('id',id); if(error)toast(error.message); else{toast('Pago rechazado'); await refresh();}}
 async function deletePayment(id){if(!confirm('¿Eliminar pago?'))return; const {error}=await sb.from('payments').delete().eq('id',id); if(error)toast(error.message); else{toast('Pago eliminado'); await refresh();}}
 
-window.renderPublicHome=renderPublicHome; window.renderParentLogin=renderParentLogin; window.renderAdminLogin=renderAdminLogin; window.renderLogin=renderAdminLogin; window.parentLogout=parentLogout; window.copyBank=copyBank; window.openParentPayment=openParentPayment; window.openParentDocument=openParentDocument; window.installDucksApp=installDucksApp; window.goBackSmart=goBackSmart; window.openPlayerForm=openPlayerForm; window.deletePlayer=deletePlayer; window.openPaymentForm=openPaymentForm; window.confirmPayment=confirmPayment; window.rejectPayment=rejectPayment; window.deletePayment=deletePayment; window.closeModal=closeModal; window.copyReminder=copyReminder; window.deleteParentLink=deleteParentLink; window.prefillParent=prefillParent; window.exportCSV=exportCSV; window.exportFullJSON=exportFullJSON; window.exportDocumentsCSV=exportDocumentsCSV; window.resetParentPassword=resetParentPassword; window.autoLinkAccountFromButton=autoLinkAccountFromButton; window.editParentAccount=editParentAccount; window.saveParentAccountChanges=saveParentAccountChanges; window.deleteParentAccount=deleteParentAccount; window.sendParentCredentialsWhatsApp=sendParentCredentialsWhatsApp; window.openFamilyPayment=openFamilyPayment; window.updateFamilyPaymentTotal=updateFamilyPaymentTotal; window.toggleAllFamilyPlayers=toggleAllFamilyPlayers; window.copyFamilyPaymentData=copyFamilyPaymentData; window.confirmFamilyPayment=confirmFamilyPayment; window.rejectFamilyPayment=rejectFamilyPayment; window.openEvidencePreview=openEvidencePreview; window.openPaymentReview=openPaymentReview; window.updatePaymentReviewDifference=updatePaymentReviewDifference; window.confirmReviewedPayment=confirmReviewedPayment;
+window.renderPublicHome=renderPublicHome; window.renderRegistrationForm=renderRegistrationForm; window.toggleRegistrationDetail=toggleRegistrationDetail; window.renderParentLogin=renderParentLogin; window.renderAdminLogin=renderAdminLogin; window.renderLogin=renderAdminLogin; window.parentLogout=parentLogout; window.copyBank=copyBank; window.openParentPayment=openParentPayment; window.openParentDocument=openParentDocument; window.installDucksApp=installDucksApp; window.goBackSmart=goBackSmart; window.openPlayerForm=openPlayerForm; window.deletePlayer=deletePlayer; window.openPaymentForm=openPaymentForm; window.confirmPayment=confirmPayment; window.rejectPayment=rejectPayment; window.deletePayment=deletePayment; window.closeModal=closeModal; window.copyReminder=copyReminder; window.deleteParentLink=deleteParentLink; window.prefillParent=prefillParent; window.exportCSV=exportCSV; window.exportFullJSON=exportFullJSON; window.exportDocumentsCSV=exportDocumentsCSV; window.resetParentPassword=resetParentPassword; window.autoLinkAccountFromButton=autoLinkAccountFromButton; window.editParentAccount=editParentAccount; window.saveParentAccountChanges=saveParentAccountChanges; window.deleteParentAccount=deleteParentAccount; window.sendParentCredentialsWhatsApp=sendParentCredentialsWhatsApp; window.openFamilyPayment=openFamilyPayment; window.updateFamilyPaymentTotal=updateFamilyPaymentTotal; window.toggleAllFamilyPlayers=toggleAllFamilyPlayers; window.copyFamilyPaymentData=copyFamilyPaymentData; window.confirmFamilyPayment=confirmFamilyPayment; window.rejectFamilyPayment=rejectFamilyPayment; window.openEvidencePreview=openEvidencePreview; window.openPaymentReview=openPaymentReview; window.updatePaymentReviewDifference=updatePaymentReviewDifference; window.confirmReviewedPayment=confirmReviewedPayment;
 
 init();
 
@@ -2335,6 +2495,6 @@ window.openParentPayNow=openParentPayNow;
 
 window.copyDefaultPaymentData=copyDefaultPaymentData;
 
-window.requestAdminNotificationPermission=requestAdminNotificationPermission; window.markNotificationRead=markNotificationRead; window.markAllNotificationsRead=markAllNotificationsRead; window.openNotificationTarget=openNotificationTarget;
+window.requestAdminNotificationPermission=requestAdminNotificationPermission; window.openRegistrationDetail=openRegistrationDetail; window.openRegistrationConvert=openRegistrationConvert; window.updateRegistrationStatus=updateRegistrationStatus; window.markNotificationRead=markNotificationRead; window.markAllNotificationsRead=markAllNotificationsRead; window.openNotificationTarget=openNotificationTarget;
 
 window.openPlayerHistory=openPlayerHistory; window.openHistoryDetail=openHistoryDetail; window.exportPlayerHistoryCSV=exportPlayerHistoryCSV;

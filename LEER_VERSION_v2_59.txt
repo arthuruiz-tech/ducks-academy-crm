@@ -1,0 +1,30 @@
+DUCKS CRM PROFESIONAL v2.59
+CUESTIONARIO DIGITAL PROPIO Y SOLICITUDES DE INGRESO
+
+BASE UTILIZADA
+- Esta versión parte de v2.57.
+- La v2.58 de Google Forms no fue utilizada.
+
+NUEVO
+- Botón público "Nuevo ingreso".
+- Cuestionario digital propio de Ducks, sin límites de Google Forms.
+- Datos guardados de forma privada en Supabase.
+- Folio automático para cada familia.
+- Aviso al administrador cuando llega una solicitud.
+- Módulo administrativo "Solicitudes de ingreso".
+- Revisión completa del cuestionario médico y hábitos.
+- Opción de rechazar o convertir la solicitud en jugador.
+- Al convertir, copia nombre, nacimiento, tutor y WhatsApp.
+- El jugador creado inicia con $0 de adeudo.
+- Opción Imprimir / Guardar PDF desde el navegador.
+
+INSTALACIÓN
+1. En Supabase > SQL Editor > New query, ejecuta:
+   PASO_13_SQL_CUESTIONARIO_v2_59.sql
+2. Publica todos los archivos de esta carpeta en Vercel.
+3. Realiza una recarga completa: Ctrl + Shift + R.
+
+SEGURIDAD
+- Las familias pueden enviar, pero no pueden leer solicitudes de otras personas.
+- Solo el administrador autenticado puede revisar o modificar solicitudes.
+- No se alteran jugadores, pagos, adeudos, comprobantes ni historial existente.
