@@ -1,0 +1,12 @@
+DUCKS CRM PROFESIONAL v2.52
+
+CAMBIOS REALIZADOS
+- Se agregó la opción obligatoria “Fecha de registro” al crear o editar un jugador.
+- “Día de pago” ahora es una lista obligatoria para seleccionar del día 1 al 31.
+- La fecha de registro y el día de pago se muestran en la tarjeta del jugador.
+- La fecha de registro se incluye en el historial de cambios y en la exportación CSV.
+- La fecha predeterminada ahora utiliza correctamente la fecha local del dispositivo.
+- Se agregó el archivo PASO_10_SQL_FECHA_REGISTRO_v2_52.txt para actualizar Supabase.
+
+IMPORTANTE
+Antes de crear o editar jugadores con esta versión, ejecuta una sola vez el archivo SQL incluido.

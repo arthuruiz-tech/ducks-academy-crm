@@ -1,0 +1,42 @@
+DUCKS CRM PROFESIONAL v2.52
+ACTUALIZACIÓN DE BASE DE DATOS — FECHA DE REGISTRO
+
+Ejecuta este bloque una sola vez en Supabase:
+1. Abre Supabase.
+2. Entra a SQL Editor.
+3. Crea una consulta nueva.
+4. Copia y ejecuta todo el bloque siguiente.
+
+------------------------------------------------------------
+
+alter table public.players
+  add column if not exists registration_date date;
+
+update public.players
+set registration_date = current_date
+where registration_date is null;
+
+alter table public.players
+  alter column registration_date set default current_date;
+
+alter table public.players
+  alter column registration_date set not null;
+
+update public.players
+set payment_day = 5
+where payment_day is null
+   or payment_day < 1
+   or payment_day > 31;
+
+alter table public.players
+  alter column payment_day set default 5;
+
+alter table public.players
+  alter column payment_day set not null;
+
+------------------------------------------------------------
+
+Después de ejecutarlo:
+- Actualiza o vuelve a desplegar el CRM v2.52.
+- Los jugadores existentes recibirán inicialmente la fecha del día de la actualización.
+- Puedes abrir cada jugador y corregir su fecha real de registro.

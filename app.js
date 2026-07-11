@@ -1,6 +1,6 @@
 
 async function forceFreshAssetsOnce(){
-  const key = 'ducks_cache_fix_v2_25_done';
+  const key = 'ducks_cache_fix_v2_52_done';
   if(localStorage.getItem(key)==='yes') return;
   try{
     if('caches' in window){
@@ -14,7 +14,7 @@ async function forceFreshAssetsOnce(){
 }
 forceFreshAssetsOnce();
 
-// Ducks CRM profesional v2.38 - fix columnas tutor y schema cache
+// Ducks CRM profesional v2.52 - fecha de registro y día de pago obligatorios
 const app = document.getElementById('app');
 let sb = null;
 let session = null;
@@ -50,7 +50,13 @@ const DOCUMENT_TYPES = ['Acta de nacimiento','CURP','Fotografía','Certificado m
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),4000); }
 function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
 function money(n){return Number(n||0).toLocaleString('es-MX',{style:'currency',currency:'MXN'});}
-function todayISO(){return new Date().toISOString().slice(0,10);}
+function todayISO(){
+  const d=new Date();
+  const y=d.getFullYear();
+  const m=String(d.getMonth()+1).padStart(2,'0');
+  const day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
 function period(date){return String(date||'').slice(0,7);}
 function statusClass(s){return String(s||'').replace(/\s+/g,'');}
 function thumb(url){return url?`<div class="thumb"><img src="${url}"></div>`:`<div class="thumb"><div class="emptythumb">Sin foto</div></div>`;}
@@ -84,7 +90,7 @@ async function autoLinkPlayersToAccount(account){
 
 const PLAYER_EDIT_FIELDS = [
   'id','name','tutor','phone','tutor_2','tutor_phone_2','category','status',
-  'monthly_fee','payment_day','uniform_number','photo_url','notes'
+  'registration_date','monthly_fee','payment_day','uniform_number','photo_url','notes'
 ];
 function compactPlayerSnapshot(p){
   const o = {};
@@ -123,14 +129,21 @@ function fieldLabel(k){
   const map = {
     name:'Nombre', tutor:'Tutor principal', phone:'WhatsApp principal',
     tutor_2:'Tutor secundario', tutor_phone_2:'WhatsApp secundario',
-    category:'Categoría', status:'Estado', monthly_fee:'Mensualidad',
-    payment_day:'Día de pago', uniform_number:'Número uniforme',
+    category:'Categoría', status:'Estado', registration_date:'Fecha de registro',
+    monthly_fee:'Mensualidad', payment_day:'Día de pago', uniform_number:'Número uniforme',
     photo_url:'Foto', notes:'Notas'
   };
   return map[k] || k;
 }
 
 function nextId(){ const max=players.reduce((m,p)=>Math.max(m,Number(String(p.id||'').replace(/\D/g,''))||0),0); return 'D'+String(max+1).padStart(3,'0'); }
+function paymentDayOptions(selectedDay=''){
+  const parsed=Number(selectedDay);
+  const selected=Number.isInteger(parsed) && parsed>=1 && parsed<=31 ? parsed : null;
+  return Array.from({length:31},(_,i)=>i+1)
+    .map(day=>`<option value="${day}" ${day===selected?'selected':''}>Día ${day}</option>`)
+    .join('');
+}
 
 function paymentBalanceAfter(payment){
   const m=String(payment?.notes||'').match(/\[DUCKS_BALANCE_AFTER:([-+]?\d+(?:\.\d+)?)\]/);
@@ -262,8 +275,9 @@ function exportCSV(kind){
   if(kind === 'players'){
     const headers=[
       {label:'ID',key:'id'}, {label:'Nombre',key:'name'}, {label:'Tutor',key:'tutor'}, {label:'WhatsApp',key:'phone'},
-      {label:'Categoria',key:'category'}, {label:'Estado',key:'status'}, {label:'Mensualidad',key:'monthly_fee'},
-      {label:'Dia pago',key:'payment_day'}, {label:'Numero uniforme',key:'uniform_number'}, {label:'Foto URL',key:'photo_url'}, {label:'Notas',key:'notes'}
+      {label:'Categoria',key:'category'}, {label:'Estado',key:'status'}, {label:'Fecha registro',key:'registration_date'},
+      {label:'Mensualidad',key:'monthly_fee'}, {label:'Dia pago',key:'payment_day'}, {label:'Numero uniforme',key:'uniform_number'},
+      {label:'Foto URL',key:'photo_url'}, {label:'Notas',key:'notes'}
     ];
     downloadText(`ducks_jugadores_${d}.csv`, toCSV(players, headers));
   }
@@ -1112,14 +1126,14 @@ async function loadAdminData(){
 }
 async function refresh(){ if(mode==='admin'){await loadAdminData(); renderShell(); renderPage();} }
 function renderShell(){
-  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="history">🕘 Historial</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.38: administrador discreto + WhatsApp.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
+  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="history">🕘 Historial</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.52: registro y día de pago obligatorios.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
   document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page=b.dataset.page; if(page==='public'){renderPublicHome(); return;} renderPage();});
   document.getElementById('search').oninput=e=>{q=e.target.value; renderPage();};
   document.getElementById('authBtn').onclick=logout;
 }
 function setTitle(t){ const el=document.getElementById('title'); if(el) el.textContent=t; document.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===page)); }
 function renderPage(){ if(mode==='admin') rememberScreen('admin:'+page); if(page==='dashboard') renderDashboard(); if(page==='players') renderPlayers(); if(page==='parents') renderParents(); if(page==='payments') renderPayments(); if(page==='evidence') renderEvidence(); if(page==='whatsapp') renderWhatsApp(); if(page==='documents') renderDocuments(); if(page==='history') renderPlayerHistory(); if(page==='backups') renderBackups(); if(page==='settings') renderSettings(); }
-function filteredPlayers(){ const s=q.toLowerCase().trim(); return players.filter(p=>!s || [p.id,p.name,p.tutor,p.phone,p.category,p.uniform_number].join(' ').toLowerCase().includes(s)); }
+function filteredPlayers(){ const s=q.toLowerCase().trim(); return players.filter(p=>!s || [p.id,p.name,p.tutor,p.phone,p.category,p.registration_date,p.payment_day,p.uniform_number].join(' ').toLowerCase().includes(s)); }
 
 function renderDashboard(){
   setTitle('Dashboard ejecutivo');
@@ -1130,7 +1144,7 @@ function renderDashboard(){
 function renderPlayers(){
   setTitle('Jugadores');
   const list=filteredPlayers();
-  document.getElementById('content').innerHTML=`<div class="panel"><div class="panel-head"><h3>Base de jugadores</h3><button class="btn green" onclick="openPlayerForm()">+ Nuevo jugador</button></div><div class="cards">${list.map(p=>{const c=calc(p);return `<div class="card">${thumb(p.photo_url)}<h4>${esc(p.name)}</h4><p><span class="uniform">#${esc(p.uniform_number||'-')}</span></p><p><b>ID:</b> ${p.id} · <b>Categoría:</b> ${esc(p.category||'')}</p><p><b>Tutor principal:</b> ${esc(p.tutor||'')}</p><p><b>WhatsApp principal:</b> ${esc(p.phone||'')}</p>${p.tutor_2||p.tutor_phone_2?`<p><b>Tutor secundario:</b> ${esc(p.tutor_2||'')} · ${esc(p.tutor_phone_2||'')}</p>`:''}<p><b>Adeudo:</b> <span class="amount">${money(c.amount)}</span> · <span class="status ${c.status}">${c.status}</span></p><div class="actions"><button class="btn secondary" onclick="openPlayerForm('${p.id}')">Editar</button><button class="btn secondary" onclick="openPlayerHistory('${p.id}')">Historial</button><button class="btn green" onclick="openPaymentForm('${p.id}')">Pago</button>${whatsappButtons(p)}<button class="btn red" onclick="deletePlayer('${p.id}')">Eliminar</button></div></div>`}).join('')||'<div class="card">Sin jugadores. Si aquí no aparecen, revisa que estés logueado como administrador y que la tabla players tenga permisos.'}</div></div>`;
+  document.getElementById('content').innerHTML=`<div class="panel"><div class="panel-head"><h3>Base de jugadores</h3><button class="btn green" onclick="openPlayerForm()">+ Nuevo jugador</button></div><div class="cards">${list.map(p=>{const c=calc(p);return `<div class="card">${thumb(p.photo_url)}<h4>${esc(p.name)}</h4><p><span class="uniform">#${esc(p.uniform_number||'-')}</span></p><p><b>ID:</b> ${p.id} · <b>Categoría:</b> ${esc(p.category||'')}</p><p><b>Registro:</b> ${esc(p.registration_date||String(p.created_at||'').slice(0,10)||'-')} · <b>Pago:</b> día ${esc(p.payment_day||'-')}</p><p><b>Tutor principal:</b> ${esc(p.tutor||'')}</p><p><b>WhatsApp principal:</b> ${esc(p.phone||'')}</p>${p.tutor_2||p.tutor_phone_2?`<p><b>Tutor secundario:</b> ${esc(p.tutor_2||'')} · ${esc(p.tutor_phone_2||'')}</p>`:''}<p><b>Adeudo:</b> <span class="amount">${money(c.amount)}</span> · <span class="status ${c.status}">${c.status}</span></p><div class="actions"><button class="btn secondary" onclick="openPlayerForm('${p.id}')">Editar</button><button class="btn secondary" onclick="openPlayerHistory('${p.id}')">Historial</button><button class="btn green" onclick="openPaymentForm('${p.id}')">Pago</button>${whatsappButtons(p)}<button class="btn red" onclick="deletePlayer('${p.id}')">Eliminar</button></div></div>`}).join('')||'<div class="card">Sin jugadores. Si aquí no aparecen, revisa que estés logueado como administrador y que la tabla players tenga permisos.'}</div></div>`;
 }
 function suggestedFamilies(){
   const m = new Map();
@@ -1795,9 +1809,10 @@ async function uploadFile(file, folder){
 function closeModal(id){ const el=document.getElementById(id); if(el) el.remove(); }
 function openPlayerForm(id=''){
   const p=id?players.find(x=>x.id===id):null;
+  const registrationDate=p?(p.registration_date||String(p.created_at||'').slice(0,10)||todayISO()):'';
   const modal=document.createElement('div'); modal.className='modalbg open'; modal.id='playerModal';
   modal.innerHTML=`<div class="modal"><div class="modal-head"><h3>${p?'Editar jugador':'Nuevo jugador'}</h3><button class="btn secondary" onclick="closeModal('playerModal')">Cerrar</button></div><div class="modal-body"><form id="playerForm" class="form-grid">
-    <label class="label">ID jugador<input id="pId" class="input" value="${esc(p?.id||nextId())}" ${p?'readonly':''} required></label><label class="label">Nombre<input id="pName" class="input" value="${esc(p?.name||'')}" required></label><label class="label">Tutor principal<input id="pTutor" class="input" value="${esc(p?.tutor||'')}"></label><label class="label">WhatsApp principal<input id="pPhone" class="input" value="${esc(p?.phone||'')}"></label><label class="label">Tutor secundario<input id="pTutor2" class="input" value="${esc(p?.tutor_2||'')}" placeholder="Opcional"></label><label class="label">WhatsApp secundario<input id="pPhone2" class="input" value="${esc(p?.tutor_phone_2||'')}" placeholder="Opcional"></label><label class="label">Categoría<input id="pCategory" class="input" value="${esc(p?.category||'')}"></label><label class="label">Estado<select id="pStatus" class="select"><option ${p?.status==='Activo'?'selected':''}>Activo</option><option ${p?.status==='Inactivo'?'selected':''}>Inactivo</option><option ${p?.status==='Baja'?'selected':''}>Baja</option></select></label><label class="label">Mensualidad<input id="pFee" class="input" type="number" min="0" step="50" value="${esc(p?.monthly_fee||300)}"></label><label class="label">Día de pago<input id="pDay" class="input" type="number" min="1" max="31" value="${esc(p?.payment_day||5)}"></label><label class="label">Número uniforme<input id="pUniform" class="input" value="${esc(p?.uniform_number||'')}"></label><label class="label">Foto<input id="pPhoto" class="input" type="file" accept="image/*"></label><label class="label full">Notas<textarea id="pNotes" class="input">${esc(p?.notes||'')}</textarea></label><div class="full actions"><button class="btn green">Guardar jugador</button></div></form></div></div>`;
+    <label class="label">ID jugador<input id="pId" class="input" value="${esc(p?.id||nextId())}" ${p?'readonly':''} required></label><label class="label">Nombre<input id="pName" class="input" value="${esc(p?.name||'')}" required></label><label class="label">Fecha de registro<input id="pRegistrationDate" class="input" type="date" max="${todayISO()}" value="${esc(registrationDate)}" required></label><label class="label">Día de pago<select id="pDay" class="select" required><option value="">Selecciona el día...</option>${paymentDayOptions(p?.payment_day||'')}</select></label><label class="label">Tutor principal<input id="pTutor" class="input" value="${esc(p?.tutor||'')}"></label><label class="label">WhatsApp principal<input id="pPhone" class="input" value="${esc(p?.phone||'')}"></label><label class="label">Tutor secundario<input id="pTutor2" class="input" value="${esc(p?.tutor_2||'')}" placeholder="Opcional"></label><label class="label">WhatsApp secundario<input id="pPhone2" class="input" value="${esc(p?.tutor_phone_2||'')}" placeholder="Opcional"></label><label class="label">Categoría<input id="pCategory" class="input" value="${esc(p?.category||'')}"></label><label class="label">Estado<select id="pStatus" class="select"><option ${p?.status==='Activo'?'selected':''}>Activo</option><option ${p?.status==='Inactivo'?'selected':''}>Inactivo</option><option ${p?.status==='Baja'?'selected':''}>Baja</option></select></label><label class="label">Mensualidad<input id="pFee" class="input" type="number" min="0" step="50" value="${esc(p?.monthly_fee||300)}"></label><label class="label">Número uniforme<input id="pUniform" class="input" value="${esc(p?.uniform_number||'')}"></label><label class="label">Foto<input id="pPhoto" class="input" type="file" accept="image/*"></label><label class="label full">Notas<textarea id="pNotes" class="input">${esc(p?.notes||'')}</textarea></label><div class="full actions"><button class="btn green">Guardar jugador</button></div></form></div></div>`;
   document.body.appendChild(modal);
   document.getElementById('playerForm').onsubmit=(e)=>savePlayerForm(e,p);
 }
@@ -1817,12 +1832,16 @@ async function savePlayerForm(e, oldPlayer){
       tutor_phone_2:normalizePhone(document.getElementById('pPhone2')?.value||''),
       category:document.getElementById('pCategory').value.trim(),
       status:document.getElementById('pStatus').value,
+      registration_date:document.getElementById('pRegistrationDate').value,
       monthly_fee:Number(document.getElementById('pFee').value||0),
-      payment_day:Number(document.getElementById('pDay').value||1),
+      payment_day:Number(document.getElementById('pDay').value),
       uniform_number:document.getElementById('pUniform').value.trim(),
       photo_url,
       notes:document.getElementById('pNotes').value.trim()
     };
+
+    if(!row.registration_date){ toast('Selecciona la fecha de registro.'); return; }
+    if(!Number.isInteger(row.payment_day) || row.payment_day<1 || row.payment_day>31){ toast('Selecciona un día de pago válido.'); return; }
 
     const beforeSnapshot = oldPlayer ? compactPlayerSnapshot(oldPlayer) : {};
     const afterSnapshot = compactPlayerSnapshot(row);
@@ -1831,7 +1850,12 @@ async function savePlayerForm(e, oldPlayer){
       ? await sb.from('players').update(row).eq('id',oldPlayer.id)
       : await sb.from('players').insert(row);
 
-    if(result.error) throw result.error;
+    if(result.error){
+      if(/registration_date/i.test(result.error.message||'')){
+        throw new Error('Falta habilitar Fecha de registro en Supabase. Ejecuta el archivo PASO_10_SQL_FECHA_REGISTRO_v2_52.txt incluido en esta versión.');
+      }
+      throw result.error;
+    }
 
     await savePlayerHistory(id, beforeSnapshot, afterSnapshot, oldPlayer ? 'update' : 'create');
 
