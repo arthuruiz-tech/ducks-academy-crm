@@ -1,0 +1,24 @@
+DUCKS CRM PROFESIONAL v2.56
+
+CORRECCIÓN DEFINITIVA: JUGADORES NUEVOS SIN ADEUDO INMEDIATO
+
+1. Detección segura de altas nuevas
+   - Usa created_at cuando está disponible.
+   - Si players no tiene created_at, usa exclusivamente el evento create del historial.
+   - Guarda un marcador interno para que la misma lógica funcione en el Portal de Papás.
+   - Los jugadores anteriores continúan con el esquema histórico protegido.
+
+2. Cálculo de jugadores nuevos
+   - El día del registro siempre muestra $0 de adeudo.
+   - El primer cobro se genera en el siguiente día de pago posterior al registro.
+   - Los pagos confirmados antes del primer cobro se conservan como crédito.
+   - Ya no se arrastra un saldo incorrecto generado por una confirmación anterior.
+
+3. Protección de datos
+   - No borra ni modifica pagos, evidencias o historial.
+   - No cambia el cálculo histórico de jugadores anteriores.
+   - No requiere ejecutar SQL adicional.
+
+4. Corrección del caso reportado
+   - Un jugador registrado el 10-jul-2026 con día de pago 1 tiene primer cobro el 1-ago-2026.
+   - Aunque tenga un pago confirmado el 10-jul-2026, su adeudo permanece en $0.

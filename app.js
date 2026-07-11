@@ -1,6 +1,6 @@
 
 async function forceFreshAssetsOnce(){
-  const key = 'ducks_cache_fix_v2_55_done';
+  const key = 'ducks_cache_fix_v2_56_done';
   if(localStorage.getItem(key)==='yes') return;
   try{
     if('caches' in window){
@@ -14,7 +14,7 @@ async function forceFreshAssetsOnce(){
 }
 forceFreshAssetsOnce();
 
-// Ducks CRM profesional v2.55 - historial protegido y altas nuevas sin adeudo inmediato
+// Ducks CRM profesional v2.56 - altas nuevas sin adeudo y pagos anticipados como crédito
 const app = document.getElementById('app');
 let sb = null;
 let session = null;
@@ -113,14 +113,53 @@ function dueDatesThrough(firstDue,today,paymentDay){
   return {count,lastDue,nextDue:cursor};
 }
 const REGISTRATION_BILLING_START={year:2026,month:7,day:10};
+const REGISTRATION_BILLING_MARKER='[DUCKS_BILLING_MODE:REGISTRATION]';
+const LEGACY_BILLING_MARKER='[DUCKS_BILLING_MODE:LEGACY]';
+function stripPlayerBillingMarkers(notes){
+  return String(notes||'')
+    .replace(/\s*\[DUCKS_BILLING_MODE:(?:REGISTRATION|LEGACY)\]/gi,'')
+    .trim();
+}
+function hasRegistrationBillingMarker(player){
+  return String(player?.notes||'').toUpperCase().includes(REGISTRATION_BILLING_MARKER);
+}
+function hasLegacyBillingMarker(player){
+  return String(player?.notes||'').toUpperCase().includes(LEGACY_BILLING_MARKER);
+}
+function withRegistrationBillingMarker(notes){
+  const clean=stripPlayerBillingMarkers(notes);
+  return `${clean}${clean?' ':''}${REGISTRATION_BILLING_MARKER}`;
+}
+function playerCreationHistoryISO(player){
+  const rows=playerHistory
+    .filter(h=>String(h?.player_id||'')===String(player?.id||'') && String(h?.action||'').toLowerCase()==='create')
+    .sort((a,b)=>String(a?.created_at||'').localeCompare(String(b?.created_at||'')));
+  return rows.length?timestampDateISO(rows[0].created_at):'';
+}
 function playerCreatedISO(player){
-  return timestampDateISO(player?.created_at);
+  // Algunas instalaciones antiguas no tienen created_at en players.
+  // En ese caso se usa el evento "create" del historial, sin confundirlo con ediciones posteriores.
+  return timestampDateISO(player?.created_at) || playerCreationHistoryISO(player);
 }
 function usesRegistrationBilling(player){
-  // Jugadores creados antes de esta fecha conservan exactamente el esquema histórico.
-  // Las altas nuevas usan la fecha de registro seleccionada por el administrador.
+  // El marcador interno es la fuente principal y también funciona en el Portal de Papás.
+  if(hasRegistrationBillingMarker(player)) return true;
+  if(hasLegacyBillingMarker(player)) return false;
+
+  // Para jugadores creados desde el 10-jul-2026 se acepta created_at o el evento create del historial.
+  // Los jugadores anteriores sin evidencia de alta nueva continúan con el esquema histórico.
   const created=parseISODate(playerCreatedISO(player));
   return !!(created && compareDateParts(created,REGISTRATION_BILLING_START)>=0);
+}
+async function persistRegistrationBillingMarkers(){
+  if(!sb || !players.length) return;
+  const candidates=players.filter(p=>usesRegistrationBilling(p) && !hasRegistrationBillingMarker(p));
+  for(const player of candidates){
+    const notes=withRegistrationBillingMarker(player.notes);
+    const {error}=await sb.from('players').update({notes}).eq('id',player.id);
+    if(!error) player.notes=notes;
+    else console.warn('No se pudo guardar el esquema de cobro del jugador',player.id,error.message);
+  }
 }
 function effectiveRegistrationISO(player){
   const registration=parseISODate(player?.registration_date);
@@ -189,7 +228,7 @@ const PLAYER_EDIT_FIELDS = [
 ];
 function compactPlayerSnapshot(p){
   const o = {};
-  PLAYER_EDIT_FIELDS.forEach(k => o[k] = p?.[k] ?? '');
+  PLAYER_EDIT_FIELDS.forEach(k => o[k] = k==='notes' ? stripPlayerBillingMarkers(p?.[k]) : (p?.[k] ?? ''));
   return o;
 }
 function playerDiffBeforeAfter(before, after){
@@ -259,8 +298,16 @@ function cleanPaymentBalanceTags(notes){
     .replace(/\s*\[CONFIRMED_AMOUNT:[^\]]+\]/g,'')
     .trim();
 }
-function paymentBalanceSummary(payment){
-  const balance=paymentBalanceAfter(payment);
+function paymentBalanceSummary(payment,player=null){
+  let balance=paymentBalanceAfter(payment);
+  if(player&&usesRegistrationBilling(player)&&payment?.confirmation_status==='Confirmado'){
+    const confirmed=confirmedPaymentsForPlayer(player,payments);
+    const latest=confirmed[0]||null;
+    if(latest&&String(latest.id)===String(payment.id)){
+      const current=calcRegistrationPlayer(player,payments);
+      balance=current.amount>0?current.amount:(current.credit>0?-current.credit:0);
+    }
+  }
   if(balance===null || !Number.isFinite(balance)) return '<span class="sub">—</span>';
   if(balance>0) return `<span class="payment-balance debt">Adeudo ${money(balance)}</span>`;
   if(balance<0) return `<span class="payment-balance credit">Crédito ${money(Math.abs(balance))}</span>`;
@@ -336,35 +383,34 @@ function calcRegistrationPlayer(player,payList=payments){
     return {last,months:0,amount:0,status:'Inactivo',credit:0,isOverdue:false,paymentDay,registrationDate:datePartsISO(registration),billingMode:'registration'};
   }
 
-  let firstDue=null;
-  if(latest){
-    const lastDate=parseISODate(last);
-    firstDue=lastDate?nextMonthScheduledDate(lastDate,paymentDay):nextScheduledDateAfter(registration,paymentDay);
-  }else{
-    // El primer cobro siempre es posterior al alta, incluso si el alta cae en el día de pago.
-    firstDue=nextScheduledDateAfter(registration,paymentDay);
-  }
-
+  // El primer cobro siempre ocurre después de la fecha de alta.
+  // No se reinicia el calendario cuando se registra un pago.
+  const firstDue=nextScheduledDateAfter(registration,paymentDay);
   const schedule=firstDue&&today?dueDatesThrough(firstDue,today,paymentDay):{count:0,lastDue:null,nextDue:firstDue};
-  const savedBalance=latest?paymentBalanceAfter(latest):null;
-  const openingBalance=savedBalance!==null&&Number.isFinite(savedBalance)?savedBalance:0;
-  const rawBalance=openingBalance+(schedule.count*fee);
+
+  // Para altas nuevas se usa un estado de cuenta limpio:
+  // cargos vencidos/programados menos TODOS los pagos confirmados.
+  // Así, un pago realizado el día del alta nunca crea adeudo; se conserva como crédito.
+  const totalPaid=confirmed.reduce((sum,p)=>{
+    const tagged=paymentConfirmedAmount(p);
+    const value=tagged!==null&&Number.isFinite(tagged)?tagged:Number(p.amount||0);
+    return sum+(Number.isFinite(value)?value:0);
+  },0);
+  const totalCharges=schedule.count*fee;
+  const rawBalance=totalCharges-totalPaid;
   const amount=Math.max(0,Math.round(rawBalance*100)/100);
   const credit=Math.max(0,Math.round((-rawBalance)*100)/100);
   const months=amount>0&&fee>0?Math.max(1,Math.ceil(amount/fee)):0;
   const isPastLastDue=!!(schedule.lastDue&&today&&compareDateParts(today,schedule.lastDue)>0);
-  const isOverdue=amount>0&&(
-    openingBalance>0 ||
-    schedule.count>1 ||
-    (schedule.count===1&&isPastLastDue)
-  );
+  const isOverdue=amount>0&&isPastLastDue;
 
   return {
     last,months,amount,
     status:amount<=0?'Pagado':(isOverdue?'Vencido':'Pendiente'),
     credit,isOverdue,paymentDay,
     registrationDate:datePartsISO(registration),
-    balanceAfter:savedBalance,
+    balanceAfter:rawBalance,
+    totalPaid,totalCharges,
     firstDue:firstDue?datePartsISO(firstDue):'',
     nextDue:schedule.nextDue?datePartsISO(schedule.nextDue):'',
     billingMode:'registration'
@@ -435,6 +481,7 @@ function exportCSV(kind){
   if(kind === 'players'){
     const rows=players.map(p=>({
       ...p,
+      notes:stripPlayerBillingMarkers(p.notes),
       registration_date:effectiveRegistrationISO(p),
       billing_scheme:usesRegistrationBilling(p)?'Alta nueva':'Histórico protegido'
     }));
@@ -1290,10 +1337,11 @@ async function loadAdminData(){
   if(dc.error){documents=[];} else documents=dc.data||[];
   const hs=await sb.from('player_change_history_v237').select('*').order('created_at',{ascending:false}).limit(500);
   if(hs.error){playerHistory=[];} else playerHistory=hs.data||[];
+  await persistRegistrationBillingMarkers();
 }
 async function refresh(){ if(mode==='admin'){await loadAdminData(); renderShell(); renderPage();} }
 function renderShell(){
-  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="history">🕘 Historial</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.55: históricos protegidos y altas nuevas sin adeudo.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
+  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="history">🕘 Historial</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.56: altas nuevas en $0 y pagos anticipados como crédito.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
   document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page=b.dataset.page; if(page==='public'){renderPublicHome(); return;} renderPage();});
   document.getElementById('search').oninput=e=>{q=e.target.value; renderPage();};
   document.getElementById('authBtn').onclick=logout;
@@ -1784,7 +1832,7 @@ async function confirmReviewedPayment(e){
 
 function renderPayments(){
   setTitle('Pagos');
-  document.getElementById('content').innerHTML=`<div class="notice success"><b>Revisión y saldo por jugador:</b> los pagos pendientes ahora se revisan y confirman directamente desde esta ventana. Cuando el monto confirmado es menor o mayor al adeudo, el CRM conserva la diferencia como adeudo restante o crédito para el siguiente periodo.</div><div class="panel"><div class="panel-head"><h3>Historial de pagos</h3><button class="btn green" onclick="openPaymentForm()">+ Registrar pago</button></div><div class="tablewrap"><table><thead><tr><th>ID</th><th>Alumno</th><th>Fecha</th><th>Periodo</th><th>Monto reportado / confirmado</th><th>Saldo después</th><th>Método</th><th>Estatus</th><th>Evidencia</th><th>Acción</th></tr></thead><tbody>${payments.map(p=>{const pending=p.confirmation_status==='Pendiente de confirmación';const batch=familyPaymentBatchId(p);const pendingGroup=batch?familyPaymentRows(batch,payments).filter(x=>x.confirmation_status==='Pendiente de confirmación'):[];const firstInGroup=!batch||String(pendingGroup[0]?.id)===String(p.id);let action='';if(pending){action=firstInGroup?`<div class="family-admin-actions"><button class="btn green" onclick="openPaymentReview('${p.id}')">${batch?'Revisar familia y confirmar':'Revisar monto y confirmar'}</button></div>`:'<span class="sub">Incluido en revisión familiar</span>';}else{action=`<button class="btn red" onclick="deletePayment('${p.id}')">Eliminar</button>`;}return `<tr><td>${String(p.id).slice(0,8)}</td><td><b>${esc(p.student_name||'')}</b><br><small>${esc(p.player_id)}</small>${batch?`<br><span class="family-payment-chip">Pago familiar · ${pendingGroup.length||familyPaymentRows(batch,payments).length} hijos</span>`:''}</td><td>${esc(p.payment_date)}</td><td>${esc(p.period||'')}</td><td class="amount">${money(p.amount)}</td><td>${paymentBalanceSummary(p)}</td><td>${esc(p.method||'')}</td><td><span class="status ${statusClass(p.confirmation_status)}">${esc(p.confirmation_status)}</span></td><td>${p.evidence_url?`<button class="btn secondary" onclick="openEvidencePreview('${p.id}')">Ver evidencia</button>`:'-'}</td><td>${action}</td></tr>`}).join('')||'<tr><td colspan="10">Sin pagos</td></tr>'}</tbody></table></div></div>`;
+  document.getElementById('content').innerHTML=`<div class="notice success"><b>Revisión y saldo por jugador:</b> los pagos pendientes ahora se revisan y confirman directamente desde esta ventana. Cuando el monto confirmado es menor o mayor al adeudo, el CRM conserva la diferencia como adeudo restante o crédito para el siguiente periodo.</div><div class="panel"><div class="panel-head"><h3>Historial de pagos</h3><button class="btn green" onclick="openPaymentForm()">+ Registrar pago</button></div><div class="tablewrap"><table><thead><tr><th>ID</th><th>Alumno</th><th>Fecha</th><th>Periodo</th><th>Monto reportado / confirmado</th><th>Saldo después</th><th>Método</th><th>Estatus</th><th>Evidencia</th><th>Acción</th></tr></thead><tbody>${payments.map(p=>{const pending=p.confirmation_status==='Pendiente de confirmación';const batch=familyPaymentBatchId(p);const pendingGroup=batch?familyPaymentRows(batch,payments).filter(x=>x.confirmation_status==='Pendiente de confirmación'):[];const firstInGroup=!batch||String(pendingGroup[0]?.id)===String(p.id);let action='';if(pending){action=firstInGroup?`<div class="family-admin-actions"><button class="btn green" onclick="openPaymentReview('${p.id}')">${batch?'Revisar familia y confirmar':'Revisar monto y confirmar'}</button></div>`:'<span class="sub">Incluido en revisión familiar</span>';}else{action=`<button class="btn red" onclick="deletePayment('${p.id}')">Eliminar</button>`;}return `<tr><td>${String(p.id).slice(0,8)}</td><td><b>${esc(p.student_name||'')}</b><br><small>${esc(p.player_id)}</small>${batch?`<br><span class="family-payment-chip">Pago familiar · ${pendingGroup.length||familyPaymentRows(batch,payments).length} hijos</span>`:''}</td><td>${esc(p.payment_date)}</td><td>${esc(p.period||'')}</td><td class="amount">${money(p.amount)}</td><td>${paymentBalanceSummary(p,players.find(x=>x.id===p.player_id))}</td><td>${esc(p.method||'')}</td><td><span class="status ${statusClass(p.confirmation_status)}">${esc(p.confirmation_status)}</span></td><td>${p.evidence_url?`<button class="btn secondary" onclick="openEvidencePreview('${p.id}')">Ver evidencia</button>`:'-'}</td><td>${action}</td></tr>`}).join('')||'<tr><td colspan="10">Sin pagos</td></tr>'}</tbody></table></div></div>`;
 }
 function renderEvidence(){
   setTitle('Evidencias por confirmar');
@@ -1983,7 +2031,7 @@ function openPlayerForm(id=''){
     : '<small>Jugador anterior: se conserva su fecha original de creación y su cálculo histórico. Este campo no se modifica.</small>';
   const modal=document.createElement('div'); modal.className='modalbg open'; modal.id='playerModal';
   modal.innerHTML=`<div class="modal"><div class="modal-head"><h3>${p?'Editar jugador':'Nuevo jugador'}</h3><button class="btn secondary" onclick="closeModal('playerModal')">Cerrar</button></div><div class="modal-body"><form id="playerForm" class="form-grid">
-    <label class="label">ID jugador<input id="pId" class="input" value="${esc(p?.id||nextId())}" ${p?'readonly':''} required></label><label class="label">Nombre<input id="pName" class="input" value="${esc(p?.name||'')}" required></label><label class="label">Fecha de registro<input id="pRegistrationDate" class="input" type="date" max="${todayISO()}" value="${esc(registrationDate)}" ${registrationManaged?'required':'readonly'}>${registrationHelp}</label><label class="label">Día de pago<select id="pDay" class="select" required><option value="">Selecciona el día...</option>${paymentDayOptions(p?.payment_day||'')}</select></label><label class="label">Tutor principal<input id="pTutor" class="input" value="${esc(p?.tutor||'')}"></label><label class="label">WhatsApp principal<input id="pPhone" class="input" value="${esc(p?.phone||'')}"></label><label class="label">Tutor secundario<input id="pTutor2" class="input" value="${esc(p?.tutor_2||'')}" placeholder="Opcional"></label><label class="label">WhatsApp secundario<input id="pPhone2" class="input" value="${esc(p?.tutor_phone_2||'')}" placeholder="Opcional"></label><label class="label">Categoría<input id="pCategory" class="input" value="${esc(p?.category||'')}"></label><label class="label">Estado<select id="pStatus" class="select"><option ${p?.status==='Activo'?'selected':''}>Activo</option><option ${p?.status==='Inactivo'?'selected':''}>Inactivo</option><option ${p?.status==='Baja'?'selected':''}>Baja</option></select></label><label class="label">Mensualidad<input id="pFee" class="input" type="number" min="0" step="50" value="${esc(p?.monthly_fee||300)}"></label><label class="label">Número uniforme<input id="pUniform" class="input" value="${esc(p?.uniform_number||'')}"></label><label class="label">Foto<input id="pPhoto" class="input" type="file" accept="image/*"></label><label class="label full">Notas<textarea id="pNotes" class="input">${esc(p?.notes||'')}</textarea></label><div class="full actions"><button class="btn green">Guardar jugador</button></div></form></div></div>`;
+    <label class="label">ID jugador<input id="pId" class="input" value="${esc(p?.id||nextId())}" ${p?'readonly':''} required></label><label class="label">Nombre<input id="pName" class="input" value="${esc(p?.name||'')}" required></label><label class="label">Fecha de registro<input id="pRegistrationDate" class="input" type="date" max="${todayISO()}" value="${esc(registrationDate)}" ${registrationManaged?'required':'readonly'}>${registrationHelp}</label><label class="label">Día de pago<select id="pDay" class="select" required><option value="">Selecciona el día...</option>${paymentDayOptions(p?.payment_day||'')}</select></label><label class="label">Tutor principal<input id="pTutor" class="input" value="${esc(p?.tutor||'')}"></label><label class="label">WhatsApp principal<input id="pPhone" class="input" value="${esc(p?.phone||'')}"></label><label class="label">Tutor secundario<input id="pTutor2" class="input" value="${esc(p?.tutor_2||'')}" placeholder="Opcional"></label><label class="label">WhatsApp secundario<input id="pPhone2" class="input" value="${esc(p?.tutor_phone_2||'')}" placeholder="Opcional"></label><label class="label">Categoría<input id="pCategory" class="input" value="${esc(p?.category||'')}"></label><label class="label">Estado<select id="pStatus" class="select"><option ${p?.status==='Activo'?'selected':''}>Activo</option><option ${p?.status==='Inactivo'?'selected':''}>Inactivo</option><option ${p?.status==='Baja'?'selected':''}>Baja</option></select></label><label class="label">Mensualidad<input id="pFee" class="input" type="number" min="0" step="50" value="${esc(p?.monthly_fee||300)}"></label><label class="label">Número uniforme<input id="pUniform" class="input" value="${esc(p?.uniform_number||'')}"></label><label class="label">Foto<input id="pPhoto" class="input" type="file" accept="image/*"></label><label class="label full">Notas<textarea id="pNotes" class="input">${esc(stripPlayerBillingMarkers(p?.notes||''))}</textarea></label><div class="full actions"><button class="btn green">Guardar jugador</button></div></form></div></div>`;
   document.body.appendChild(modal);
   document.getElementById('playerForm').onsubmit=(e)=>savePlayerForm(e,p);
 }
@@ -2011,6 +2059,7 @@ async function savePlayerForm(e, oldPlayer){
     };
 
     const registrationManaged=!oldPlayer||usesRegistrationBilling(oldPlayer);
+    if(registrationManaged) row.notes=withRegistrationBillingMarker(row.notes);
     const selectedRegistration=document.getElementById('pRegistrationDate').value;
     if(registrationManaged){
       if(!selectedRegistration){ toast('Selecciona la fecha de registro.'); return; }

@@ -1,0 +1,12 @@
+PRUEBAS REALIZADAS - DUCKS CRM v2.56
+
+Fecha de referencia: 10 de julio de 2026, zona America/Mexico_City.
+
+APROBADO:
+- Jugador D049 sin created_at, identificado mediante evento create del historial.
+- Registro 2026-07-10, día de pago 1: primer cobro 2026-08-01.
+- Pago confirmado el día del alta con saldo previo incorrecto de $267: adeudo actual $0.
+- El pago anticipado se conserva como crédito y no desaparece.
+- Alta con día de pago 15: saldo $0 y primer cobro 2026-07-15.
+- Jugador anterior creado en junio mantiene el cálculo histórico previo.
+- Validación de sintaxis JavaScript completada sin errores.
