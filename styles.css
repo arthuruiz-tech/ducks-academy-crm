@@ -1882,3 +1882,47 @@ button[onclick="installDucksApp()"]{
     gap:8px !important;
   }
 }
+
+
+/* v2.47 - Modificar y eliminar cuentas de papás */
+.account-action-buttons{
+  display:flex;
+  gap:7px;
+  flex-wrap:wrap;
+  min-width:320px;
+}
+.account-action-buttons .btn{
+  padding:8px 10px !important;
+  font-size:12px !important;
+  white-space:nowrap;
+}
+.parent-account-edit-modal{
+  max-width:720px !important;
+}
+.account-edit-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.account-edit-actions .btn{
+  min-width:160px;
+}
+@media(max-width:760px){
+  .account-action-buttons{
+    min-width:240px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+  }
+  .account-action-buttons .btn{
+    width:100%;
+  }
+  .account-edit-actions{
+    display:grid;
+    grid-template-columns:1fr;
+  }
+  .account-edit-actions .btn{
+    width:100%;
+    min-width:0;
+  }
+}

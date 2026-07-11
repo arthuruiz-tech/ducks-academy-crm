@@ -966,7 +966,12 @@ function renderParents(){
     <label class="label">Jugador<select id="linkPlayer" class="select" required><option value="">Selecciona jugador...</option>${playersOptions}</select></label>
     <div class="full"><button class="btn green">Ligar jugador</button></div>
   </form></div></div>
-  <div class="panel"><div class="panel-head"><h3>Cuentas creadas</h3></div><div class="tablewrap"><table><thead><tr><th>Nombre</th><th>Usuario</th><th>Clave temporal</th><th>WhatsApp</th><th>Activo</th><th>Acción</th></tr></thead><tbody>${parentAccounts.map(a=>`<tr><td><b>${esc(a.display_name)}</b></td><td>${esc(a.login)}</td><td><code>${esc(a.access_code||'')}</code></td><td>${esc(a.phone||'-')}</td><td>${a.active?'Sí':'No'}</td><td><button class="btn secondary" onclick="autoLinkAccountFromButton('${a.id}')">Auto ligar</button> <button class="btn secondary" onclick="resetParentPassword('${a.id}')">Reset contraseña</button></td></tr>`).join('')||'<tr><td colspan="6">Sin cuentas creadas</td></tr>'}</tbody></table></div></div>
+  <div class="panel"><div class="panel-head"><h3>Cuentas creadas</h3></div><div class="tablewrap"><table><thead><tr><th>Nombre</th><th>Usuario</th><th>Clave temporal</th><th>WhatsApp</th><th>Activo</th><th>Acción</th></tr></thead><tbody>${parentAccounts.map(a=>`<tr><td><b>${esc(a.display_name)}</b></td><td>${esc(a.login)}</td><td><code>${esc(a.access_code||'')}</code></td><td>${esc(a.phone||'-')}</td><td>${a.active?'Sí':'No'}</td><td><div class="account-action-buttons">
+  <button class="btn secondary" onclick="editParentAccount('${a.id}')">Modificar</button>
+  <button class="btn secondary" onclick="autoLinkAccountFromButton('${a.id}')">Auto ligar</button>
+  <button class="btn secondary" onclick="resetParentPassword('${a.id}')">Reset contraseña</button>
+  <button class="btn red" onclick="deleteParentAccount('${a.id}')">Eliminar</button>
+</div></td></tr>`).join('')||'<tr><td colspan="6">Sin cuentas creadas</td></tr>'}</tbody></table></div></div>
   <div class="panel"><div class="panel-head"><h3>Sugerencias desde tutor / WhatsApp existentes</h3></div><div class="cards">${fams.map(f=>`<div class="card"><h4>${esc(f.tutor||'Tutor sin nombre')}</h4><p><b>WhatsApp:</b> ${esc(f.phone||'-')}</p><p><b>Jugadores:</b> ${f.players.map(p=>esc(p.name)).join(', ')}</p><div class="actions"><button class="btn secondary" onclick="prefillParent('${String(f.tutor||'').replace(/'/g,"\\'")}','${String(f.phone||'').replace(/'/g,"\\'")}')">Usar para crear cuenta</button></div></div>`).join('')||'<div class="card">No hay sugerencias porque no cargaron jugadores.</div>'}</div></div>
   <div class="panel"><div class="panel-head"><h3>Cuentas y jugadores ligados</h3></div><div class="tablewrap"><table><thead><tr><th>Cuenta</th><th>Usuario</th><th>Jugador</th><th>Activo</th><th>Acción</th></tr></thead><tbody>${parentLinks.map(l=>{const a=parentAccounts.find(x=>x.id===l.parent_account_id); const p=players.find(x=>x.id===l.player_id); return `<tr><td><b>${esc(a?.display_name||'')}</b></td><td>${esc(a?.login||'')}</td><td>${esc(l.player_id)} · ${esc(p?.name||'')}</td><td>${l.active?'Sí':'No'}</td><td><button class="btn secondary" onclick="resetParentPassword('${a?.id||''}')">Reset contraseña</button> <button class="btn red" onclick="deleteParentLink('${l.id}')">Eliminar</button></td></tr>`}).join('')||'<tr><td colspan="5">Sin asignaciones</td></tr>'}</tbody></table></div></div>`;
   document.getElementById('parentAccountForm').onsubmit=saveParentAccount;
@@ -1024,6 +1029,128 @@ async function autoLinkAccountFromButton(accountId){
     renderPage();
   }catch(err){
     toast('Error en auto ligado: ' + err.message);
+  }
+}
+
+
+function editParentAccount(accountId){
+  const acc = parentAccounts.find(a=>a.id===accountId);
+  if(!acc){ toast('Cuenta no encontrada'); return; }
+
+  const linked = parentLinks
+    .filter(l=>l.parent_account_id===accountId && l.active)
+    .map(l=>{
+      const p=players.find(x=>x.id===l.player_id);
+      return p?.name || l.player_id;
+    });
+
+  const modal=document.createElement('div');
+  modal.className='modalbg open';
+  modal.id='editParentAccountModal';
+  modal.innerHTML=`<div class="modal parent-account-edit-modal">
+    <div class="modal-head">
+      <h3>Modificar cuenta de papá/tutor</h3>
+      <button class="btn secondary" onclick="closeModal('editParentAccountModal')">Cerrar</button>
+    </div>
+    <div class="modal-body">
+      <div class="notice success">
+        <b>Jugadores ligados:</b> ${linked.length ? linked.map(esc).join(', ') : 'Ninguno'}
+      </div>
+      <form id="editParentAccountForm" class="form-grid">
+        <label class="label">Nombre visible
+          <input id="editAccName" class="input" required value="${esc(acc.display_name||'')}">
+        </label>
+        <label class="label">Usuario
+          <input id="editAccLogin" class="input" required value="${esc(acc.login||'')}">
+        </label>
+        <label class="label">WhatsApp
+          <input id="editAccPhone" class="input" value="${esc(acc.phone||'')}">
+        </label>
+        <label class="label">Estado
+          <select id="editAccActive" class="select">
+            <option value="true" ${acc.active!==false?'selected':''}>Activa</option>
+            <option value="false" ${acc.active===false?'selected':''}>Inactiva</option>
+          </select>
+        </label>
+        <label class="label full">Nueva contraseña temporal
+          <input id="editAccPassword" class="input" placeholder="Dejar vacío para conservar la actual">
+          <small>Solo se cambiará si capturas una nueva contraseña.</small>
+        </label>
+        <div class="full account-edit-actions">
+          <button type="button" class="btn secondary" onclick="closeModal('editParentAccountModal')">Cancelar</button>
+          <button class="btn green">Guardar cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+  document.getElementById('editParentAccountForm').onsubmit=(e)=>saveParentAccountChanges(e,accountId);
+}
+
+async function saveParentAccountChanges(e, accountId){
+  e.preventDefault();
+  const acc = parentAccounts.find(a=>a.id===accountId);
+  if(!acc){ toast('Cuenta no encontrada'); return; }
+
+  const display_name=document.getElementById('editAccName').value.trim();
+  const login=document.getElementById('editAccLogin').value.trim().toLowerCase();
+  const phone=normalizePhone(document.getElementById('editAccPhone').value);
+  const active=document.getElementById('editAccActive').value==='true';
+  const newPassword=document.getElementById('editAccPassword').value.trim();
+
+  if(display_name.length<2){ toast('Captura el nombre del papá/tutor'); return; }
+  if(login.length<3){ toast('El usuario debe tener al menos 3 caracteres'); return; }
+  if(newPassword && newPassword.length<4){ toast('La nueva contraseña debe tener al menos 4 caracteres'); return; }
+
+  const duplicate=parentAccounts.find(a=>
+    a.id!==accountId &&
+    String(a.login||'').trim().toLowerCase()===login
+  );
+  if(duplicate){ toast('Ese usuario ya está asignado a otra cuenta'); return; }
+
+  const row={display_name,login,phone,active};
+  if(newPassword) row.access_code=newPassword;
+
+  try{
+    const {error}=await sb.from('parent_accounts_v213').update(row).eq('id',accountId);
+    if(error) throw error;
+    closeModal('editParentAccountModal');
+    await loadAdminData();
+    toast('Cuenta actualizada correctamente');
+    page='parents';
+    renderShell();
+    renderPage();
+  }catch(err){
+    toast('Error modificando cuenta: '+err.message);
+  }
+}
+
+async function deleteParentAccount(accountId){
+  const acc=parentAccounts.find(a=>a.id===accountId);
+  if(!acc){ toast('Cuenta no encontrada'); return; }
+
+  const linked=parentLinks.filter(l=>l.parent_account_id===accountId);
+  const playerNames=linked.map(l=>{
+    const p=players.find(x=>x.id===l.player_id);
+    return p?.name || l.player_id;
+  });
+
+  const detail=playerNames.length
+    ? `\n\nTambién se eliminarán ${playerNames.length} relación(es) con jugadores:\n- ${playerNames.join('\n- ')}`
+    : '\n\nEsta cuenta no tiene jugadores ligados.';
+
+  if(!confirm(`¿Eliminar definitivamente la cuenta de ${acc.display_name} (${acc.login})?${detail}\n\nLos jugadores, pagos y documentos NO se eliminarán.`)) return;
+
+  try{
+    const {error}=await sb.from('parent_accounts_v213').delete().eq('id',accountId);
+    if(error) throw error;
+    await loadAdminData();
+    toast('Cuenta eliminada. Los jugadores y su información se conservaron.');
+    page='parents';
+    renderShell();
+    renderPage();
+  }catch(err){
+    toast('Error eliminando cuenta: '+err.message);
   }
 }
 
@@ -1301,7 +1428,7 @@ async function confirmPayment(id){const {error}=await sb.from('payments').update
 async function rejectPayment(id){const {error}=await sb.from('payments').update({confirmation_status:'Rechazado'}).eq('id',id); if(error)toast(error.message); else{toast('Pago rechazado'); await refresh();}}
 async function deletePayment(id){if(!confirm('¿Eliminar pago?'))return; const {error}=await sb.from('payments').delete().eq('id',id); if(error)toast(error.message); else{toast('Pago eliminado'); await refresh();}}
 
-window.renderPublicHome=renderPublicHome; window.renderParentLogin=renderParentLogin; window.renderAdminLogin=renderAdminLogin; window.renderLogin=renderAdminLogin; window.parentLogout=parentLogout; window.copyBank=copyBank; window.openParentPayment=openParentPayment; window.openParentDocument=openParentDocument; window.installDucksApp=installDucksApp; window.goBackSmart=goBackSmart; window.openPlayerForm=openPlayerForm; window.deletePlayer=deletePlayer; window.openPaymentForm=openPaymentForm; window.confirmPayment=confirmPayment; window.rejectPayment=rejectPayment; window.deletePayment=deletePayment; window.closeModal=closeModal; window.copyReminder=copyReminder; window.deleteParentLink=deleteParentLink; window.prefillParent=prefillParent; window.exportCSV=exportCSV; window.exportFullJSON=exportFullJSON; window.exportDocumentsCSV=exportDocumentsCSV; window.resetParentPassword=resetParentPassword; window.autoLinkAccountFromButton=autoLinkAccountFromButton;
+window.renderPublicHome=renderPublicHome; window.renderParentLogin=renderParentLogin; window.renderAdminLogin=renderAdminLogin; window.renderLogin=renderAdminLogin; window.parentLogout=parentLogout; window.copyBank=copyBank; window.openParentPayment=openParentPayment; window.openParentDocument=openParentDocument; window.installDucksApp=installDucksApp; window.goBackSmart=goBackSmart; window.openPlayerForm=openPlayerForm; window.deletePlayer=deletePlayer; window.openPaymentForm=openPaymentForm; window.confirmPayment=confirmPayment; window.rejectPayment=rejectPayment; window.deletePayment=deletePayment; window.closeModal=closeModal; window.copyReminder=copyReminder; window.deleteParentLink=deleteParentLink; window.prefillParent=prefillParent; window.exportCSV=exportCSV; window.exportFullJSON=exportFullJSON; window.exportDocumentsCSV=exportDocumentsCSV; window.resetParentPassword=resetParentPassword; window.autoLinkAccountFromButton=autoLinkAccountFromButton; window.editParentAccount=editParentAccount; window.saveParentAccountChanges=saveParentAccountChanges; window.deleteParentAccount=deleteParentAccount;
 
 init();
 

@@ -1,0 +1,28 @@
+Ducks CRM Profesional v2.47
+
+Nuevas funciones en Papás / Cuentas creadas:
+- Botón Modificar cuenta.
+- Permite cambiar:
+  nombre visible,
+  usuario,
+  WhatsApp,
+  estado activa/inactiva,
+  contraseña temporal opcional.
+- Botón Eliminar cuenta.
+- Al eliminar una cuenta:
+  se eliminan sus relaciones de acceso con jugadores,
+  NO se eliminan jugadores,
+  NO se eliminan pagos,
+  NO se eliminan comprobantes,
+  NO se eliminan documentos.
+- Se conservan Auto ligar y Reset contraseña.
+- Validación para evitar usuarios duplicados.
+
+No requiere SQL nuevo.
+
+Publicación:
+1. Descomprime este ZIP.
+2. Sube todos los archivos y carpetas directamente a la raíz de GitHub.
+3. Haz Commit changes.
+4. Espera a que Vercel indique Ready.
+5. Recarga con Ctrl + F5.
