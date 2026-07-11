@@ -1,0 +1,23 @@
+Ducks CRM Profesional v2.49
+
+Nueva función: Pago familiar / Pagar varios hijos
+
+Portal de Papás:
+- Disponible automáticamente cuando una cuenta tiene 2 o más hijos.
+- Permite seleccionar cuáles hijos se incluirán.
+- Permite ajustar el monto aplicado a cada hijo.
+- Calcula el total familiar automáticamente.
+- Genera concepto y datos bancarios para un solo depósito.
+- Se carga un solo comprobante.
+- El mismo comprobante se registra individualmente en cada hijo seleccionado.
+- Cada aplicación queda pendiente de confirmación.
+
+Administrador > Evidencias:
+- Los movimientos muestran la etiqueta Pago familiar.
+- Botón Confirmar familia confirma todas las aplicaciones del comprobante.
+- Botón Rechazar familia rechaza todas las aplicaciones del comprobante.
+
+Importante:
+- No duplica el ingreso total: el total familiar se reparte entre los hijos seleccionados.
+- Los pagos se reflejan en cada hijo después de la confirmación administrativa.
+- No requiere SQL nuevo.

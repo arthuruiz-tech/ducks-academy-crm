@@ -655,6 +655,145 @@ function parentPortalActions(){
   </section>`;
 }
 
+
+function familyPaymentBatchId(payment){
+  const m=String(payment?.notes||'').match(/\[FAMILY_PAYMENT:([^\]]+)\]/);
+  return m ? m[1] : '';
+}
+function familyPaymentRows(batchId, list=payments){
+  return list.filter(p=>familyPaymentBatchId(p)===batchId);
+}
+function familyPaymentConcept(){
+  const d=new Date();
+  const ym=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  const family=String(parentProfile?.display_name||parentProfile?.login||'FAMILIA').replace(/\s+/g,' ').trim();
+  return `DUCKS FAMILIA ${family} ${ym}`.slice(0,70);
+}
+function familySuggestedAmount(player){
+  const c=calc(player,parentPayments);
+  return c.amount>0 ? c.amount : Number(player.monthly_fee||0);
+}
+function updateFamilyPaymentTotal(){
+  const rows=[...document.querySelectorAll('.family-pay-player-row')];
+  let total=0, count=0;
+  rows.forEach(row=>{
+    const check=row.querySelector('.family-pay-check');
+    const amount=row.querySelector('.family-pay-amount');
+    const enabled=!!check?.checked;
+    row.classList.toggle('selected',enabled);
+    if(amount) amount.disabled=!enabled;
+    if(enabled){ total+=Number(amount?.value||0); count++; }
+  });
+  const totalEl=document.getElementById('familyPayTotal');
+  const countEl=document.getElementById('familyPayCount');
+  if(totalEl) totalEl.textContent=money(total);
+  if(countEl) countEl.textContent=`${count} hijo${count===1?'':'s'} seleccionado${count===1?'':'s'}`;
+}
+function toggleAllFamilyPlayers(value){
+  document.querySelectorAll('.family-pay-check').forEach(x=>x.checked=!!value);
+  updateFamilyPaymentTotal();
+}
+function selectedFamilyPaymentItems(){
+  return [...document.querySelectorAll('.family-pay-player-row')]
+    .filter(row=>row.querySelector('.family-pay-check')?.checked)
+    .map(row=>({
+      player_id:row.dataset.playerId,
+      amount:Number(row.querySelector('.family-pay-amount')?.value||0)
+    }));
+}
+function copyFamilyPaymentData(){
+  const items=selectedFamilyPaymentItems();
+  if(items.length<2){toast('Selecciona por lo menos dos hijos.');return;}
+  const total=items.reduce((s,x)=>s+x.amount,0);
+  const concept=familyPaymentConcept();
+  const text=`Banco: ${BANK_NAME}\nCLABE: ${BANK_CLABE}\nBeneficiario: ${BANK_BENEFICIARY}\nMonto total: ${money(total)}\nConcepto: ${concept}`;
+  navigator.clipboard.writeText(text).then(()=>toast('Datos del pago familiar copiados')).catch(()=>toast('No se pudieron copiar los datos'));
+}
+function openFamilyPayment(){
+  if(parentPlayers.length<2){toast('Esta opción requiere por lo menos dos hijos ligados a la cuenta.');return;}
+  const rows=parentPlayers.map(p=>{
+    const c=calc(p,parentPayments);
+    const amount=familySuggestedAmount(p);
+    return `<div class="family-pay-player-row selected" data-player-id="${p.id}">
+      <label class="family-pay-selector">
+        <input class="family-pay-check" type="checkbox" checked onchange="updateFamilyPaymentTotal()">
+        <img src="${playerPhotoUrl(p)}" alt="${esc(p.name)}">
+        <span><b>${esc(p.name)}</b><small>${c.months} mes(es) pendiente(s) · ${c.status}</small></span>
+      </label>
+      <label class="family-pay-amount-label">Aplicar a este hijo
+        <input class="input family-pay-amount" type="number" min="1" step="50" value="${amount}" oninput="updateFamilyPaymentTotal()">
+      </label>
+    </div>`;
+  }).join('');
+  const modal=document.createElement('div');
+  modal.className='modalbg open family-pay-overlay';
+  modal.id='familyPayModal';
+  modal.innerHTML=`<div class="modal family-pay-modal">
+    <div class="modal-head family-pay-head"><div><h3>Pago familiar</h3><small>Un solo depósito y un comprobante para varios hijos</small></div></div>
+    <div class="modal-body">
+      <div class="family-pay-summary">
+        <div><small>Total del pago</small><strong id="familyPayTotal">$0.00</strong><span id="familyPayCount"></span></div>
+        <button type="button" class="btn secondary" onclick="copyFamilyPaymentData()">Copiar datos de pago</button>
+      </div>
+      <div class="notice success"><b>¿Cómo funciona?</b> Selecciona los hijos, ajusta el monto de cada uno y sube un solo comprobante. El CRM creará una aplicación individual para cada hijo con la misma evidencia.</div>
+      <div class="family-pay-tools"><button type="button" class="btn secondary" onclick="toggleAllFamilyPlayers(true)">Seleccionar todos</button><button type="button" class="btn secondary" onclick="toggleAllFamilyPlayers(false)">Quitar selección</button></div>
+      <div class="family-pay-list">${rows}</div>
+      <div class="family-bank-compact">
+        <div><small>CLABE BBVA</small><b>${BANK_CLABE}</b></div>
+        <div><small>Concepto sugerido</small><b>${esc(familyPaymentConcept())}</b></div>
+        <button type="button" class="btn green" onclick="copyBank(BANK_CLABE,'CLABE')">Copiar CLABE</button>
+      </div>
+      <form id="familyPayForm" class="form-grid family-pay-form">
+        <label class="label">Fecha de pago<input id="familyPayDate" class="input" type="date" value="${todayISO()}" required></label>
+        <label class="label">Método<select id="familyPayMethod" class="select" required><option>Transferencia</option><option>Depósito</option><option>Efectivo</option><option>Otro</option></select></label>
+        <label class="label full">Un solo comprobante<input id="familyPayEvidence" class="input" type="file" accept="image/*,application/pdf" required></label>
+        <label class="label full">Comentario opcional<textarea id="familyPayNotes" class="input" placeholder="Referencia bancaria o comentario..."></textarea></label>
+        <div class="full"><button class="btn green family-submit-btn">Enviar pago para todos los hijos seleccionados</button></div>
+      </form>
+    </div>
+    <div class="pay-close-footer"><button type="button" class="btn secondary pay-close-btn" onclick="closeModal('familyPayModal')">Cerrar ventana</button></div>
+  </div>`;
+  document.body.appendChild(modal);
+  document.getElementById('familyPayForm').onsubmit=submitFamilyPayment;
+  updateFamilyPaymentTotal();
+}
+async function submitFamilyPayment(e){
+  e.preventDefault();
+  const items=selectedFamilyPaymentItems();
+  if(items.length<2){toast('Selecciona por lo menos dos hijos para un pago familiar.');return;}
+  if(items.some(x=>!x.amount || x.amount<=0)){toast('Todos los montos seleccionados deben ser mayores a cero.');return;}
+  const file=document.getElementById('familyPayEvidence').files[0];
+  if(!file){toast('Selecciona el comprobante del pago familiar.');return;}
+  const submitBtn=document.querySelector('#familyPayForm .family-submit-btn');
+  if(submitBtn){submitBtn.disabled=true;submitBtn.textContent='Enviando pago familiar...';}
+  try{
+    const evidence_url=await uploadFile(file,'evidencias/familiares');
+    const payDate=document.getElementById('familyPayDate').value;
+    const method=document.getElementById('familyPayMethod').value;
+    const comment=document.getElementById('familyPayNotes').value.trim();
+    const batchId=`FAM-${Date.now().toString(36).toUpperCase()}`;
+    const successes=[]; const failures=[];
+    for(let i=0;i<items.length;i++){
+      const item=items[i];
+      const player=parentPlayers.find(p=>p.id===item.player_id);
+      const notes=`[FAMILY_PAYMENT:${batchId}] Pago familiar ${i+1}/${items.length}.${comment?' '+comment:''}`;
+      const row={p_token:parentToken,p_player_id:item.player_id,p_payment_date:payDate,p_period:period(payDate),p_amount:item.amount,p_method:method,p_notes:notes,p_evidence_url:evidence_url,p_evidence_name:file.name};
+      const {data,error}=await sb.rpc('ducks_parent_submit_payment_v213',row);
+      if(error || !data?.ok) failures.push(player?.name||item.player_id);
+      else successes.push(player?.name||item.player_id);
+    }
+    if(!successes.length) throw new Error('No se pudo aplicar el pago a ningún hijo.');
+    closeModal('familyPayModal');
+    await loadParentData();
+    renderParentPortal();
+    if(failures.length) toast(`Pago aplicado a ${successes.length} hijo(s). No se pudo aplicar a: ${failures.join(', ')}`);
+    else toast(`Pago familiar enviado para ${successes.length} hijos. Queda pendiente de confirmación.`);
+  }catch(err){
+    toast('Error: '+err.message);
+    if(submitBtn){submitBtn.disabled=false;submitBtn.textContent='Enviar pago para todos los hijos seleccionados';}
+  }
+}
+
 function renderParentPortal(){
   mode='parentPortal'; rememberScreen('parentPortal:');
   const cards = parentPlayers.map(p=>{
@@ -683,12 +822,13 @@ function renderParentPortal(){
   app.innerHTML=`${publicQuickMenu()}<div class="public-site with-global-menu">
     <header class="academy-menu"><div class="academy-menu-inner">
       <a class="academy-brand" href="#" onclick="renderParentPortal()"><img src="assets/logo.png"><span>Portal de Papás</span></a>
-      <nav class="academy-links"><button onclick="renderParentPortal()">Mis hijos</button><button onclick="openParentPayment()">Subir comprobante</button></nav>
+      <nav class="academy-links"><button onclick="renderParentPortal()">Mis hijos</button>${parentPlayers.length>=2?'<button class="primary-menu-btn" onclick="openFamilyPayment()">Pago familiar</button>':''}<button onclick="openParentPayment()">Subir comprobante</button></nav>
       <div class="header-actions"><button class="btn secondary academy-admin" onclick="parentLogout()">Cerrar sesión</button></div>
     </div></header>
     <main class="academy-main">
       <section class="academy-ribbon private-ribbon"><div class="court-lines"></div><div class="ribbon-content"><img class="ribbon-logo small" src="assets/logo.png"><div class="ribbon-text"><span class="ribbon-kicker">Acceso privado</span><h1>Bienvenido al Portal de Papás</h1><p>${esc(parentProfile?.display_name||parentProfile?.login||'')}</p></div></div></section>
       ${parentPortalActions()}
+      ${parentPlayers.length>=2?`<section class="family-payment-banner"><div><span>Pago para varios hijos</span><h2>Realiza un solo pago familiar</h2><p>Selecciona a tus hijos, paga el total y carga un solo comprobante. El pago se aplicará individualmente a cada uno.</p></div><button class="btn green" onclick="openFamilyPayment()">💳 Pagar varios hijos</button></section>`:''}
       <section class="parent-card"><div class="parent-title"><img src="assets/logo.png"><div><h1>Mis jugadores</h1><div class="sub">Solo información asignada a tu familia</div></div></div>${parentPlayers.length?`<div class="family-grid">${cards}</div>`:`<div class="notice warning">Tu cuenta aún no tiene jugadores asignados. Contacta a administración.</div>`}</section>
       <section class="bank-card"><div class="bank-head"><div><span class="bank-chip">BBVA MX</span><h2>Datos para depósito o transferencia</h2><p>Copia la cuenta o CLABE, realiza tu pago y después adjunta el comprobante.</p></div><img src="assets/logo.png"></div><div class="bank-grid"><div class="bank-item"><small>Cuenta</small><strong>${BANK_ACCOUNT}</strong><button type="button" class="btn secondary" onclick="copyBank(BANK_ACCOUNT,'Cuenta')">Copiar cuenta</button></div><div class="bank-item"><small>CLABE</small><strong>${BANK_CLABE}</strong><button type="button" class="btn secondary" onclick="copyBank(BANK_CLABE,'CLABE')">Copiar CLABE</button></div><div class="bank-item full"><small>Beneficiario / referencia</small><strong>${BANK_BENEFICIARY}</strong><button type="button" class="btn secondary" onclick="copyBank(BANK_BENEFICIARY,'Beneficiario')">Copiar beneficiario</button></div></div></section>
     </main>
@@ -1231,7 +1371,7 @@ function renderPayments(){
 function renderEvidence(){
   setTitle('Evidencias por confirmar');
   const pend=payments.filter(p=>p.confirmation_status==='Pendiente de confirmación');
-  document.getElementById('content').innerHTML=`<div class="notice warning">Al confirmar un pago, se reflejará automáticamente en el dashboard y adeudos.</div><div class="panel"><div class="panel-head"><h3>Pendientes</h3></div><div class="tablewrap"><table><thead><tr><th>Alumno</th><th>Fecha</th><th>Periodo</th><th>Monto</th><th>Enviado por</th><th>Evidencia</th><th>Acción</th></tr></thead><tbody>${pend.map(p=>`<tr><td><b>${esc(p.student_name)}</b><br><small>${esc(p.player_id)}</small></td><td>${p.payment_date}</td><td>${esc(p.period||'')}</td><td class="amount">${money(p.amount)}</td><td>${esc(p.submitted_by||'')}</td><td>${p.evidence_url?`<a class="btn secondary" target="_blank" href="${p.evidence_url}">Ver evidencia</a>`:'-'}</td><td><button class="btn green" onclick="confirmPayment('${p.id}')">Confirmar</button> <button class="btn red" onclick="rejectPayment('${p.id}')">Rechazar</button></td></tr>`).join('')||'<tr><td colspan="7">No hay evidencias pendientes.</td></tr>'}</tbody></table></div></div>`;
+  document.getElementById('content').innerHTML=`<div class="notice warning">Al confirmar un pago, se reflejará automáticamente en el dashboard y adeudos. Los pagos familiares pueden confirmarse o rechazarse como grupo.</div><div class="panel"><div class="panel-head"><h3>Pendientes</h3></div><div class="tablewrap"><table><thead><tr><th>Alumno</th><th>Fecha</th><th>Periodo</th><th>Monto</th><th>Enviado por</th><th>Evidencia</th><th>Acción</th></tr></thead><tbody>${pend.map(p=>{const batch=familyPaymentBatchId(p);const group=batch?familyPaymentRows(batch,pend):[];return `<tr><td><b>${esc(p.student_name)}</b><br><small>${esc(p.player_id)}</small>${batch?`<br><span class="family-payment-chip">Pago familiar · ${group.length} hijos</span>`:''}</td><td>${p.payment_date}</td><td>${esc(p.period||'')}</td><td class="amount">${money(p.amount)}</td><td>${esc(p.submitted_by||'')}</td><td>${p.evidence_url?`<a class="btn secondary" target="_blank" href="${p.evidence_url}">Ver evidencia</a>`:'-'}</td><td>${batch?`<div class="family-admin-actions"><button class="btn green" onclick="confirmFamilyPayment('${batch}')">Confirmar familia</button><button class="btn red" onclick="rejectFamilyPayment('${batch}')">Rechazar familia</button></div>`:`<button class="btn green" onclick="confirmPayment('${p.id}')">Confirmar</button> <button class="btn red" onclick="rejectPayment('${p.id}')">Rechazar</button>`}</td></tr>`}).join('')||'<tr><td colspan="7">No hay evidencias pendientes.</td></tr>'}</tbody></table></div></div>`;
 }
 function renderWhatsApp(){
   setTitle('WhatsApp vencidos');
@@ -1476,11 +1616,29 @@ async function savePaymentForm(e){
   const player_id=document.getElementById('payPlayer').value; const player=players.find(p=>p.id===player_id); const file=document.getElementById('payEvidence').files[0];
   try{ const evidence_url=file?await uploadFile(file,'evidencias'):''; const row={player_id,student_name:player?.name||'',payment_date:document.getElementById('payDate').value,period:document.getElementById('payPeriod').value||period(document.getElementById('payDate').value),amount:Number(document.getElementById('payAmount').value||0),method:document.getElementById('payMethod').value,notes:document.getElementById('payNotes').value,confirmation_status:'Confirmado',evidence_url,evidence_name:file?.name||'',submitted_by:'Admin',confirmed_at:new Date().toISOString()}; const {error}=await sb.from('payments').insert(row); if(error) throw error; toast('Pago guardado y confirmado'); closeModal('paymentModal'); await refresh(); page='payments'; renderPage(); }catch(err){toast('Error: '+err.message);}
 }
+
+async function confirmFamilyPayment(batchId){
+  const rows=payments.filter(p=>familyPaymentBatchId(p)===batchId && p.confirmation_status==='Pendiente de confirmación');
+  if(!rows.length){toast('Este pago familiar ya no tiene registros pendientes.');return;}
+  if(!confirm(`¿Confirmar el pago familiar para ${rows.length} hijos?`)) return;
+  const ids=rows.map(p=>p.id);
+  const {error}=await sb.from('payments').update({confirmation_status:'Confirmado',confirmed_at:new Date().toISOString()}).in('id',ids);
+  if(error) toast('Error: '+error.message); else{toast(`Pago familiar confirmado para ${rows.length} hijos`);await refresh();}
+}
+async function rejectFamilyPayment(batchId){
+  const rows=payments.filter(p=>familyPaymentBatchId(p)===batchId && p.confirmation_status==='Pendiente de confirmación');
+  if(!rows.length){toast('Este pago familiar ya no tiene registros pendientes.');return;}
+  if(!confirm(`¿Rechazar el pago familiar para ${rows.length} hijos?`)) return;
+  const ids=rows.map(p=>p.id);
+  const {error}=await sb.from('payments').update({confirmation_status:'Rechazado'}).in('id',ids);
+  if(error) toast('Error: '+error.message); else{toast(`Pago familiar rechazado para ${rows.length} hijos`);await refresh();}
+}
+
 async function confirmPayment(id){const {error}=await sb.from('payments').update({confirmation_status:'Confirmado',confirmed_at:new Date().toISOString()}).eq('id',id); if(error)toast(error.message); else{toast('Pago confirmado'); await refresh();}}
 async function rejectPayment(id){const {error}=await sb.from('payments').update({confirmation_status:'Rechazado'}).eq('id',id); if(error)toast(error.message); else{toast('Pago rechazado'); await refresh();}}
 async function deletePayment(id){if(!confirm('¿Eliminar pago?'))return; const {error}=await sb.from('payments').delete().eq('id',id); if(error)toast(error.message); else{toast('Pago eliminado'); await refresh();}}
 
-window.renderPublicHome=renderPublicHome; window.renderParentLogin=renderParentLogin; window.renderAdminLogin=renderAdminLogin; window.renderLogin=renderAdminLogin; window.parentLogout=parentLogout; window.copyBank=copyBank; window.openParentPayment=openParentPayment; window.openParentDocument=openParentDocument; window.installDucksApp=installDucksApp; window.goBackSmart=goBackSmart; window.openPlayerForm=openPlayerForm; window.deletePlayer=deletePlayer; window.openPaymentForm=openPaymentForm; window.confirmPayment=confirmPayment; window.rejectPayment=rejectPayment; window.deletePayment=deletePayment; window.closeModal=closeModal; window.copyReminder=copyReminder; window.deleteParentLink=deleteParentLink; window.prefillParent=prefillParent; window.exportCSV=exportCSV; window.exportFullJSON=exportFullJSON; window.exportDocumentsCSV=exportDocumentsCSV; window.resetParentPassword=resetParentPassword; window.autoLinkAccountFromButton=autoLinkAccountFromButton; window.editParentAccount=editParentAccount; window.saveParentAccountChanges=saveParentAccountChanges; window.deleteParentAccount=deleteParentAccount; window.sendParentCredentialsWhatsApp=sendParentCredentialsWhatsApp;
+window.renderPublicHome=renderPublicHome; window.renderParentLogin=renderParentLogin; window.renderAdminLogin=renderAdminLogin; window.renderLogin=renderAdminLogin; window.parentLogout=parentLogout; window.copyBank=copyBank; window.openParentPayment=openParentPayment; window.openParentDocument=openParentDocument; window.installDucksApp=installDucksApp; window.goBackSmart=goBackSmart; window.openPlayerForm=openPlayerForm; window.deletePlayer=deletePlayer; window.openPaymentForm=openPaymentForm; window.confirmPayment=confirmPayment; window.rejectPayment=rejectPayment; window.deletePayment=deletePayment; window.closeModal=closeModal; window.copyReminder=copyReminder; window.deleteParentLink=deleteParentLink; window.prefillParent=prefillParent; window.exportCSV=exportCSV; window.exportFullJSON=exportFullJSON; window.exportDocumentsCSV=exportDocumentsCSV; window.resetParentPassword=resetParentPassword; window.autoLinkAccountFromButton=autoLinkAccountFromButton; window.editParentAccount=editParentAccount; window.saveParentAccountChanges=saveParentAccountChanges; window.deleteParentAccount=deleteParentAccount; window.sendParentCredentialsWhatsApp=sendParentCredentialsWhatsApp; window.openFamilyPayment=openFamilyPayment; window.updateFamilyPaymentTotal=updateFamilyPaymentTotal; window.toggleAllFamilyPlayers=toggleAllFamilyPlayers; window.copyFamilyPaymentData=copyFamilyPaymentData; window.confirmFamilyPayment=confirmFamilyPayment; window.rejectFamilyPayment=rejectFamilyPayment;
 
 init();
 
