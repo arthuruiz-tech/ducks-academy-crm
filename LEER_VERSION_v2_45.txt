@@ -1,0 +1,16 @@
+Ducks CRM Profesional v2.45
+
+Cambios:
+- Se redujo el tamaño de la imagen de la sección “Pagos y comprobantes” en la página principal.
+- La imagen del acceso al Portal de Papás ahora ocupa menos espacio y se ve más equilibrada.
+- Ajuste especial para celular y computadora.
+- Actualización de caché para mostrar los cambios correctamente.
+
+No requiere SQL nuevo.
+
+Publicación:
+1. Descomprime este ZIP.
+2. Sube todos los archivos y carpetas a la raíz de GitHub.
+3. Haz Commit changes.
+4. Espera a que Vercel indique Ready.
+5. Recarga la página con Ctrl + F5.

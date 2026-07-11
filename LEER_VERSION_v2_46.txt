@@ -1,0 +1,18 @@
+Ducks CRM Profesional v2.46
+
+Corrección definitiva:
+- La v2.45 todavía cargaba styles.css y app.js con referencia v2.44.
+- Se corrigieron todas las referencias de caché a v2.46.
+- La imagen de “Pagos y comprobantes” ahora es una miniatura compacta.
+- Tamaño en computadora: 125 × 125 px.
+- Tamaño aproximado en celular: 82 × 82 px.
+- El texto y botones ocupan el espacio principal.
+- No requiere SQL nuevo.
+
+Publicación:
+1. Descomprime el ZIP.
+2. Sube todos los archivos y carpetas directamente a la raíz de GitHub.
+3. Haz Commit changes.
+4. Espera a que Vercel indique Ready.
+5. Cierra completamente la PWA o pestaña anterior.
+6. Abre nuevamente el portal y recarga con Ctrl + F5.

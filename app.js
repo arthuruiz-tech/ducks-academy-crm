@@ -457,7 +457,7 @@ function renderPublicHome(){
         </div>
       </section>
       <section class="quick-parent-card parent-entry-card">
-        <img class="parent-entry-image" src="assets/portal-papas-cover.png" alt="Portal de Papás Ducks">
+        <img class="parent-entry-image portal-access-thumb" src="assets/portal-papas-cover.png?v=2.46" alt="Portal de Papás Ducks">
         <div class="parent-entry-content"><h2>Pagos y comprobantes</h2><p>El Portal de Papás es privado. Cada familia entra con usuario y contraseña para ver únicamente la información de sus hijos.</p>
         <div class="quick-actions"><button class="btn green" onclick="renderParentLogin()">Entrar al Portal de Papás</button><button class="btn secondary" onclick="installDucksApp()"><img class="install-app-icon" src="assets/pwa-icon-192.png" alt=""> Instalar App</button></div></div>
       </section>

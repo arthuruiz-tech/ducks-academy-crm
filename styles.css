@@ -1796,3 +1796,89 @@ button[onclick="installDucksApp()"]{
     max-width:none !important;
   }
 }
+
+
+/* v2.45 - Reducir imagen de acceso al Portal de Papás en inicio */
+.parent-entry-card{grid-template-columns:minmax(150px,220px) 1fr !important;align-items:center !important}
+.parent-entry-image{max-width:220px !important;width:100% !important;height:auto !important;min-height:0 !important;max-height:240px !important;object-fit:cover !important;justify-self:center !important;align-self:center !important;border-radius:18px 0 0 18px !important}
+.parent-entry-content{padding:24px 24px 24px 18px !important}
+@media(max-width:760px){.parent-entry-card{grid-template-columns:1fr !important}.parent-entry-image{max-width:170px !important;max-height:170px !important;aspect-ratio:1/1 !important;border-radius:18px 18px 0 0 !important;margin:14px auto 0 !important}.parent-entry-content{padding:18px 14px 16px !important}}
+
+
+/* v2.46 - Miniatura compacta definitiva del acceso al Portal de Papás */
+.parent-entry-card{
+  display:grid !important;
+  grid-template-columns:145px minmax(0,1fr) !important;
+  align-items:center !important;
+  min-height:0 !important;
+  padding:16px 18px !important;
+  gap:18px !important;
+  overflow:visible !important;
+}
+.parent-entry-card .portal-access-thumb{
+  width:125px !important;
+  height:125px !important;
+  min-width:125px !important;
+  min-height:125px !important;
+  max-width:125px !important;
+  max-height:125px !important;
+  aspect-ratio:1/1 !important;
+  object-fit:cover !important;
+  object-position:center !important;
+  border-radius:20px !important;
+  margin:0 auto !important;
+  display:block !important;
+  box-shadow:0 10px 24px rgba(6,21,40,.14) !important;
+}
+.parent-entry-card .parent-entry-content{
+  padding:4px 0 !important;
+  text-align:left !important;
+  align-items:stretch !important;
+}
+.parent-entry-card .parent-entry-content h2{
+  font-size:25px !important;
+  margin:0 0 6px !important;
+}
+.parent-entry-card .parent-entry-content p{
+  font-size:15px !important;
+  margin:0 0 14px !important;
+  max-width:none !important;
+  text-align:left !important;
+}
+.parent-entry-card .parent-entry-content .quick-actions{
+  grid-template-columns:1fr 1fr !important;
+  gap:10px !important;
+}
+
+@media(max-width:760px){
+  .parent-entry-card{
+    grid-template-columns:92px minmax(0,1fr) !important;
+    padding:12px !important;
+    gap:12px !important;
+  }
+  .parent-entry-card .portal-access-thumb{
+    width:82px !important;
+    height:82px !important;
+    min-width:82px !important;
+    min-height:82px !important;
+    max-width:82px !important;
+    max-height:82px !important;
+    border-radius:16px !important;
+    margin:0 !important;
+  }
+  .parent-entry-card .parent-entry-content{
+    padding:0 !important;
+  }
+  .parent-entry-card .parent-entry-content h2{
+    font-size:20px !important;
+  }
+  .parent-entry-card .parent-entry-content p{
+    font-size:13px !important;
+    line-height:1.35 !important;
+    margin-bottom:10px !important;
+  }
+  .parent-entry-card .parent-entry-content .quick-actions{
+    grid-template-columns:1fr !important;
+    gap:8px !important;
+  }
+}
