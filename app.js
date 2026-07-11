@@ -1,6 +1,6 @@
 
 async function forceFreshAssetsOnce(){
-  const key = 'ducks_cache_fix_v2_56_done';
+  const key = 'ducks_cache_fix_v2_57_done';
   if(localStorage.getItem(key)==='yes') return;
   try{
     if('caches' in window){
@@ -14,7 +14,7 @@ async function forceFreshAssetsOnce(){
 }
 forceFreshAssetsOnce();
 
-// Ducks CRM profesional v2.56 - altas nuevas sin adeudo y pagos anticipados como crédito
+// Ducks CRM profesional v2.57 - fechas reales, cumpleaños y avisos administrativos
 const app = document.getElementById('app');
 let sb = null;
 let session = null;
@@ -31,6 +31,9 @@ let parentPayments = [];
 let parentDocuments = [];
 let documents = [];
 let playerHistory = [];
+let adminNotifications = [];
+let notificationsReady = false;
+let notificationChannel = null;
 let q = '';
 
 const BANK_ACCOUNT = '157 889 8256';
@@ -166,10 +169,10 @@ function effectiveRegistrationISO(player){
   const created=parseISODate(playerCreatedISO(player));
   const today=parseISODate(todayISO());
 
-  // En jugadores anteriores, la fecha oficial es su created_at original.
-  // La fecha masiva agregada por la migración no altera su historial ni sus adeudos.
+  // En jugadores anteriores se muestra la fecha real de ingreso cargada desde el archivo original.
+  // El cálculo histórico de adeudos permanece separado y no se reinicia por esta fecha.
   if(!usesRegistrationBilling(player)){
-    return datePartsISO(created)||datePartsISO(registration)||todayISO();
+    return datePartsISO(registration)||datePartsISO(created)||todayISO();
   }
 
   // En altas nuevas, la fecha elegida manualmente es la fuente oficial.
@@ -190,6 +193,27 @@ function formatAcademyDateTime(value){
     timeZone:ACADEMY_TIME_ZONE,year:'numeric',month:'2-digit',day:'2-digit',
     hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false
   }).format(d);
+}
+function formatDateDMY(value){
+  const p=parseISODate(value);
+  if(!p) return '';
+  return `${String(p.day).padStart(2,'0')}/${String(p.month).padStart(2,'0')}/${p.year}`;
+}
+function playerAge(player, referenceISO=todayISO()){
+  const birth=parseISODate(player?.birth_date);
+  const ref=parseISODate(referenceISO);
+  if(!birth||!ref) return null;
+  let age=ref.year-birth.year;
+  if(ref.month<birth.month || (ref.month===birth.month&&ref.day<birth.day)) age--;
+  return age>=0?age:null;
+}
+function isBirthdayToday(player){
+  const birth=parseISODate(player?.birth_date);
+  const today=parseISODate(todayISO());
+  return !!(birth&&today&&birth.month===today.month&&birth.day===today.day);
+}
+function birthdayPlayersToday(){
+  return players.filter(p=>String(p.status||'').toLowerCase()==='activo'&&isBirthdayToday(p));
 }
 function period(date){return String(date||'').slice(0,7);}
 function statusClass(s){return String(s||'').replace(/\s+/g,'');}
@@ -224,7 +248,7 @@ async function autoLinkPlayersToAccount(account){
 
 const PLAYER_EDIT_FIELDS = [
   'id','name','tutor','phone','tutor_2','tutor_phone_2','category','status',
-  'registration_date','monthly_fee','payment_day','uniform_number','photo_url','notes'
+  'birth_date','registration_date','monthly_fee','payment_day','uniform_number','photo_url','notes'
 ];
 function compactPlayerSnapshot(p){
   const o = {};
@@ -263,7 +287,7 @@ function fieldLabel(k){
   const map = {
     name:'Nombre', tutor:'Tutor principal', phone:'WhatsApp principal',
     tutor_2:'Tutor secundario', tutor_phone_2:'WhatsApp secundario',
-    category:'Categoría', status:'Estado', registration_date:'Fecha de registro',
+    category:'Categoría', status:'Estado', birth_date:'Fecha de nacimiento', registration_date:'Fecha de registro',
     monthly_fee:'Mensualidad', payment_day:'Día de pago', uniform_number:'Número uniforme',
     photo_url:'Foto', notes:'Notas'
   };
@@ -487,7 +511,7 @@ function exportCSV(kind){
     }));
     const headers=[
       {label:'ID',key:'id'}, {label:'Nombre',key:'name'}, {label:'Tutor',key:'tutor'}, {label:'WhatsApp',key:'phone'},
-      {label:'Categoria',key:'category'}, {label:'Estado',key:'status'}, {label:'Fecha registro efectiva',key:'registration_date'},
+      {label:'Categoria',key:'category'}, {label:'Estado',key:'status'}, {label:'Fecha nacimiento',key:'birth_date'}, {label:'Edad',value:p=>playerAge(p)??''}, {label:'Fecha registro efectiva',key:'registration_date'},
       {label:'Esquema de cobro',key:'billing_scheme'}, {label:'Mensualidad',key:'monthly_fee'}, {label:'Dia pago',key:'payment_day'},
       {label:'Numero uniforme',key:'uniform_number'}, {label:'Foto URL',key:'photo_url'}, {label:'Notas',key:'notes'}
     ];
@@ -501,6 +525,15 @@ function exportCSV(kind){
       {label:'Confirmado en',key:'confirmed_at'}, {label:'Evidencia URL',key:'evidence_url'}, {label:'Evidencia nombre',key:'evidence_name'}, {label:'Notas',key:'notes'}
     ];
     downloadText(`ducks_pagos_${d}.csv`, toCSV(payments, headers));
+  }
+
+  if(kind === 'notifications'){
+    const headers=[
+      {label:'ID aviso',key:'id'}, {label:'Tipo',key:'type'}, {label:'Titulo',key:'title'},
+      {label:'Mensaje',key:'message'}, {label:'ID jugador',key:'player_id'}, {label:'ID pago',key:'payment_id'},
+      {label:'Creado',key:'created_at'}, {label:'Leido',key:'read_at'}, {label:'Clave evento',key:'event_key'}
+    ];
+    downloadText(`ducks_avisos_${d}.csv`, toCSV(adminNotifications, headers));
   }
   if(kind === 'parents'){
     const headers=[
@@ -540,12 +573,145 @@ function exportFullJSON(){
     academy: 'Ducks Basketball Academy',
     players,
     payments,
+    admin_notifications: adminNotifications,
     parent_accounts: parentAccounts,
     parent_player_links: parentLinks,
     debts,
     notes: 'Las fotos y comprobantes se respaldan como URLs hacia Supabase Storage.'
   };
   downloadText(`ducks_respaldo_completo_${d}.json`, JSON.stringify(data, null, 2), 'application/json;charset=utf-8;');
+}
+
+
+function unreadNotificationCount(){
+  return adminNotifications.filter(n=>!n.read_at).length;
+}
+function notificationTypeIcon(type){
+  if(type==='birthday') return '🎂';
+  if(type==='evidence') return '📎';
+  return '💳';
+}
+function updateNotificationBadges(){
+  const count=unreadNotificationCount();
+  document.querySelectorAll('[data-notification-badge]').forEach(el=>{
+    el.textContent=count>99?'99+':String(count);
+    el.classList.toggle('hidden',count===0);
+  });
+}
+function notificationSeenIds(){
+  try{return new Set(JSON.parse(localStorage.getItem('ducks_system_notifications_seen_v257')||'[]'));}
+  catch(e){return new Set();}
+}
+function rememberNotificationSeen(id){
+  const seen=notificationSeenIds();
+  seen.add(String(id));
+  localStorage.setItem('ducks_system_notifications_seen_v257',JSON.stringify([...seen].slice(-300)));
+}
+async function showSystemNotification(notification){
+  if(!notification||!('Notification' in window)||Notification.permission!=='granted') return;
+  const seen=notificationSeenIds();
+  if(seen.has(String(notification.id))) return;
+  const options={
+    body:notification.message||'',
+    icon:'assets/pwa-icon-192.png',
+    badge:'assets/favicon-96.png',
+    tag:notification.event_key||String(notification.id),
+    data:{url:location.href,notification_id:notification.id},
+    renotify:false
+  };
+  try{
+    if('serviceWorker' in navigator){
+      const reg=await navigator.serviceWorker.ready;
+      await reg.showNotification(notification.title||'Ducks Academy',options);
+    }else{
+      new Notification(notification.title||'Ducks Academy',options);
+    }
+    rememberNotificationSeen(notification.id);
+  }catch(e){console.warn('No se pudo mostrar aviso del sistema',e);}
+}
+async function showPendingSystemNotifications(){
+  if(!('Notification' in window)||Notification.permission!=='granted') return;
+  for(const n of adminNotifications.filter(x=>!x.read_at).slice(0,20).reverse()) await showSystemNotification(n);
+}
+async function requestAdminNotificationPermission(){
+  if(!('Notification' in window)){toast('Este navegador no permite avisos del sistema. Los avisos seguirán disponibles dentro del CRM.');return;}
+  const permission=await Notification.requestPermission();
+  if(permission==='granted'){
+    toast('Avisos del dispositivo activados.');
+    await showPendingSystemNotifications();
+  }else if(permission==='denied') toast('Los avisos están bloqueados en el navegador. Puedes habilitarlos en los permisos del sitio.');
+  else toast('No se activaron los avisos del dispositivo.');
+}
+async function loadAdminNotifications(){
+  notificationsReady=false;
+  try{
+    const birthdayResult=await sb.rpc('ducks_refresh_birthday_notifications_v257');
+    if(birthdayResult.error&&!/could not find|does not exist|schema cache/i.test(birthdayResult.error.message||'')) console.warn(birthdayResult.error.message);
+    const nt=await sb.from('admin_notifications_v257').select('*').order('created_at',{ascending:false}).limit(250);
+    if(nt.error){
+      adminNotifications=[];
+      return;
+    }
+    adminNotifications=nt.data||[];
+    notificationsReady=true;
+    updateNotificationBadges();
+    await showPendingSystemNotifications();
+  }catch(e){adminNotifications=[];notificationsReady=false;}
+}
+function setupNotificationRealtime(){
+  if(!sb||!session||notificationChannel) return;
+  notificationChannel=sb.channel('ducks-admin-notifications-v257')
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'admin_notifications_v257'},payload=>{
+      const incoming=payload.new;
+      if(!adminNotifications.some(n=>String(n.id)===String(incoming.id))) adminNotifications.unshift(incoming);
+      updateNotificationBadges();
+      toast(`${notificationTypeIcon(incoming.type)} ${incoming.title}`);
+      showSystemNotification(incoming);
+      if(mode==='admin'&&(page==='notifications'||page==='dashboard')) renderPage();
+    })
+    .subscribe();
+}
+async function markNotificationRead(id){
+  const row=adminNotifications.find(n=>String(n.id)===String(id));
+  if(!row||row.read_at) return;
+  const readAt=new Date().toISOString();
+  const {error}=await sb.from('admin_notifications_v257').update({read_at:readAt}).eq('id',id);
+  if(error){toast('No se pudo marcar el aviso: '+error.message);return;}
+  row.read_at=readAt;
+  updateNotificationBadges();
+  if(page==='notifications') renderNotifications();
+}
+async function markAllNotificationsRead(){
+  const unread=adminNotifications.filter(n=>!n.read_at);
+  if(!unread.length){toast('No hay avisos pendientes.');return;}
+  const readAt=new Date().toISOString();
+  const {error}=await sb.from('admin_notifications_v257').update({read_at:readAt}).is('read_at',null);
+  if(error){toast('No se pudieron actualizar los avisos: '+error.message);return;}
+  unread.forEach(n=>n.read_at=readAt);
+  updateNotificationBadges();
+  renderNotifications();
+  toast('Todos los avisos quedaron marcados como leídos.');
+}
+async function openNotificationTarget(id){
+  const n=adminNotifications.find(x=>String(x.id)===String(id));
+  if(!n) return;
+  await markNotificationRead(id);
+  q=n.player_id||'';
+  const search=document.getElementById('search'); if(search) search.value=q;
+  page=n.type==='evidence'?'evidence':(n.type==='payment'?'payments':'players');
+  renderPage();
+}
+function notificationSetupNotice(){
+  if(notificationsReady) return '';
+  return `<div class="notice warning"><b>Falta activar el módulo de avisos:</b> ejecuta en Supabase el archivo <b>PASO_12_SQL_FECHAS_Y_AVISOS_v2_57.sql</b> incluido en esta versión.</div>`;
+}
+function renderNotifications(){
+  setTitle('Avisos');
+  const list=adminNotifications.filter(n=>{
+    const search=q.toLowerCase().trim();
+    return !search||[n.title,n.message,n.player_id,n.type].join(' ').toLowerCase().includes(search);
+  });
+  document.getElementById('content').innerHTML=`${notificationSetupNotice()}<div class="panel"><div class="panel-head"><div><h3>Centro de avisos</h3><p class="sub">Cumpleaños, pagos reportados y evidencias enviadas por papás.</p></div><div class="actions"><button class="btn secondary" onclick="requestAdminNotificationPermission()">🔔 Activar avisos del dispositivo</button><button class="btn green" onclick="markAllNotificationsRead()">Marcar todos como leídos</button></div></div><div class="notification-list">${list.map(n=>`<article class="notification-card ${n.read_at?'read':'unread'}"><div class="notification-icon">${notificationTypeIcon(n.type)}</div><div class="notification-content"><div class="notification-title-row"><h4>${esc(n.title)}</h4><span>${esc(formatAcademyDateTime(n.created_at))}</span></div><p>${esc(n.message)}</p><small>${esc(n.player_id||'')}</small></div><div class="notification-actions"><button class="btn secondary" onclick="openNotificationTarget('${n.id}')">Abrir</button>${n.read_at?'':'<button class="btn green" onclick="markNotificationRead(\''+n.id+'\')">Leído</button>'}</div></article>`).join('')||'<div class="notice success">No hay avisos registrados.</div>'}</div></div>`;
 }
 
 
@@ -689,6 +855,7 @@ function adminQuickMenu(){
     <div class="admin-top-inner">
       <button onclick="renderPublicHome()" class="admin-home-btn">🏠 Inicio público</button>
       <button onclick="page='dashboard';renderPage()">Dashboard</button>
+      <button onclick="page='notifications';renderPage()">Avisos <span class="notification-badge hidden" data-notification-badge>0</span></button>
       <button onclick="page='players';renderPage()">Jugadores</button>
       <button onclick="page='parents';renderPage()">Papás</button>
       <button onclick="page='payments';renderPage()">Pagos</button>
@@ -1087,7 +1254,7 @@ function renderParentPortal(){
     return `<div class="family-player-card player-priority-card">
       <div class="player-card-top">
         <div class="player-info-side">
-          <div class="family-head"><div><h2>${esc(p.name)}</h2><p>${esc(p.category||'')} · Uniforme #${esc(p.uniform_number||'-')}</p><span class="status ${c.status}">${c.status}</span></div></div>
+          <div class="family-head"><div><h2>${esc(p.name)}</h2><p>${esc(p.category||'')} · Uniforme #${esc(p.uniform_number||'-')}</p><p class="sub">Nacimiento: ${esc(formatDateDMY(p.birth_date)||'Sin capturar')} · Registro: ${esc(formatDateDMY(effectiveRegistrationISO(p))||'-')}</p><span class="status ${c.status}">${c.status}</span></div></div>
           <div class="family-kpis"><div><small>Último pago</small><b>${esc(c.last||'Sin registro')}</b></div><div><small>Meses pendientes</small><b>${c.months}</b></div><div><small>Adeudo actual</small><b class="amount">${money(c.amount)}</b></div></div>
         </div>
         <div class="player-photo-side"><img src="${playerPhotoUrl(p)}" alt="Foto de ${esc(p.name)}"></div>
@@ -1323,7 +1490,7 @@ async function login(e){
   if(error){toast(error.message);return;}
   session=data.session; mode='admin'; page='dashboard'; renderShell(); await loadAdminData(); renderPage();
 }
-async function logout(){ await sb.auth.signOut(); session=null; renderPublicHome(); }
+async function logout(){ if(notificationChannel){await sb.removeChannel(notificationChannel);notificationChannel=null;} await sb.auth.signOut(); session=null; adminNotifications=[]; renderPublicHome(); }
 async function loadAdminData(){
   const pr=await sb.from('players').select('*').order('id');
   if(pr.error){toast('Error cargando jugadores: '+pr.error.message); players=[];} else players=pr.data||[];
@@ -1338,28 +1505,33 @@ async function loadAdminData(){
   const hs=await sb.from('player_change_history_v237').select('*').order('created_at',{ascending:false}).limit(500);
   if(hs.error){playerHistory=[];} else playerHistory=hs.data||[];
   await persistRegistrationBillingMarkers();
+  await loadAdminNotifications();
+  setupNotificationRealtime();
 }
 async function refresh(){ if(mode==='admin'){await loadAdminData(); renderShell(); renderPage();} }
 function renderShell(){
-  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="history">🕘 Historial</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.56: altas nuevas en $0 y pagos anticipados como crédito.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
+  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="notifications">🔔 Avisos <span class="notification-badge hidden" data-notification-badge>0</span></button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="history">🕘 Historial</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.57: fechas reales, cumpleaños y avisos de pagos.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><button class="btn secondary notification-bell" onclick="page='notifications';renderPage()">🔔 <span class="notification-badge hidden" data-notification-badge>0</span></button><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
   document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page=b.dataset.page; if(page==='public'){renderPublicHome(); return;} renderPage();});
   document.getElementById('search').oninput=e=>{q=e.target.value; renderPage();};
   document.getElementById('authBtn').onclick=logout;
+  updateNotificationBadges();
 }
 function setTitle(t){ const el=document.getElementById('title'); if(el) el.textContent=t; document.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===page)); }
-function renderPage(){ if(mode==='admin') rememberScreen('admin:'+page); if(page==='dashboard') renderDashboard(); if(page==='players') renderPlayers(); if(page==='parents') renderParents(); if(page==='payments') renderPayments(); if(page==='evidence') renderEvidence(); if(page==='whatsapp') renderWhatsApp(); if(page==='documents') renderDocuments(); if(page==='history') renderPlayerHistory(); if(page==='backups') renderBackups(); if(page==='settings') renderSettings(); }
-function filteredPlayers(){ const s=q.toLowerCase().trim(); return players.filter(p=>!s || [p.id,p.name,p.tutor,p.phone,p.category,p.registration_date,p.payment_day,p.uniform_number].join(' ').toLowerCase().includes(s)); }
+function renderPage(){ if(mode==='admin') rememberScreen('admin:'+page); if(page==='dashboard') renderDashboard(); if(page==='notifications') renderNotifications(); if(page==='players') renderPlayers(); if(page==='parents') renderParents(); if(page==='payments') renderPayments(); if(page==='evidence') renderEvidence(); if(page==='whatsapp') renderWhatsApp(); if(page==='documents') renderDocuments(); if(page==='history') renderPlayerHistory(); if(page==='backups') renderBackups(); if(page==='settings') renderSettings(); }
+function filteredPlayers(){ const s=q.toLowerCase().trim(); return players.filter(p=>!s || [p.id,p.name,p.tutor,p.phone,p.category,p.birth_date,p.registration_date,p.payment_day,p.uniform_number].join(' ').toLowerCase().includes(s)); }
 
 function renderDashboard(){
   setTitle('Dashboard ejecutivo');
-  const rows=players.map(p=>({...p,c:calc(p)})); const active=rows.filter(p=>p.status==='Activo').length; const debtors=rows.filter(p=>p.c.amount>0); const overdue=rows.filter(p=>p.c.status==='Vencido').length; const pendingEvidence=payments.filter(p=>p.confirmation_status==='Pendiente de confirmación').length; const totalDebt=debtors.reduce((a,p)=>a+p.c.amount,0);
-  document.getElementById('content').innerHTML=`${iosInstallBanner()}<div class="kpis"><div class="kpi"><small>Jugadores</small><strong>${players.length}</strong></div><div class="kpi green"><small>Activos</small><strong>${active}</strong></div><div class="kpi orange"><small>Con adeudo</small><strong>${debtors.length}</strong></div><div class="kpi red"><small>Vencidos</small><strong>${overdue}</strong></div><div class="kpi orange"><small>Por confirmar</small><strong>${pendingEvidence}</strong></div><div class="kpi red"><small>Adeudo total</small><strong>${money(totalDebt)}</strong></div></div>
+  const rows=players.map(p=>({...p,c:calc(p)})); const active=rows.filter(p=>p.status==='Activo').length; const debtors=rows.filter(p=>p.c.amount>0); const overdue=rows.filter(p=>p.c.status==='Vencido').length; const pendingEvidence=payments.filter(p=>p.confirmation_status==='Pendiente de confirmación').length; const totalDebt=debtors.reduce((a,p)=>a+p.c.amount,0); const birthdays=birthdayPlayersToday(); const unread=unreadNotificationCount();
+  const birthdayBanner=birthdays.length?`<div class="notice birthday-notice"><b>🎂 Cumpleaños de hoy:</b> ${birthdays.map(p=>`${esc(p.name)} (${playerAge(p)} años)`).join(', ')}</div>`:'';
+  const recentNotices=adminNotifications.filter(n=>!n.read_at).slice(0,3);
+  document.getElementById('content').innerHTML=`${iosInstallBanner()}${notificationSetupNotice()}${birthdayBanner}<div class="kpis"><div class="kpi"><small>Jugadores</small><strong>${players.length}</strong></div><div class="kpi green"><small>Activos</small><strong>${active}</strong></div><div class="kpi orange"><small>Con adeudo</small><strong>${debtors.length}</strong></div><div class="kpi red"><small>Vencidos</small><strong>${overdue}</strong></div><div class="kpi orange"><small>Por confirmar</small><strong>${pendingEvidence}</strong></div><div class="kpi"><small>Avisos nuevos</small><strong>${unread}</strong></div><div class="kpi"><small>Cumpleaños hoy</small><strong>${birthdays.length}</strong></div><div class="kpi red"><small>Adeudo total</small><strong>${money(totalDebt)}</strong></div></div>${recentNotices.length?`<div class="panel compact-notifications"><div class="panel-head"><h3>Avisos recientes</h3><button class="btn secondary" onclick="page='notifications';renderPage()">Ver todos</button></div>${recentNotices.map(n=>`<button class="dashboard-notification" onclick="openNotificationTarget('${n.id}')"><span>${notificationTypeIcon(n.type)}</span><div><b>${esc(n.title)}</b><small>${esc(n.message)}</small></div></button>`).join('')}</div>`:''}
   <div class="panel"><div class="panel-head"><h3>Jugadores con adeudo</h3></div><div class="tablewrap"><table><thead><tr><th>Foto</th><th>ID</th><th>Jugador</th><th>Núm.</th><th>Tutor</th><th>Último pago</th><th>Meses</th><th>Adeudo</th><th>Estado</th><th>WhatsApp</th></tr></thead><tbody>${debtors.sort((a,b)=>b.c.amount-a.c.amount).map(p=>`<tr><td>${thumb(p.photo_url)}</td><td>${p.id}</td><td><b>${esc(p.name)}</b><br><small>${esc(p.category||'')}</small></td><td><span class="uniform">#${esc(p.uniform_number||'-')}</span></td><td>${esc(p.tutor||'')}</td><td>${esc(p.c.last||'')}</td><td>${p.c.months}</td><td class="amount">${money(p.c.amount)}</td><td><span class="status ${p.c.status}">${p.c.status}</span></td><td>${whatsappButtons(p)}</td></tr>`).join('')||'<tr><td colspan="10">Sin adeudos</td></tr>'}</tbody></table></div></div>`;
 }
 function renderPlayers(){
   setTitle('Jugadores');
   const list=filteredPlayers();
-  document.getElementById('content').innerHTML=`<div class="panel"><div class="panel-head"><h3>Base de jugadores</h3><button class="btn green" onclick="openPlayerForm()">+ Nuevo jugador</button></div><div class="cards">${list.map(p=>{const c=calc(p);return `<div class="card">${thumb(p.photo_url)}<h4>${esc(p.name)}</h4><p><span class="uniform">#${esc(p.uniform_number||'-')}</span></p><p><b>ID:</b> ${p.id} · <b>Categoría:</b> ${esc(p.category||'')}</p><p><b>Registro:</b> ${esc(c.registrationDate||p.registration_date||timestampDateISO(p.created_at)||'-')} · <b>Pago:</b> día ${esc(p.payment_day||'-')}</p>${c.billingMode==='registration'?`<p><b>Primer/Próximo cobro:</b> ${esc(c.nextDue||c.firstDue||'-')}</p>`:`<p><b>Esquema:</b> Histórico protegido</p>`}<p><b>Tutor principal:</b> ${esc(p.tutor||'')}</p><p><b>WhatsApp principal:</b> ${esc(p.phone||'')}</p>${p.tutor_2||p.tutor_phone_2?`<p><b>Tutor secundario:</b> ${esc(p.tutor_2||'')} · ${esc(p.tutor_phone_2||'')}</p>`:''}<p><b>Adeudo:</b> <span class="amount">${money(c.amount)}</span> · <span class="status ${c.status}">${c.status}</span></p><div class="actions"><button class="btn secondary" onclick="openPlayerForm('${p.id}')">Editar</button><button class="btn secondary" onclick="openPlayerHistory('${p.id}')">Historial</button><button class="btn green" onclick="openPaymentForm('${p.id}')">Pago</button>${whatsappButtons(p)}<button class="btn red" onclick="deletePlayer('${p.id}')">Eliminar</button></div></div>`}).join('')||'<div class="card">Sin jugadores. Si aquí no aparecen, revisa que estés logueado como administrador y que la tabla players tenga permisos.'}</div></div>`;
+  document.getElementById('content').innerHTML=`<div class="panel"><div class="panel-head"><h3>Base de jugadores</h3><button class="btn green" onclick="openPlayerForm()">+ Nuevo jugador</button></div><div class="cards">${list.map(p=>{const c=calc(p);return `<div class="card">${thumb(p.photo_url)}<h4>${esc(p.name)}</h4><p><span class="uniform">#${esc(p.uniform_number||'-')}</span></p><p><b>ID:</b> ${p.id} · <b>Categoría:</b> ${esc(p.category||'')}</p><p><b>Nacimiento:</b> ${esc(formatDateDMY(p.birth_date)||'Sin capturar')}${playerAge(p)!==null?` · <b>Edad:</b> ${playerAge(p)} años`:''}</p><p><b>Registro:</b> ${esc(formatDateDMY(c.registrationDate||p.registration_date||timestampDateISO(p.created_at))||'-')} · <b>Pago:</b> día ${esc(p.payment_day||'-')}</p>${c.billingMode==='registration'?`<p><b>Primer/Próximo cobro:</b> ${esc(c.nextDue||c.firstDue||'-')}</p>`:`<p><b>Esquema:</b> Histórico protegido</p>`}<p><b>Tutor principal:</b> ${esc(p.tutor||'')}</p><p><b>WhatsApp principal:</b> ${esc(p.phone||'')}</p>${p.tutor_2||p.tutor_phone_2?`<p><b>Tutor secundario:</b> ${esc(p.tutor_2||'')} · ${esc(p.tutor_phone_2||'')}</p>`:''}<p><b>Adeudo:</b> <span class="amount">${money(c.amount)}</span> · <span class="status ${c.status}">${c.status}</span></p><div class="actions"><button class="btn secondary" onclick="openPlayerForm('${p.id}')">Editar</button><button class="btn secondary" onclick="openPlayerHistory('${p.id}')">Historial</button><button class="btn green" onclick="openPaymentForm('${p.id}')">Pago</button>${whatsappButtons(p)}<button class="btn red" onclick="deletePlayer('${p.id}')">Eliminar</button></div></div>`}).join('')||'<div class="card">Sin jugadores. Si aquí no aparecen, revisa que estés logueado como administrador y que la tabla players tenga permisos.'}</div></div>`;
 }
 function suggestedFamilies(){
   const m = new Map();
@@ -1897,6 +2069,7 @@ function renderBackups(){
   <div class="kpis">
     <div class="kpi"><small>Jugadores</small><strong>${players.length}</strong></div>
     <div class="kpi"><small>Pagos</small><strong>${payments.length}</strong></div>
+    <div class="kpi"><small>Avisos</small><strong>${adminNotifications.length}</strong></div>
     <div class="kpi"><small>Cuentas papás</small><strong>${parentAccounts.length}</strong></div>
     <div class="kpi"><small>Relaciones</small><strong>${parentLinks.length}</strong></div>
     <div class="kpi orange"><small>Por confirmar</small><strong>${pendingEvidence}</strong></div>
@@ -1911,6 +2084,10 @@ function renderBackups(){
     <div class="backup-card">
       <div><h3>Pagos</h3><p>Historial de pagos, estatus, método, evidencia URL, notas y confirmaciones.</p></div>
       <button class="btn green" onclick="exportCSV('payments')">Descargar CSV</button>
+    </div>
+    <div class="backup-card">
+      <div><h3>Avisos</h3><p>Historial de cumpleaños, pagos reportados y evidencias recibidas.</p></div>
+      <button class="btn green" onclick="exportCSV('notifications')">Descargar CSV</button>
     </div>
     <div class="backup-card">
       <div><h3>Cuentas de papás</h3><p>Usuarios, nombres, WhatsApp, clave temporal y estado de cuenta.</p></div>
@@ -1929,7 +2106,7 @@ function renderBackups(){
       <button class="btn green" onclick="exportDocumentsCSV()">Descargar CSV</button>
     </div>
     <div class="backup-card featured">
-      <div><h3>Respaldo completo</h3><p>Archivo JSON con jugadores, pagos, cuentas, relaciones, documentos y adeudos calculados.</p></div>
+      <div><h3>Respaldo completo</h3><p>Archivo JSON con jugadores, pagos, avisos, cuentas, relaciones, documentos y adeudos calculados.</p></div>
       <button class="btn" onclick="exportFullJSON()">Descargar JSON</button>
     </div>
   </div>
@@ -2009,7 +2186,7 @@ function exportPlayerHistoryCSV(){
   downloadText(`ducks_historial_jugadores_${d}.csv`, toCSV(rows, headers));
 }
 
-function renderSettings(){ setTitle('Configuración'); document.getElementById('content').innerHTML=`<div class="panel"><div class="panel-head"><h3>Configuración</h3></div><div class="modal-body"><div class="notice"><b>Link público:</b><br><a href="${window.DUCKS_PORTAL_URL||location.origin}" target="_blank">${window.DUCKS_PORTAL_URL||location.origin}</a></div><p>El acceso de papás se crea desde el módulo Papás.</p></div></div>`; }
+function renderSettings(){ setTitle('Configuración'); document.getElementById('content').innerHTML=`${notificationSetupNotice()}<div class="panel"><div class="panel-head"><h3>Configuración</h3></div><div class="modal-body"><div class="notice"><b>Link público:</b><br><a href="${window.DUCKS_PORTAL_URL||location.origin}" target="_blank">${window.DUCKS_PORTAL_URL||location.origin}</a></div><div class="notice success"><b>Avisos administrativos:</b> el CRM conserva alertas de cumpleaños, pagos y evidencias. <button class="btn green" onclick="requestAdminNotificationPermission()">🔔 Activar avisos del dispositivo</button></div><p>El acceso de papás se crea desde el módulo Papás.</p></div></div>`; }
 
 /* CRUD */
 async function uploadFile(file, folder){
@@ -2028,10 +2205,10 @@ function openPlayerForm(id=''){
   const registrationDate=p?effectiveRegistrationISO(p):todayISO();
   const registrationHelp=registrationManaged
     ? '<small>Esta fecha inicia el calendario de cobros. El día del registro el saldo será $0.</small>'
-    : '<small>Jugador anterior: se conserva su fecha original de creación y su cálculo histórico. Este campo no se modifica.</small>';
+    : '<small>Jugador anterior: se muestra su fecha real de ingreso del archivo original y se conserva intacto su cálculo histórico.</small>';
   const modal=document.createElement('div'); modal.className='modalbg open'; modal.id='playerModal';
   modal.innerHTML=`<div class="modal"><div class="modal-head"><h3>${p?'Editar jugador':'Nuevo jugador'}</h3><button class="btn secondary" onclick="closeModal('playerModal')">Cerrar</button></div><div class="modal-body"><form id="playerForm" class="form-grid">
-    <label class="label">ID jugador<input id="pId" class="input" value="${esc(p?.id||nextId())}" ${p?'readonly':''} required></label><label class="label">Nombre<input id="pName" class="input" value="${esc(p?.name||'')}" required></label><label class="label">Fecha de registro<input id="pRegistrationDate" class="input" type="date" max="${todayISO()}" value="${esc(registrationDate)}" ${registrationManaged?'required':'readonly'}>${registrationHelp}</label><label class="label">Día de pago<select id="pDay" class="select" required><option value="">Selecciona el día...</option>${paymentDayOptions(p?.payment_day||'')}</select></label><label class="label">Tutor principal<input id="pTutor" class="input" value="${esc(p?.tutor||'')}"></label><label class="label">WhatsApp principal<input id="pPhone" class="input" value="${esc(p?.phone||'')}"></label><label class="label">Tutor secundario<input id="pTutor2" class="input" value="${esc(p?.tutor_2||'')}" placeholder="Opcional"></label><label class="label">WhatsApp secundario<input id="pPhone2" class="input" value="${esc(p?.tutor_phone_2||'')}" placeholder="Opcional"></label><label class="label">Categoría<input id="pCategory" class="input" value="${esc(p?.category||'')}"></label><label class="label">Estado<select id="pStatus" class="select"><option ${p?.status==='Activo'?'selected':''}>Activo</option><option ${p?.status==='Inactivo'?'selected':''}>Inactivo</option><option ${p?.status==='Baja'?'selected':''}>Baja</option></select></label><label class="label">Mensualidad<input id="pFee" class="input" type="number" min="0" step="50" value="${esc(p?.monthly_fee||300)}"></label><label class="label">Número uniforme<input id="pUniform" class="input" value="${esc(p?.uniform_number||'')}"></label><label class="label">Foto<input id="pPhoto" class="input" type="file" accept="image/*"></label><label class="label full">Notas<textarea id="pNotes" class="input">${esc(stripPlayerBillingMarkers(p?.notes||''))}</textarea></label><div class="full actions"><button class="btn green">Guardar jugador</button></div></form></div></div>`;
+    <label class="label">ID jugador<input id="pId" class="input" value="${esc(p?.id||nextId())}" ${p?'readonly':''} required></label><label class="label">Nombre<input id="pName" class="input" value="${esc(p?.name||'')}" required></label><label class="label">Fecha de nacimiento<input id="pBirthDate" class="input" type="date" max="${todayISO()}" value="${esc(p?.birth_date||'')}" required><small>Se utiliza para calcular la edad y enviar el aviso de cumpleaños.</small></label><label class="label">Fecha de registro<input id="pRegistrationDate" class="input" type="date" max="${todayISO()}" value="${esc(registrationDate)}" ${registrationManaged?'required':'readonly'}>${registrationHelp}</label><label class="label">Día de pago<select id="pDay" class="select" required><option value="">Selecciona el día...</option>${paymentDayOptions(p?.payment_day||'')}</select></label><label class="label">Tutor principal<input id="pTutor" class="input" value="${esc(p?.tutor||'')}"></label><label class="label">WhatsApp principal<input id="pPhone" class="input" value="${esc(p?.phone||'')}"></label><label class="label">Tutor secundario<input id="pTutor2" class="input" value="${esc(p?.tutor_2||'')}" placeholder="Opcional"></label><label class="label">WhatsApp secundario<input id="pPhone2" class="input" value="${esc(p?.tutor_phone_2||'')}" placeholder="Opcional"></label><label class="label">Categoría<input id="pCategory" class="input" value="${esc(p?.category||'')}"></label><label class="label">Estado<select id="pStatus" class="select"><option ${p?.status==='Activo'?'selected':''}>Activo</option><option ${p?.status==='Inactivo'?'selected':''}>Inactivo</option><option ${p?.status==='Baja'?'selected':''}>Baja</option></select></label><label class="label">Mensualidad<input id="pFee" class="input" type="number" min="0" step="50" value="${esc(p?.monthly_fee||300)}"></label><label class="label">Número uniforme<input id="pUniform" class="input" value="${esc(p?.uniform_number||'')}"></label><label class="label">Foto<input id="pPhoto" class="input" type="file" accept="image/*"></label><label class="label full">Notas<textarea id="pNotes" class="input">${esc(stripPlayerBillingMarkers(p?.notes||''))}</textarea></label><div class="full actions"><button class="btn green">Guardar jugador</button></div></form></div></div>`;
   document.body.appendChild(modal);
   document.getElementById('playerForm').onsubmit=(e)=>savePlayerForm(e,p);
 }
@@ -2045,6 +2222,7 @@ async function savePlayerForm(e, oldPlayer){
     const row={
       id,
       name:document.getElementById('pName').value.trim(),
+      birth_date:document.getElementById('pBirthDate').value,
       tutor:document.getElementById('pTutor').value.trim(),
       phone:normalizePhone(document.getElementById('pPhone').value),
       tutor_2:document.getElementById('pTutor2')?.value.trim()||'',
@@ -2057,6 +2235,9 @@ async function savePlayerForm(e, oldPlayer){
       photo_url,
       notes:document.getElementById('pNotes').value.trim()
     };
+
+    if(!row.birth_date){ toast('Selecciona la fecha de nacimiento.'); return; }
+    if(row.birth_date>todayISO()){ toast('La fecha de nacimiento no puede ser posterior a hoy.'); return; }
 
     const registrationManaged=!oldPlayer||usesRegistrationBilling(oldPlayer);
     if(registrationManaged) row.notes=withRegistrationBillingMarker(row.notes);
@@ -2079,6 +2260,9 @@ async function savePlayerForm(e, oldPlayer){
       : await sb.from('players').insert(row);
 
     if(result.error){
+      if(/birth_date/i.test(result.error.message||'')){
+        throw new Error('Falta habilitar Fecha de nacimiento en Supabase. Ejecuta PASO_12_SQL_FECHAS_Y_AVISOS_v2_57.sql.');
+      }
       if(/registration_date/i.test(result.error.message||'')){
         throw new Error('Falta habilitar Fecha de registro en Supabase. Ejecuta el archivo PASO_10_SQL_FECHA_REGISTRO_v2_52.txt incluido en esta versión.');
       }
@@ -2150,5 +2334,7 @@ window.parentChangeOwnPassword=parentChangeOwnPassword; window.parentExitToHome=
 window.openParentPayNow=openParentPayNow;
 
 window.copyDefaultPaymentData=copyDefaultPaymentData;
+
+window.requestAdminNotificationPermission=requestAdminNotificationPermission; window.markNotificationRead=markNotificationRead; window.markAllNotificationsRead=markAllNotificationsRead; window.openNotificationTarget=openNotificationTarget;
 
 window.openPlayerHistory=openPlayerHistory; window.openHistoryDetail=openHistoryDetail; window.exportPlayerHistoryCSV=exportPlayerHistoryCSV;

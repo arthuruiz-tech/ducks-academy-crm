@@ -1,0 +1,28 @@
+DUCKS CRM PROFESIONAL v2.57
+
+CAMBIOS PRINCIPALES
+1. Fecha de nacimiento visible y editable en Jugadores.
+2. Carga las fechas originales de nacimiento e ingreso de D001 a D046.
+3. Conserva sin cambios los pagos, comprobantes, historial y cálculo protegido de jugadores existentes.
+4. Los jugadores nuevos siguen iniciando con $0 de adeudo el día de su registro.
+5. Centro de Avisos para:
+   - cumpleaños del día;
+   - pago reportado por un papá/tutor;
+   - evidencia de pago subida por un papá/tutor.
+6. Avisos persistentes dentro del CRM y avisos del dispositivo mientras la aplicación está abierta/instalada y el permiso está habilitado.
+
+INSTALACIÓN
+A) En Supabase > SQL Editor > New query, abre y ejecuta completo:
+   PASO_12_SQL_FECHAS_Y_AVISOS_v2_57.sql
+B) Publica todos los archivos del ZIP en Vercel reemplazando la versión anterior.
+C) Inicia sesión como administrador y presiona “Activar avisos del dispositivo”.
+D) Realiza una recarga completa con Ctrl + Shift + R.
+
+IMPORTANTE
+- El script SQL no borra información.
+- Alicia Martinez (D039) no tenía fecha de nacimiento en el archivo original; queda pendiente de captura manual.
+- Los avisos quedan guardados aunque el CRM esté cerrado. El aviso emergente del dispositivo se muestra al abrir o mientras está activa la aplicación; para notificaciones push con la app totalmente cerrada sería necesario conectar un servicio de push externo.
+
+NOTA DE DATOS
+- Mateo Correa (D045) aparecía con año 1905, pero el archivo indicaba 11 años y categoría 2015-2014; se corrigió a 06/07/2015.
+- Los jugadores creados después de D046 conservan su fecha de registro actual y requieren capturar su fecha de nacimiento desde Jugadores > Editar.

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ducks-academy-v2-56';
+const CACHE_NAME = 'ducks-academy-v2-57';
 
 self.addEventListener('install', event => {
   self.skipWaiting();
@@ -28,5 +28,19 @@ self.addEventListener('fetch', event => {
         return res;
       })
       .catch(() => caches.match(req).then(cached => cached || caches.match('./index.html')))
+  );
+});
+
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const target = event.notification.data?.url || './';
+  event.waitUntil(
+    clients.matchAll({type:'window',includeUncontrolled:true}).then(list => {
+      for(const client of list){
+        if('focus' in client) return client.focus();
+      }
+      if(clients.openWindow) return clients.openWindow(target);
+    })
   );
 });

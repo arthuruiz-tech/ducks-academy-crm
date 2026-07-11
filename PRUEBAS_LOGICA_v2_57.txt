@@ -1,0 +1,9 @@
+PRUEBAS REALIZADAS - DUCKS CRM v2.57
+
+1. Sintaxis JavaScript validada con node --check: OK.
+2. Jugador nuevo registrado el 10/07/2026: adeudo inicial $0.00: OK.
+3. Jugador histórico conserva cálculo anterior y usa fecha real de ingreso solo para mostrarla: OK.
+4. Fecha de nacimiento 10/07/2016 al 10/07/2026: edad 10 y cumpleaños detectado: OK.
+5. Centro de avisos genera correctamente botones Abrir y Leído: OK.
+6. La migración actualiza únicamente birth_date y registration_date de D001-D046: no toca pagos, comprobantes ni historial.
+7. Se agregaron avisos persistentes y en tiempo real para pagos/evidencias de papás.
