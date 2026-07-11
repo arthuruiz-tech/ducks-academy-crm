@@ -132,22 +132,80 @@ function fieldLabel(k){
 
 function nextId(){ const max=players.reduce((m,p)=>Math.max(m,Number(String(p.id||'').replace(/\D/g,''))||0),0); return 'D'+String(max+1).padStart(3,'0'); }
 
+function paymentBalanceAfter(payment){
+  const m=String(payment?.notes||'').match(/\[DUCKS_BALANCE_AFTER:([-+]?\d+(?:\.\d+)?)\]/);
+  return m ? Number(m[1]) : null;
+}
+function paymentDebtBefore(payment){
+  const m=String(payment?.notes||'').match(/\[DEBT_BEFORE:([-+]?\d+(?:\.\d+)?)\]/);
+  return m ? Number(m[1]) : null;
+}
+function paymentConfirmedAmount(payment){
+  const m=String(payment?.notes||'').match(/\[CONFIRMED_AMOUNT:([-+]?\d+(?:\.\d+)?)\]/);
+  return m ? Number(m[1]) : null;
+}
+function cleanPaymentBalanceTags(notes){
+  return String(notes||'')
+    .replace(/\s*\[DUCKS_BALANCE_AFTER:[^\]]+\]/g,'')
+    .replace(/\s*\[DEBT_BEFORE:[^\]]+\]/g,'')
+    .replace(/\s*\[CONFIRMED_AMOUNT:[^\]]+\]/g,'')
+    .trim();
+}
+function paymentBalanceSummary(payment){
+  const balance=paymentBalanceAfter(payment);
+  if(balance===null || !Number.isFinite(balance)) return '<span class="sub">—</span>';
+  if(balance>0) return `<span class="payment-balance debt">Adeudo ${money(balance)}</span>`;
+  if(balance<0) return `<span class="payment-balance credit">Crédito ${money(Math.abs(balance))}</span>`;
+  return '<span class="payment-balance exact">Sin diferencia</span>';
+}
 function calc(player, payList=payments){
-  const confirmed = payList.filter(p=>p.player_id===player.id && p.confirmation_status==='Confirmado').sort((a,b)=>String(b.payment_date).localeCompare(String(a.payment_date)));
-  const last = confirmed[0]?.payment_date || '';
-  const now = new Date();
-  const lastD = last ? new Date(last+'T00:00:00') : null;
-  const active = String(player.status||'').toLowerCase()==='activo';
-  let months = 0;
-  if(active){ months = !lastD ? 1 : Math.max(0,(now.getFullYear()-lastD.getFullYear())*12+(now.getMonth()-lastD.getMonth())); }
-  const amount = active ? months * Number(player.monthly_fee||0) : 0;
-  let status='Inactivo';
-  if(active){
-    if(months===0) status='Pagado';
-    else if(months===1 && now.getDate() <= Number(player.payment_day||1)) status='Pendiente';
-    else status='Vencido';
+  const confirmed = payList
+    .filter(p=>p.player_id===player.id && p.confirmation_status==='Confirmado')
+    .sort((a,b)=>{
+      const ka=`${a.payment_date||''}|${a.confirmed_at||''}|${a.id||''}`;
+      const kb=`${b.payment_date||''}|${b.confirmed_at||''}|${b.id||''}`;
+      return kb.localeCompare(ka);
+    });
+  const latest=confirmed[0]||null;
+  const last=latest?.payment_date||'';
+  const now=new Date();
+  const lastD=last?new Date(last+'T00:00:00'):null;
+  const active=String(player.status||'').toLowerCase()==='activo';
+  const fee=Number(player.monthly_fee||0);
+  const paymentDay=Math.max(1,Math.min(31,Number(player.payment_day||1)));
+  const elapsedMonths=lastD
+    ? Math.max(0,(now.getFullYear()-lastD.getFullYear())*12+(now.getMonth()-lastD.getMonth()))
+    : 0;
+
+  if(!active){
+    return {last,months:0,amount:0,status:'Inactivo',credit:0,isOverdue:false,paymentDay};
   }
-  return {last,months,amount,status};
+
+  const savedBalance=latest?paymentBalanceAfter(latest):null;
+  if(savedBalance!==null && Number.isFinite(savedBalance)){
+    const rawBalance=savedBalance+(elapsedMonths*fee);
+    const amount=Math.max(0,Math.round(rawBalance*100)/100);
+    const credit=Math.max(0,Math.round((-rawBalance)*100)/100);
+    const months=amount>0 && fee>0 ? Math.max(1,Math.ceil(amount/fee)) : 0;
+    const isOverdue=amount>0 && (
+      savedBalance>0 ||
+      elapsedMonths>1 ||
+      (elapsedMonths>=1 && now.getDate()>paymentDay)
+    );
+    return {
+      last,months,amount,
+      status:amount<=0?'Pagado':(isOverdue?'Vencido':'Pendiente'),
+      credit,isOverdue,paymentDay,balanceAfter:savedBalance
+    };
+  }
+
+  let months=!lastD?1:elapsedMonths;
+  months=Math.max(0,months);
+  const amount=months*fee;
+  const isOverdue=amount>0 && (months>1 || (months===1 && now.getDate()>paymentDay));
+  let status='Pagado';
+  if(amount>0) status=isOverdue?'Vencido':'Pendiente';
+  return {last,months,amount,status,credit:0,isOverdue,paymentDay};
 }
 function reminderMessage(player){
   const c=calc(player);
@@ -169,7 +227,7 @@ Agradecemos mucho su apoyo para mantener el control administrativo de la academi
 function whatsappUrl(player){ const phone = String(player.phone||'').replace(/\D/g,''); return phone ? `https://wa.me/${phone}?text=${encodeURIComponent(reminderMessage(player))}` : ''; }
 function whatsappButtons(player){
   const c = calc(player);
-  if(c.status !== 'Vencido' || !player.phone) return '';
+  if(!c.isOverdue || !player.phone) return '';
   return `<button class="btn secondary" onclick="copyReminder('${player.id}')">Copiar</button><a class="btn green" target="_blank" rel="noopener" href="${whatsappUrl(player)}">WhatsApp</a>`;
 }
 async function copyReminder(id){ const p=players.find(x=>x.id===id); if(!p) return; await navigator.clipboard.writeText(reminderMessage(p)); toast('Mensaje de WhatsApp copiado'); }
@@ -807,7 +865,7 @@ function renderParentPortal(){
         </div>
         <div class="player-photo-side"><img src="${playerPhotoUrl(p)}" alt="Foto de ${esc(p.name)}"></div>
       </div>
-      <details class="history-box"><summary>Ver historial y comprobantes</summary>${history.length?`<table class="mini-table"><thead><tr><th>Fecha</th><th>Monto</th><th>Estatus</th><th>Evidencia</th></tr></thead><tbody>${history.map(h=>`<tr><td>${esc(h.payment_date)}</td><td>${money(h.amount)}</td><td><span class="status ${statusClass(h.confirmation_status)}">${esc(h.confirmation_status)}</span></td><td>${h.evidence_url?`<a target="_blank" href="${h.evidence_url}">Ver</a>`:'-'}</td></tr>`).join('')}</tbody></table>`:'<p class="sub">Sin pagos registrados.</p>'}</details>
+      <details class="history-box"><summary>Ver historial y comprobantes</summary>${history.length?`<table class="mini-table"><thead><tr><th>Fecha</th><th>Monto</th><th>Estatus</th><th>Evidencia</th></tr></thead><tbody>${history.map(h=>`<tr><td>${esc(h.payment_date)}</td><td>${money(h.amount)}</td><td><span class="status ${statusClass(h.confirmation_status)}">${esc(h.confirmation_status)}</span></td><td>${h.evidence_url?`<button type="button" class="btn secondary" onclick="openEvidencePreview('${h.id}')">Ver</button>`:'-'}</td></tr>`).join('')}</tbody></table>`:'<p class="sub">Sin pagos registrados.</p>'}</details>
       <div class="doc-actions">
         <button class="btn green pay-now-main-btn" onclick="openParentPayNow('${p.id}')">💳 Pagar ahora</button>
         <button class="btn secondary" onclick="openParentPayment('${p.id}')">Subir comprobante</button>
@@ -1364,19 +1422,201 @@ async function resetParentPassword(accountId){
 
 async function deleteParentLink(id){ if(!confirm('¿Eliminar relación papá-jugador?')) return; const {error}=await sb.from('parent_player_links_v213').delete().eq('id',id); if(error) toast(error.message); else {toast('Relación eliminada'); await refresh(); page='parents'; renderPage();} }
 
+
+function findPaymentForPreview(paymentId){
+  return payments.find(p=>String(p.id)===String(paymentId))
+    || parentPayments.find(p=>String(p.id)===String(paymentId))
+    || null;
+}
+function evidenceViewerHtml(payment, compact=false){
+  const url=String(payment?.evidence_url||'').trim();
+  if(!url) return '<div class="notice warning">Este pago no tiene evidencia adjunta.</div>';
+  const fileName=String(payment?.evidence_name||url).toLowerCase();
+  const isPdf=fileName.includes('.pdf') || /\.pdf(?:$|\?)/i.test(url);
+  if(isPdf){
+    return `<iframe class="evidence-preview-frame ${compact?'compact':''}" src="${esc(url)}" title="Comprobante de pago"></iframe>`;
+  }
+  return `<div class="evidence-image-wrap"><img class="evidence-preview-image ${compact?'compact':''}" src="${esc(url)}" alt="Comprobante de pago"></div>`;
+}
+function openEvidencePreview(paymentId){
+  const payment=findPaymentForPreview(paymentId);
+  if(!payment){toast('No se encontró el pago.');return;}
+  if(!payment.evidence_url){toast('Este pago no tiene evidencia.');return;}
+  const modal=document.createElement('div');
+  modal.className='modalbg open evidence-preview-overlay';
+  modal.id='evidencePreviewModal';
+  modal.innerHTML=`<div class="modal evidence-preview-modal">
+    <div class="modal-head evidence-preview-head">
+      <div><h3>Comprobante de pago</h3><small>${esc(payment.student_name||payment.player_id||'')} · ${esc(payment.payment_date||'')}</small></div>
+    </div>
+    <div class="modal-body evidence-preview-body">
+      ${evidenceViewerHtml(payment)}
+    </div>
+    <div class="pay-close-footer">
+      <button type="button" class="btn secondary pay-close-btn" onclick="closeModal('evidencePreviewModal')">Cerrar evidencia</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+}
+function paymentDifferenceText(debt,amount){
+  const difference=Math.round((Number(debt||0)-Number(amount||0))*100)/100;
+  if(difference>0) return {text:`Quedará adeudo de ${money(difference)}`,cls:'debt'};
+  if(difference<0) return {text:`Quedará crédito de ${money(Math.abs(difference))}`,cls:'credit'};
+  return {text:'Pago exacto: sin diferencia',cls:'exact'};
+}
+function updatePaymentReviewDifference(){
+  const rows=[...document.querySelectorAll('.payment-review-row')];
+  let totalReported=0,totalConfirmed=0,totalDifference=0;
+  rows.forEach(row=>{
+    const debt=Number(row.dataset.debt||0);
+    const input=row.querySelector('.payment-review-amount');
+    const amount=Number(input?.value||0);
+    const result=paymentDifferenceText(debt,amount);
+    const resultEl=row.querySelector('.payment-review-difference');
+    if(resultEl){
+      resultEl.className=`payment-review-difference ${result.cls}`;
+      resultEl.textContent=result.text;
+    }
+    totalReported+=Number(row.dataset.reported||0);
+    totalConfirmed+=amount;
+    totalDifference+=(debt-amount);
+  });
+  const reportedEl=document.getElementById('reviewReportedTotal');
+  const confirmedEl=document.getElementById('reviewConfirmedTotal');
+  const differenceEl=document.getElementById('reviewDifferenceTotal');
+  if(reportedEl) reportedEl.textContent=money(totalReported);
+  if(confirmedEl) confirmedEl.textContent=money(totalConfirmed);
+  if(differenceEl){
+    differenceEl.textContent=totalDifference>0
+      ? `Adeudo restante ${money(totalDifference)}`
+      : totalDifference<0
+        ? `Crédito total ${money(Math.abs(totalDifference))}`
+        : 'Sin diferencia';
+    differenceEl.className=`review-total-difference ${totalDifference>0?'debt':totalDifference<0?'credit':'exact'}`;
+  }
+}
+function openPaymentReview(paymentId){
+  const payment=payments.find(p=>String(p.id)===String(paymentId));
+  if(!payment){toast('No se encontró el pago.');return;}
+  const batch=familyPaymentBatchId(payment);
+  const rows=(batch?familyPaymentRows(batch,payments):[payment])
+    .filter(p=>p.confirmation_status==='Pendiente de confirmación');
+  if(!rows.length){toast('Este pago ya no está pendiente.');return;}
+
+  const first=rows[0];
+  const rowHtml=rows.map(p=>{
+    const player=players.find(x=>x.id===p.player_id);
+    const debt=player?calc(player).amount:0;
+    const initial=Number(p.amount||0);
+    const result=paymentDifferenceText(debt,initial);
+    return `<div class="payment-review-row" data-payment-id="${p.id}" data-debt="${debt}" data-reported="${initial}">
+      <div class="payment-review-player">
+        <b>${esc(p.student_name||player?.name||p.player_id)}</b>
+        <small>Adeudo actual: <strong>${money(debt)}</strong> · Reportado: ${money(initial)}</small>
+      </div>
+      <label>Monto a confirmar
+        <input class="input payment-review-amount" type="number" min="0.01" step="0.01" value="${initial}" oninput="updatePaymentReviewDifference()">
+      </label>
+      <div class="payment-review-difference ${result.cls}">${result.text}</div>
+    </div>`;
+  }).join('');
+
+  const modal=document.createElement('div');
+  modal.className='modalbg open payment-review-overlay';
+  modal.id='paymentReviewModal';
+  modal.innerHTML=`<div class="modal payment-review-modal">
+    <div class="modal-head payment-review-head">
+      <div><h3>${batch?'Revisar pago familiar':'Revisar y confirmar pago'}</h3><small>Verifica el comprobante y captura el monto realmente recibido.</small></div>
+    </div>
+    <div class="modal-body">
+      <div class="payment-review-evidence">${evidenceViewerHtml(first,true)}</div>
+      <div class="payment-review-totals">
+        <div><small>Total reportado</small><strong id="reviewReportedTotal">$0.00</strong></div>
+        <div><small>Total a confirmar</small><strong id="reviewConfirmedTotal">$0.00</strong></div>
+        <div><small>Diferencia general</small><strong id="reviewDifferenceTotal" class="review-total-difference">—</strong></div>
+      </div>
+      <form id="paymentReviewForm">
+        <div class="payment-review-list">${rowHtml}</div>
+        <div class="payment-review-confirm-area">
+          <button class="btn green payment-review-confirm-btn">${batch?'Confirmar pago para todos los hijos':'Confirmar pago'}</button>
+        </div>
+      </form>
+    </div>
+    <div class="pay-close-footer">
+      <button type="button" class="btn secondary pay-close-btn" onclick="closeModal('paymentReviewModal')">Cerrar sin confirmar</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+  document.getElementById('paymentReviewForm').onsubmit=confirmReviewedPayment;
+  updatePaymentReviewDifference();
+}
+async function confirmReviewedPayment(e){
+  e.preventDefault();
+  const rows=[...document.querySelectorAll('#paymentReviewModal .payment-review-row')];
+  if(!rows.length){toast('No hay pagos para confirmar.');return;}
+
+  const updates=rows.map(row=>{
+    const payment=payments.find(p=>String(p.id)===String(row.dataset.paymentId));
+    const amount=Number(row.querySelector('.payment-review-amount')?.value||0);
+    const debt=Number(row.dataset.debt||0);
+    return {payment,amount,debt,balance:Math.round((debt-amount)*100)/100};
+  });
+  if(updates.some(x=>!x.payment || !Number.isFinite(x.amount) || x.amount<=0)){
+    toast('Captura un monto válido mayor a cero para cada jugador.');
+    return;
+  }
+
+  const total=updates.reduce((s,x)=>s+x.amount,0);
+  const detail=updates.map(x=>{
+    const result=paymentDifferenceText(x.debt,x.amount);
+    return `• ${x.payment.student_name}: ${money(x.amount)} — ${result.text}`;
+  }).join('\n');
+  if(!confirm(`¿Confirmar ${updates.length>1?'estos pagos':'este pago'} por un total de ${money(total)}?\n\n${detail}`)) return;
+
+  const button=document.querySelector('#paymentReviewModal .payment-review-confirm-btn');
+  if(button){button.disabled=true;button.textContent='Confirmando...';}
+  const failures=[];
+  for(const item of updates){
+    const baseNotes=cleanPaymentBalanceTags(item.payment.notes);
+    const tags=`[DUCKS_BALANCE_AFTER:${item.balance.toFixed(2)}] [DEBT_BEFORE:${item.debt.toFixed(2)}] [CONFIRMED_AMOUNT:${item.amount.toFixed(2)}]`;
+    const notes=`${baseNotes}${baseNotes?' ':''}${tags}`;
+    const {error}=await sb.from('payments').update({
+      amount:item.amount,
+      notes,
+      confirmation_status:'Confirmado',
+      confirmed_at:new Date().toISOString()
+    }).eq('id',item.payment.id);
+    if(error) failures.push(`${item.payment.student_name}: ${error.message}`);
+  }
+  if(failures.length){
+    toast('Algunos pagos no se confirmaron: '+failures.join(' | '));
+    if(button){button.disabled=false;button.textContent='Intentar nuevamente';}
+    await refresh();
+    return;
+  }
+  closeModal('paymentReviewModal');
+  await refresh();
+  page='evidence';
+  renderPage();
+  toast(`Pago confirmado. El saldo de ${updates.length} jugador(es) fue recalculado.`);
+}
+
 function renderPayments(){
   setTitle('Pagos');
-  document.getElementById('content').innerHTML=`<div class="panel"><div class="panel-head"><h3>Historial de pagos</h3><button class="btn green" onclick="openPaymentForm()">+ Registrar pago</button></div><div class="tablewrap"><table><thead><tr><th>ID</th><th>Alumno</th><th>Fecha</th><th>Periodo</th><th>Monto</th><th>Método</th><th>Estatus</th><th>Evidencia</th><th>Acción</th></tr></thead><tbody>${payments.map(p=>`<tr><td>${String(p.id).slice(0,8)}</td><td><b>${esc(p.student_name||'')}</b><br><small>${esc(p.player_id)}</small></td><td>${esc(p.payment_date)}</td><td>${esc(p.period||'')}</td><td class="amount">${money(p.amount)}</td><td>${esc(p.method||'')}</td><td><span class="status ${statusClass(p.confirmation_status)}">${esc(p.confirmation_status)}</span></td><td>${p.evidence_url?`<a class="btn secondary" target="_blank" href="${p.evidence_url}">Ver</a>`:'-'}</td><td><button class="btn red" onclick="deletePayment('${p.id}')">Eliminar</button></td></tr>`).join('')||'<tr><td colspan="9">Sin pagos</td></tr>'}</tbody></table></div></div>`;
+  document.getElementById('content').innerHTML=`<div class="notice success"><b>Saldo por jugador:</b> cuando el monto confirmado es menor o mayor al adeudo, el CRM conserva la diferencia como adeudo restante o crédito para el siguiente periodo.</div><div class="panel"><div class="panel-head"><h3>Historial de pagos</h3><button class="btn green" onclick="openPaymentForm()">+ Registrar pago</button></div><div class="tablewrap"><table><thead><tr><th>ID</th><th>Alumno</th><th>Fecha</th><th>Periodo</th><th>Monto confirmado</th><th>Saldo después</th><th>Método</th><th>Estatus</th><th>Evidencia</th><th>Acción</th></tr></thead><tbody>${payments.map(p=>`<tr><td>${String(p.id).slice(0,8)}</td><td><b>${esc(p.student_name||'')}</b><br><small>${esc(p.player_id)}</small></td><td>${esc(p.payment_date)}</td><td>${esc(p.period||'')}</td><td class="amount">${money(p.amount)}</td><td>${paymentBalanceSummary(p)}</td><td>${esc(p.method||'')}</td><td><span class="status ${statusClass(p.confirmation_status)}">${esc(p.confirmation_status)}</span></td><td>${p.evidence_url?`<button class="btn secondary" onclick="openEvidencePreview('${p.id}')">Ver evidencia</button>`:'-'}</td><td><button class="btn red" onclick="deletePayment('${p.id}')">Eliminar</button></td></tr>`).join('')||'<tr><td colspan="10">Sin pagos</td></tr>'}</tbody></table></div></div>`;
 }
 function renderEvidence(){
   setTitle('Evidencias por confirmar');
   const pend=payments.filter(p=>p.confirmation_status==='Pendiente de confirmación');
-  document.getElementById('content').innerHTML=`<div class="notice warning">Al confirmar un pago, se reflejará automáticamente en el dashboard y adeudos. Los pagos familiares pueden confirmarse o rechazarse como grupo.</div><div class="panel"><div class="panel-head"><h3>Pendientes</h3></div><div class="tablewrap"><table><thead><tr><th>Alumno</th><th>Fecha</th><th>Periodo</th><th>Monto</th><th>Enviado por</th><th>Evidencia</th><th>Acción</th></tr></thead><tbody>${pend.map(p=>{const batch=familyPaymentBatchId(p);const group=batch?familyPaymentRows(batch,pend):[];return `<tr><td><b>${esc(p.student_name)}</b><br><small>${esc(p.player_id)}</small>${batch?`<br><span class="family-payment-chip">Pago familiar · ${group.length} hijos</span>`:''}</td><td>${p.payment_date}</td><td>${esc(p.period||'')}</td><td class="amount">${money(p.amount)}</td><td>${esc(p.submitted_by||'')}</td><td>${p.evidence_url?`<a class="btn secondary" target="_blank" href="${p.evidence_url}">Ver evidencia</a>`:'-'}</td><td>${batch?`<div class="family-admin-actions"><button class="btn green" onclick="confirmFamilyPayment('${batch}')">Confirmar familia</button><button class="btn red" onclick="rejectFamilyPayment('${batch}')">Rechazar familia</button></div>`:`<button class="btn green" onclick="confirmPayment('${p.id}')">Confirmar</button> <button class="btn red" onclick="rejectPayment('${p.id}')">Rechazar</button>`}</td></tr>`}).join('')||'<tr><td colspan="7">No hay evidencias pendientes.</td></tr>'}</tbody></table></div></div>`;
+  document.getElementById('content').innerHTML=`<div class="notice warning"><b>Revisión rápida:</b> la evidencia se abre dentro del CRM. En “Revisar monto y confirmar” puedes capturar el monto realmente recibido; el sistema calcula el adeudo restante o el crédito de cada jugador.</div><div class="panel"><div class="panel-head"><h3>Pendientes</h3></div><div class="tablewrap"><table><thead><tr><th>Alumno</th><th>Fecha</th><th>Periodo</th><th>Monto reportado</th><th>Adeudo actual</th><th>Enviado por</th><th>Evidencia</th><th>Acción</th></tr></thead><tbody>${pend.map(p=>{const batch=familyPaymentBatchId(p);const group=batch?familyPaymentRows(batch,pend):[];const firstInGroup=!batch||String(group[0]?.id)===String(p.id);const player=players.find(x=>x.id===p.player_id);const debt=player?calc(player).amount:0;return `<tr><td><b>${esc(p.student_name)}</b><br><small>${esc(p.player_id)}</small>${batch?`<br><span class="family-payment-chip">Pago familiar · ${group.length} hijos</span>`:''}</td><td>${esc(p.payment_date)}</td><td>${esc(p.period||'')}</td><td class="amount">${money(p.amount)}</td><td class="amount">${money(debt)}</td><td>${esc(p.submitted_by||'')}</td><td>${p.evidence_url?`<button class="btn secondary" onclick="openEvidencePreview('${p.id}')">Ver evidencia</button>`:'-'}</td><td>${firstInGroup?`<div class="family-admin-actions"><button class="btn green" onclick="openPaymentReview('${p.id}')">${batch?'Revisar familia y confirmar':'Revisar monto y confirmar'}</button><button class="btn red" onclick="${batch?`rejectFamilyPayment('${batch}')`:`rejectPayment('${p.id}')`}">Rechazar</button></div>`:'<span class="sub">Incluido en revisión familiar</span>'}</td></tr>`}).join('')||'<tr><td colspan="8">No hay evidencias pendientes.</td></tr>'}</tbody></table></div></div>`;
 }
 function renderWhatsApp(){
   setTitle('WhatsApp vencidos');
-  const rows=players.map(p=>({...p,c:calc(p)})).filter(p=>p.c.status==='Vencido'&&p.phone).sort((a,b)=>b.c.amount-a.c.amount);
-  document.getElementById('content').innerHTML=`<div class="notice warning"><b>Enviar recordatorios:</b> cada botón abre WhatsApp con el mensaje listo.</div><div class="panel"><div class="panel-head"><h3>Jugadores vencidos con WhatsApp</h3></div><div class="tablewrap"><table><thead><tr><th>ID</th><th>Jugador</th><th>Tutor</th><th>WhatsApp</th><th>Meses</th><th>Adeudo</th><th>Acción</th></tr></thead><tbody>${rows.map(p=>`<tr><td>${p.id}</td><td><b>${esc(p.name)}</b></td><td>${esc(p.tutor||'')}</td><td>${esc(p.phone||'')}</td><td>${p.c.months}</td><td class="amount">${money(p.c.amount)}</td><td>${whatsappButtons(p)}</td></tr>`).join('')||'<tr><td colspan="7">No hay jugadores vencidos con WhatsApp registrado.</td></tr>'}</tbody></table></div></div>`;
+  const rows=players
+    .map(p=>({...p,c:calc(p)}))
+    .filter(p=>p.c.isOverdue===true && p.phone)
+    .sort((a,b)=>b.c.amount-a.c.amount);
+  document.getElementById('content').innerHTML=`<div class="notice warning"><b>Solo vencidos reales:</b> aquí aparecen únicamente jugadores cuyo día de pago ya pasó y mantienen un adeudo. No se muestran pagos pendientes ni próximos a vencer.</div><div class="panel"><div class="panel-head"><h3>Jugadores vencidos con WhatsApp</h3></div><div class="tablewrap"><table><thead><tr><th>ID</th><th>Jugador</th><th>Tutor</th><th>WhatsApp</th><th>Día de pago</th><th>Meses / saldo</th><th>Adeudo</th><th>Acción</th></tr></thead><tbody>${rows.map(p=>`<tr><td>${p.id}</td><td><b>${esc(p.name)}</b></td><td>${esc(p.tutor||'')}</td><td>${esc(p.phone||'')}</td><td>Día ${esc(p.payment_day||1)}</td><td>${p.c.months} mes(es)</td><td class="amount">${money(p.c.amount)}</td><td>${whatsappButtons(p)}</td></tr>`).join('')||'<tr><td colspan="8">No hay pagos vencidos después de la fecha límite.</td></tr>'}</tbody></table></div></div>`;
 }
 
 
@@ -1618,12 +1858,9 @@ async function savePaymentForm(e){
 }
 
 async function confirmFamilyPayment(batchId){
-  const rows=payments.filter(p=>familyPaymentBatchId(p)===batchId && p.confirmation_status==='Pendiente de confirmación');
-  if(!rows.length){toast('Este pago familiar ya no tiene registros pendientes.');return;}
-  if(!confirm(`¿Confirmar el pago familiar para ${rows.length} hijos?`)) return;
-  const ids=rows.map(p=>p.id);
-  const {error}=await sb.from('payments').update({confirmation_status:'Confirmado',confirmed_at:new Date().toISOString()}).in('id',ids);
-  if(error) toast('Error: '+error.message); else{toast(`Pago familiar confirmado para ${rows.length} hijos`);await refresh();}
+  const row=payments.find(p=>familyPaymentBatchId(p)===batchId && p.confirmation_status==='Pendiente de confirmación');
+  if(!row){toast('Este pago familiar ya no tiene registros pendientes.');return;}
+  openPaymentReview(row.id);
 }
 async function rejectFamilyPayment(batchId){
   const rows=payments.filter(p=>familyPaymentBatchId(p)===batchId && p.confirmation_status==='Pendiente de confirmación');
@@ -1634,11 +1871,11 @@ async function rejectFamilyPayment(batchId){
   if(error) toast('Error: '+error.message); else{toast(`Pago familiar rechazado para ${rows.length} hijos`);await refresh();}
 }
 
-async function confirmPayment(id){const {error}=await sb.from('payments').update({confirmation_status:'Confirmado',confirmed_at:new Date().toISOString()}).eq('id',id); if(error)toast(error.message); else{toast('Pago confirmado'); await refresh();}}
+async function confirmPayment(id){ openPaymentReview(id); }
 async function rejectPayment(id){const {error}=await sb.from('payments').update({confirmation_status:'Rechazado'}).eq('id',id); if(error)toast(error.message); else{toast('Pago rechazado'); await refresh();}}
 async function deletePayment(id){if(!confirm('¿Eliminar pago?'))return; const {error}=await sb.from('payments').delete().eq('id',id); if(error)toast(error.message); else{toast('Pago eliminado'); await refresh();}}
 
-window.renderPublicHome=renderPublicHome; window.renderParentLogin=renderParentLogin; window.renderAdminLogin=renderAdminLogin; window.renderLogin=renderAdminLogin; window.parentLogout=parentLogout; window.copyBank=copyBank; window.openParentPayment=openParentPayment; window.openParentDocument=openParentDocument; window.installDucksApp=installDucksApp; window.goBackSmart=goBackSmart; window.openPlayerForm=openPlayerForm; window.deletePlayer=deletePlayer; window.openPaymentForm=openPaymentForm; window.confirmPayment=confirmPayment; window.rejectPayment=rejectPayment; window.deletePayment=deletePayment; window.closeModal=closeModal; window.copyReminder=copyReminder; window.deleteParentLink=deleteParentLink; window.prefillParent=prefillParent; window.exportCSV=exportCSV; window.exportFullJSON=exportFullJSON; window.exportDocumentsCSV=exportDocumentsCSV; window.resetParentPassword=resetParentPassword; window.autoLinkAccountFromButton=autoLinkAccountFromButton; window.editParentAccount=editParentAccount; window.saveParentAccountChanges=saveParentAccountChanges; window.deleteParentAccount=deleteParentAccount; window.sendParentCredentialsWhatsApp=sendParentCredentialsWhatsApp; window.openFamilyPayment=openFamilyPayment; window.updateFamilyPaymentTotal=updateFamilyPaymentTotal; window.toggleAllFamilyPlayers=toggleAllFamilyPlayers; window.copyFamilyPaymentData=copyFamilyPaymentData; window.confirmFamilyPayment=confirmFamilyPayment; window.rejectFamilyPayment=rejectFamilyPayment;
+window.renderPublicHome=renderPublicHome; window.renderParentLogin=renderParentLogin; window.renderAdminLogin=renderAdminLogin; window.renderLogin=renderAdminLogin; window.parentLogout=parentLogout; window.copyBank=copyBank; window.openParentPayment=openParentPayment; window.openParentDocument=openParentDocument; window.installDucksApp=installDucksApp; window.goBackSmart=goBackSmart; window.openPlayerForm=openPlayerForm; window.deletePlayer=deletePlayer; window.openPaymentForm=openPaymentForm; window.confirmPayment=confirmPayment; window.rejectPayment=rejectPayment; window.deletePayment=deletePayment; window.closeModal=closeModal; window.copyReminder=copyReminder; window.deleteParentLink=deleteParentLink; window.prefillParent=prefillParent; window.exportCSV=exportCSV; window.exportFullJSON=exportFullJSON; window.exportDocumentsCSV=exportDocumentsCSV; window.resetParentPassword=resetParentPassword; window.autoLinkAccountFromButton=autoLinkAccountFromButton; window.editParentAccount=editParentAccount; window.saveParentAccountChanges=saveParentAccountChanges; window.deleteParentAccount=deleteParentAccount; window.sendParentCredentialsWhatsApp=sendParentCredentialsWhatsApp; window.openFamilyPayment=openFamilyPayment; window.updateFamilyPaymentTotal=updateFamilyPaymentTotal; window.toggleAllFamilyPlayers=toggleAllFamilyPlayers; window.copyFamilyPaymentData=copyFamilyPaymentData; window.confirmFamilyPayment=confirmFamilyPayment; window.rejectFamilyPayment=rejectFamilyPayment; window.openEvidencePreview=openEvidencePreview; window.openPaymentReview=openPaymentReview; window.updatePaymentReviewDifference=updatePaymentReviewDifference; window.confirmReviewedPayment=confirmReviewedPayment;
 
 init();
 

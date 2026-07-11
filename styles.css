@@ -1946,3 +1946,222 @@ button[onclick="installDucksApp()"]{
 .family-payment-banner span{display:inline-block;color:#39ff88;font-weight:950;text-transform:uppercase;letter-spacing:.7px;font-size:12px}.family-payment-banner h2{color:#fff;margin:6px 0;font-size:27px}.family-payment-banner p{margin:0;color:#d7dee8;max-width:680px;line-height:1.45}.family-payment-banner .btn{min-width:220px;padding:14px 18px!important;font-size:16px!important;font-weight:950!important}
 .family-pay-overlay{inset:82px 0 0 0!important;align-items:flex-start!important;padding:12px 18px 18px!important;overflow:hidden!important}.family-pay-modal{max-width:900px!important;max-height:calc(100dvh - 100px)!important}.family-pay-head{justify-content:flex-start!important}.family-pay-head small{display:block;color:#64748b;margin-top:3px}.family-pay-summary{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:18px 20px;margin-bottom:14px;border-radius:20px;background:linear-gradient(135deg,#061528,#0b223f);color:#fff}.family-pay-summary small,.family-pay-summary span{display:block;color:#d7dee8}.family-pay-summary strong{display:block;color:#39ff88;font-size:34px;margin:3px 0}.family-pay-tools{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.family-pay-list{display:grid;gap:10px}.family-pay-player-row{display:grid;grid-template-columns:minmax(0,1fr) 200px;align-items:center;gap:16px;padding:13px;border:1px solid rgba(11,34,63,.12);border-radius:18px;background:#fff;opacity:.72}.family-pay-player-row.selected{border:2px solid rgba(57,255,136,.55);background:linear-gradient(135deg,#f0fff7,#fff);opacity:1}.family-pay-selector{display:grid;grid-template-columns:24px 58px minmax(0,1fr);align-items:center;gap:10px;cursor:pointer}.family-pay-selector input{width:19px;height:19px}.family-pay-selector img{width:58px;height:58px;object-fit:cover;border-radius:14px;background:#eef2f7}.family-pay-selector b,.family-pay-selector small{display:block}.family-pay-selector b{color:#061528;font-size:17px}.family-pay-selector small{color:#64748b;margin-top:4px}.family-pay-amount-label{font-size:11px;font-weight:900;text-transform:uppercase;color:#64748b}.family-pay-amount-label input{margin-top:5px;font-size:18px!important;font-weight:900!important;text-align:right}.family-bank-compact{display:grid;grid-template-columns:1fr 1fr auto;align-items:center;gap:12px;margin:16px 0;padding:14px;border-radius:17px;background:#f4f7fb;border:1px solid rgba(11,34,63,.1)}.family-bank-compact small,.family-bank-compact b{display:block}.family-bank-compact small{color:#64748b;font-size:11px;text-transform:uppercase;font-weight:900}.family-bank-compact b{color:#061528;margin-top:4px;word-break:break-word}.family-submit-btn{width:100%;padding:15px!important;font-size:17px!important;font-weight:950!important}.family-payment-chip{display:inline-block;margin-top:5px;padding:4px 8px;border-radius:999px;background:#e8fff0;color:#065f46;border:1px solid rgba(57,255,136,.4);font-size:11px;font-weight:900}.family-admin-actions{display:flex;gap:6px;flex-wrap:wrap}.family-admin-actions .btn{font-size:12px!important;padding:8px 10px!important}
 @media(max-width:760px){.family-payment-banner{flex-direction:column;align-items:stretch;padding:18px}.family-payment-banner h2{font-size:23px}.family-payment-banner .btn{width:100%;min-width:0}.family-pay-overlay{inset:116px 0 0 0!important;padding:8px!important}.family-pay-modal{max-height:calc(100dvh - 124px)!important;border-radius:16px!important}.family-pay-summary{align-items:flex-start;flex-direction:column}.family-pay-summary .btn{width:100%}.family-pay-player-row{grid-template-columns:1fr;gap:9px}.family-pay-amount-label input{text-align:left}.family-bank-compact{grid-template-columns:1fr}.family-bank-compact .btn{width:100%}}
+
+
+/* v2.50 - Evidencia interna, confirmación de monto y saldo real */
+.payment-balance{
+  display:inline-block;
+  border-radius:999px;
+  padding:5px 9px;
+  font-size:11px;
+  font-weight:900;
+  white-space:nowrap;
+}
+.payment-balance.debt,
+.payment-review-difference.debt,
+.review-total-difference.debt{
+  background:#fff1f2;
+  color:#be123c;
+  border:1px solid #fecdd3;
+}
+.payment-balance.credit,
+.payment-review-difference.credit,
+.review-total-difference.credit{
+  background:#ecfdf5;
+  color:#047857;
+  border:1px solid #a7f3d0;
+}
+.payment-balance.exact,
+.payment-review-difference.exact,
+.review-total-difference.exact{
+  background:#eff6ff;
+  color:#1d4ed8;
+  border:1px solid #bfdbfe;
+}
+.evidence-preview-overlay,
+.payment-review-overlay{
+  inset:82px 0 0 0 !important;
+  align-items:flex-start !important;
+  justify-content:center !important;
+  padding:12px 18px 18px !important;
+  overflow:hidden !important;
+}
+.evidence-preview-modal{
+  max-width:980px !important;
+  max-height:calc(100dvh - 100px) !important;
+}
+.evidence-preview-head,
+.payment-review-head{
+  justify-content:flex-start !important;
+}
+.evidence-preview-head small,
+.payment-review-head small{
+  display:block;
+  margin-top:3px;
+  color:#64748b;
+}
+.evidence-preview-body{
+  background:#eef2f7;
+  min-height:0;
+}
+.evidence-preview-frame{
+  width:100%;
+  height:68vh;
+  min-height:420px;
+  border:0;
+  border-radius:14px;
+  background:#fff;
+}
+.evidence-preview-frame.compact{
+  height:340px;
+  min-height:260px;
+}
+.evidence-image-wrap{
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+  width:100%;
+  min-height:260px;
+}
+.evidence-preview-image{
+  display:block;
+  max-width:100%;
+  max-height:68vh;
+  width:auto;
+  height:auto;
+  object-fit:contain;
+  border-radius:14px;
+  box-shadow:0 12px 30px rgba(6,21,40,.16);
+  background:#fff;
+}
+.evidence-preview-image.compact{
+  max-height:340px;
+}
+.payment-review-modal{
+  max-width:960px !important;
+  max-height:calc(100dvh - 100px) !important;
+}
+.payment-review-evidence{
+  background:#eef2f7;
+  border-radius:18px;
+  padding:10px;
+  margin-bottom:14px;
+}
+.payment-review-totals{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+  margin-bottom:14px;
+}
+.payment-review-totals > div{
+  padding:13px;
+  border-radius:16px;
+  background:#f6f8fb;
+  border:1px solid rgba(11,34,63,.10);
+}
+.payment-review-totals small,
+.payment-review-totals strong{
+  display:block;
+}
+.payment-review-totals small{
+  color:#64748b;
+  font-size:11px;
+  font-weight:900;
+  text-transform:uppercase;
+}
+.payment-review-totals strong{
+  margin-top:5px;
+  color:#061528;
+  font-size:19px;
+}
+.review-total-difference{
+  padding:5px 8px;
+  border-radius:10px;
+  font-size:14px !important;
+}
+.payment-review-list{
+  display:grid;
+  gap:10px;
+}
+.payment-review-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 190px minmax(180px,240px);
+  align-items:center;
+  gap:12px;
+  padding:14px;
+  border:1px solid rgba(11,34,63,.12);
+  border-radius:17px;
+  background:#fff;
+}
+.payment-review-player b,
+.payment-review-player small{
+  display:block;
+}
+.payment-review-player b{
+  font-size:17px;
+  color:#061528;
+}
+.payment-review-player small{
+  margin-top:4px;
+  color:#64748b;
+}
+.payment-review-row label{
+  font-size:11px;
+  font-weight:900;
+  color:#64748b;
+  text-transform:uppercase;
+}
+.payment-review-row input{
+  margin-top:5px;
+  font-size:18px !important;
+  font-weight:900 !important;
+  text-align:right;
+}
+.payment-review-difference{
+  padding:9px 10px;
+  border-radius:12px;
+  font-size:12px;
+  font-weight:900;
+  text-align:center;
+}
+.payment-review-confirm-area{
+  margin-top:14px;
+}
+.payment-review-confirm-btn{
+  width:100%;
+  padding:15px !important;
+  font-size:17px !important;
+  font-weight:950 !important;
+}
+@media(max-width:760px){
+  .evidence-preview-overlay,
+  .payment-review-overlay{
+    inset:116px 0 0 0 !important;
+    padding:8px !important;
+  }
+  .evidence-preview-modal,
+  .payment-review-modal{
+    max-height:calc(100dvh - 124px) !important;
+    border-radius:16px !important;
+  }
+  .evidence-preview-frame{
+    height:60vh;
+    min-height:360px;
+  }
+  .evidence-preview-frame.compact{
+    height:280px;
+    min-height:220px;
+  }
+  .evidence-preview-image.compact{
+    max-height:280px;
+  }
+  .payment-review-totals{
+    grid-template-columns:1fr;
+  }
+  .payment-review-row{
+    grid-template-columns:1fr;
+  }
+  .payment-review-row input{
+    text-align:left;
+  }
+}

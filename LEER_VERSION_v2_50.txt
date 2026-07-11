@@ -1,0 +1,30 @@
+Ducks CRM Profesional v2.50
+
+1. Evidencia rápida dentro del CRM
+- “Ver evidencia” abre una ventana interna.
+- Compatible con imágenes y PDF.
+- Disponible en Pagos, Evidencias y Portal de Papás.
+
+2. Confirmación del monto recibido
+- “Revisar monto y confirmar” muestra la evidencia.
+- Permite cambiar el monto real a confirmar.
+- En pagos familiares permite revisar cada hijo por separado.
+
+3. Diferencia por jugador
+- Pago menor: conserva el adeudo restante.
+- Pago mayor: conserva el excedente como crédito.
+- El crédito se descuenta en periodos posteriores.
+- Pagos muestra la columna “Saldo después”.
+
+4. WhatsApp vencidos
+- Solo muestra jugadores cuyo día de pago ya pasó.
+- No muestra pagos pendientes ni próximos a vencer.
+
+No requiere SQL nuevo.
+
+Publicación:
+1. Descomprime el ZIP.
+2. Sube todos los archivos y carpetas a la raíz de GitHub.
+3. Haz Commit changes.
+4. Espera a que Vercel indique Ready.
+5. Recarga con Ctrl + F5 o reinicia la PWA.
