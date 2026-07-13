@@ -1,0 +1,6 @@
+DUCKS CRM PROFESIONAL v2.63
+
+Cambios incluidos:
+- Se integran las imágenes personalizadas del usuario en sus secciones correspondientes del portal público.
+- Se actualizan las secciones: Pagos y comprobantes, Calendario de juegos, Academia, Entrenamiento, Competencias y comunidad y Reglamento Ducks.
+- No requiere SQL adicional en Supabase.

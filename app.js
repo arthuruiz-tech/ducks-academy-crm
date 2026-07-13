@@ -1,6 +1,6 @@
 
 async function forceFreshAssetsOnce(){
-  const key = 'ducks_cache_fix_v2_62_done';
+  const key = 'ducks_cache_fix_v2_63_done';
   if(localStorage.getItem(key)==='yes') return;
   try{
     if('caches' in window){
@@ -14,7 +14,7 @@ async function forceFreshAssetsOnce(){
 }
 forceFreshAssetsOnce();
 
-// Ducks CRM profesional v2.62 - banner con hotspots y recibo compacto a una hoja
+// Ducks CRM profesional v2.63 - se integran banners por sección en el portal público
 const app = document.getElementById('app');
 let sb = null;
 let session = null;
@@ -923,39 +923,24 @@ function renderPublicHome(){
           <button type="button" class="registration-banner-hotspot print" onclick="renderRegistrationForm();setTimeout(()=>window.print(),350)" aria-label="Imprimir formato"></button>
         </div>
       </section>
-      <section class="quick-parent-card parent-entry-card">
-        <img class="parent-entry-image portal-access-thumb" src="assets/portal-papas-cover.png?v=2.46" alt="Portal de Papás Ducks">
-        <div class="parent-entry-content"><h2>Pagos y comprobantes</h2><p>El Portal de Papás es privado. Cada familia entra con usuario y contraseña para ver únicamente la información de sus hijos.</p>
-        <div class="quick-actions"><button class="btn green" onclick="renderParentLogin()">Entrar al Portal de Papás</button><button class="btn secondary" onclick="installDucksApp()"><img class="install-app-icon" src="assets/pwa-icon-192.png" alt=""> Instalar App</button></div></div>
+      <section class="quick-parent-card parent-entry-card visual-banner-section">
+        <img class="section-banner-image" src="assets/pagos-comprobantes-banner-v263.png?v=2.63" alt="Pagos y comprobantes - Portal de Papás Ducks" loading="lazy">
       </section>
-      <section id="calendario" class="academy-section"><h2>Calendario de Juegos</h2><p>Próximamente aquí podrás consultar juegos, torneos, horarios, sedes y categorías.</p><div class="coming-soon"><span>🏀</span><b>Calendario en preparación</b><small>Consulta avisos oficiales de la academia mientras se activa este módulo.</small></div></section>
-      <section id="academia" class="academy-section">
-        <div class="section-headline">
-          <span class="eyebrow">Academia</span>
-          <h2>Formamos jugadores con disciplina, respeto y trabajo en equipo</h2>
-          <p>Ducks Basketball Academy impulsa el desarrollo deportivo y humano de niños y jóvenes a través del basketball.</p>
-        </div>
-        <div class="academy-grid">
-          <div><b>Entrenamiento</b><small>Fundamentos, técnica, coordinación, condición física y disciplina deportiva.</small></div>
-          <div><b>Competencia</b><small>Participación en juegos, torneos y seguimiento por categoría.</small></div>
-          <div><b>Comunidad</b><small>Comunicación clara con papás, control administrativo y compromiso familiar.</small></div>
-        </div>
+      <section id="calendario" class="academy-section visual-banner-section">
+        <img class="section-banner-image" src="assets/calendario-juegos-banner-v263.png?v=2.63" alt="Calendario de juegos - Ducks Basketball Academy" loading="lazy">
+      </section>
+      <section id="academia" class="academy-section visual-banner-section">
+        <img class="section-banner-image" src="assets/academia-banner-v263.png?v=2.63" alt="Academia - Ducks Basketball Academy" loading="lazy">
+      </section>
+      <section id="entrenamiento" class="academy-section visual-banner-section">
+        <img class="section-banner-image" src="assets/entrenamiento-banner-v263.png?v=2.63" alt="Entrenamiento - Ducks Basketball Academy" loading="lazy">
+      </section>
+      <section id="competencias" class="academy-section visual-banner-section">
+        <img class="section-banner-image" src="assets/competencias-comunidad-banner-v263.png?v=2.63" alt="Competencias y comunidad - Ducks Basketball Academy" loading="lazy">
       </section>
 
-      <section id="reglamento" class="academy-section rules-section">
-        <div class="section-headline">
-          <span class="eyebrow">Reglamento Ducks</span>
-          <h2>Lineamientos principales</h2>
-          <p>Este apartado queda preparado para integrar el reglamento oficial completo de Ducks Basketball Academy.</p>
-        </div>
-        <div class="rules-grid">
-          <article><b>Asistencia y puntualidad</b><small>Confirmar asistencia a entrenamientos, juegos y torneos. Llegar a tiempo fortalece la disciplina del equipo.</small></article>
-          <article><b>Uniforme y presentación</b><small>Usar la playera o uniforme indicado por la academia en entrenamientos y partidos.</small></article>
-          <article><b>Respeto y conducta</b><small>Promover respeto a compañeros, entrenadores, árbitros, rivales y familias.</small></article>
-          <article><b>Pagos y comprobantes</b><small>Mantener mensualidades y cuotas al corriente. Los comprobantes se cargan desde el Portal de Papás.</small></article>
-          <article><b>Comunicación oficial</b><small>La información administrativa, horarios y avisos se comunicarán por los canales oficiales de Ducks.</small></article>
-          <article><b>Compromiso familiar</b><small>El desarrollo del jugador requiere constancia, apoyo de papás y seguimiento administrativo.</small></article>
-        </div>
+      <section id="reglamento" class="academy-section visual-banner-section rules-section">
+        <img class="section-banner-image" src="assets/reglamento-banner-v263.png?v=2.63" alt="Reglamento Ducks" loading="lazy">
       </section>
 
       <section id="categorias" class="academy-section">
@@ -1622,7 +1607,7 @@ async function loadAdminData(){
 }
 async function refresh(){ if(mode==='admin'){await loadAdminData(); renderShell(); renderPage();} }
 function renderShell(){
-  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="notifications">🔔 Avisos <span class="notification-badge hidden" data-notification-badge>0</span></button><button data-page="registrations">📝 Solicitudes de ingreso</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="history">🕘 Historial</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.62: banner interactivo y recibos de efectivo en una sola hoja.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><button class="btn secondary notification-bell" onclick="page='notifications';renderPage()">🔔 <span class="notification-badge hidden" data-notification-badge>0</span></button><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
+  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="notifications">🔔 Avisos <span class="notification-badge hidden" data-notification-badge>0</span></button><button data-page="registrations">📝 Solicitudes de ingreso</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="history">🕘 Historial</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.63: imágenes personalizadas en secciones del portal público y recibos de efectivo en una sola hoja.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><button class="btn secondary notification-bell" onclick="page='notifications';renderPage()">🔔 <span class="notification-badge hidden" data-notification-badge>0</span></button><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
   document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page=b.dataset.page; if(page==='public'){renderPublicHome(); return;} renderPage();});
   document.getElementById('search').oninput=e=>{q=e.target.value; renderPage();};
   document.getElementById('authBtn').onclick=logout;
