@@ -1,0 +1,5 @@
+DUCKS CRM v2.66 - PAQUETE LIMPIO PARA VERCEL
+
+Este paquete contiene únicamente los archivos necesarios para ejecutar el portal.
+Total: menos de 30 archivos.
+No incluye archivos SQL, pruebas ni instrucciones de versiones anteriores.
