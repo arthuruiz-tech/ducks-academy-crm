@@ -1,5 +1,4 @@
-DUCKS CRM v2.66 - PAQUETE LIMPIO PARA VERCEL
+DUCKS CRM PROFESIONAL v2.67
 
-Este paquete contiene únicamente los archivos necesarios para ejecutar el portal.
-Total: menos de 30 archivos.
-No incluye archivos SQL, pruebas ni instrucciones de versiones anteriores.
+Este paquete limpio está listo para Vercel y contiene menos de 100 archivos.
+Cambios: realineación fina de botones en Academia, Entrenamiento, Competencias y Reglamento; reglamento de 1 página.
