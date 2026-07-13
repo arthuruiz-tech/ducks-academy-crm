@@ -1,6 +1,6 @@
 
 async function forceFreshAssetsOnce(){
-  const key = 'ducks_cache_fix_v2_61_done';
+  const key = 'ducks_cache_fix_v2_62_done';
   if(localStorage.getItem(key)==='yes') return;
   try{
     if('caches' in window){
@@ -14,7 +14,7 @@ async function forceFreshAssetsOnce(){
 }
 forceFreshAssetsOnce();
 
-// Ducks CRM profesional v2.61 - recibo formal con folio, validación administrativa y firma
+// Ducks CRM profesional v2.62 - banner con hotspots y recibo compacto a una hoja
 const app = document.getElementById('app');
 let sb = null;
 let session = null;
@@ -917,12 +917,10 @@ function renderPublicHome(){
         </div>
       </section>
       <section class="registration-home-card registration-home-banner-card">
-        <button type="button" class="registration-home-banner-button" onclick="renderRegistrationForm()" aria-label="Abrir registro de nuevos jugadores">
-          <img class="registration-home-banner-image" src="assets/nuevo-ingreso-banner-v260.png?v=2.61" alt="Registro de nuevo jugador Ducks Basketball Academy">
-        </button>
-        <div class="registration-home-actions">
-          <button class="btn green" onclick="renderRegistrationForm()">Registrar nuevo jugador</button>
-          <button class="btn secondary" onclick="renderRegistrationForm();setTimeout(()=>window.print(),350)">Imprimir formato</button>
+        <div class="registration-home-banner-wrap" aria-label="Registro de nuevo jugador Ducks Basketball Academy">
+          <img class="registration-home-banner-image" src="assets/nuevo-ingreso-banner-v260.png?v=2.62" alt="Registro de nuevo jugador Ducks Basketball Academy">
+          <button type="button" class="registration-banner-hotspot start" onclick="renderRegistrationForm()" aria-label="Comenzar registro"></button>
+          <button type="button" class="registration-banner-hotspot print" onclick="renderRegistrationForm();setTimeout(()=>window.print(),350)" aria-label="Imprimir formato"></button>
         </div>
       </section>
       <section class="quick-parent-card parent-entry-card">
@@ -1624,7 +1622,7 @@ async function loadAdminData(){
 }
 async function refresh(){ if(mode==='admin'){await loadAdminData(); renderShell(); renderPage();} }
 function renderShell(){
-  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="notifications">🔔 Avisos <span class="notification-badge hidden" data-notification-badge>0</span></button><button data-page="registrations">📝 Solicitudes de ingreso</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="history">🕘 Historial</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.61: cuestionario digital y recibos formales de efectivo.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><button class="btn secondary notification-bell" onclick="page='notifications';renderPage()">🔔 <span class="notification-badge hidden" data-notification-badge>0</span></button><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
+  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="notifications">🔔 Avisos <span class="notification-badge hidden" data-notification-badge>0</span></button><button data-page="registrations">📝 Solicitudes de ingreso</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="history">🕘 Historial</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.62: banner interactivo y recibos de efectivo en una sola hoja.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><button class="btn secondary notification-bell" onclick="page='notifications';renderPage()">🔔 <span class="notification-badge hidden" data-notification-badge>0</span></button><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
   document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page=b.dataset.page; if(page==='public'){renderPublicHome(); return;} renderPage();});
   document.getElementById('search').oninput=e=>{q=e.target.value; renderPage();};
   document.getElementById('authBtn').onclick=logout;
@@ -2600,20 +2598,23 @@ function cashReceiptHtml(data){
 }
 function cashReceiptPrintStyles(){
   return `
-    *{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;background:#f3f5f7;padding:24px;color:#0a2035}
-    .cash-receipt-print{max-width:860px;margin:0 auto;background:#fff;border:3px solid #0d3b5f;border-radius:24px;overflow:hidden;box-shadow:0 10px 35px rgba(0,0,0,.08)}
-    .cash-receipt-head{display:flex;justify-content:space-between;gap:18px;align-items:center;padding:24px 28px;background:linear-gradient(135deg,#073f2f,#0d6748);color:#fff}
-    .cash-receipt-brand{display:flex;gap:14px;align-items:center}.cash-receipt-brand img{width:78px;height:78px;object-fit:contain;background:#fff;border-radius:18px;padding:6px}.cash-receipt-brand h2{margin:0 0 4px;font-size:26px}.cash-receipt-brand small{letter-spacing:1.5px}
-    .cash-receipt-status{text-align:center;border:2px solid #e9ffbd;border-radius:14px;padding:10px 16px}.cash-receipt-status span{display:block;font-weight:900;font-size:26px;color:#caff42}.cash-receipt-status small{display:block;margin-top:2px}
-    .cash-receipt-identity{display:grid;grid-template-columns:2fr 1fr;gap:14px;padding:18px 28px;background:#edf7f2;border-bottom:1px solid #d1e7dc}.cash-receipt-identity small,.cash-receipt-grid small,.cash-receipt-foot small,.cash-receipt-observations small,.cash-receipt-verification small{display:block;color:#5a6c78;margin-bottom:6px}.cash-receipt-identity strong{font-size:16px;word-break:break-all}
-    .cash-receipt-body{padding:28px}.cash-receipt-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-bottom:20px}.cash-receipt-grid>div{border:1px solid #d8e5ea;border-radius:14px;padding:14px;background:#f8fbfc}.cash-receipt-grid .wide{grid-column:1/-1}.cash-receipt-grid strong,.cash-receipt-foot strong{display:block}
-    .cash-receipt-total-box{background:linear-gradient(135deg,#b8f000,#ddff75);color:#081d30;border-radius:18px;padding:18px 20px;text-align:center;margin:18px 0;border:2px solid #7eae00}.cash-receipt-total-box strong{display:block;font-size:38px;margin:6px 0}.cash-receipt-total-box span{display:block;font-weight:800;font-size:13px}
-    .cash-receipt-observations{border:1px solid #d8e5ea;border-radius:14px;padding:14px;margin:16px 0}.cash-receipt-observations p{margin:0;white-space:pre-wrap}
-    .cash-receipt-signature-block{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:end;margin:32px 0 18px}.cash-receipt-signature-line{border-top:2px solid #183c4d;padding-top:9px;text-align:center}.cash-receipt-signature-image{display:block;max-width:220px;max-height:72px;object-fit:contain;margin:-78px auto 6px}.cash-receipt-signature-line strong,.cash-receipt-signature-line span{display:block}.cash-receipt-signature-line span{font-size:12px;color:#5a6c78;margin-top:4px}.cash-receipt-verification{border:1px solid #c9e8d8;background:#effaf4;border-radius:14px;padding:13px}.cash-receipt-verification strong,.cash-receipt-verification span{display:block}.cash-receipt-verification strong{color:#087142}.cash-receipt-verification span{font-size:12px;margin-top:5px;color:#4e6760}
-    .cash-receipt-note{border-left:5px solid #0e8555;background:#edf8f3;padding:14px 16px;border-radius:10px;color:#194535;font-size:13px}
-    .cash-receipt-foot{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:0 28px 26px}.cash-receipt-foot .wide{grid-column:1/-1}
-    @media(max-width:700px){.cash-receipt-head,.cash-receipt-signature-block{grid-template-columns:1fr;display:grid}.cash-receipt-identity,.cash-receipt-grid,.cash-receipt-foot{grid-template-columns:1fr}.cash-receipt-grid .wide,.cash-receipt-foot .wide{grid-column:auto}}
-    @media print{body{background:#fff;padding:0}.cash-receipt-print{box-shadow:none;margin:0;max-width:100%;border-radius:0}}
+    @page{size:auto;margin:9mm}
+    *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    html,body{margin:0;padding:0;background:#fff;color:#0a2035;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.25}
+    body{padding:0}
+    .cash-receipt-print{width:100%;max-width:190mm;margin:0 auto;background:#fff;border:2px solid #0d3b5f;border-radius:16px;overflow:hidden;box-shadow:none;page-break-inside:avoid;break-inside:avoid}
+    .cash-receipt-head{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px 16px;background:linear-gradient(135deg,#073f2f,#0d6748);color:#fff}
+    .cash-receipt-brand{display:flex;gap:10px;align-items:center}.cash-receipt-brand img{width:52px;height:52px;object-fit:contain;background:#fff;border-radius:12px;padding:4px}.cash-receipt-brand h2{margin:0 0 2px;font-size:18px;line-height:1.1}.cash-receipt-brand small{letter-spacing:1px;font-size:10px}
+    .cash-receipt-status{text-align:center;border:1.5px solid #e9ffbd;border-radius:10px;padding:7px 10px;min-width:118px}.cash-receipt-status span{display:block;font-weight:900;font-size:20px;line-height:1;color:#caff42}.cash-receipt-status small{display:block;margin-top:2px;font-size:10px}
+    .cash-receipt-identity{display:grid;grid-template-columns:2fr 1fr;gap:10px;padding:10px 16px;background:#edf7f2;border-bottom:1px solid #d1e7dc}.cash-receipt-identity small,.cash-receipt-grid small,.cash-receipt-foot small,.cash-receipt-observations small,.cash-receipt-verification small{display:block;color:#5a6c78;margin-bottom:3px;font-size:10px}.cash-receipt-identity strong{font-size:12px;word-break:break-all;line-height:1.2}
+    .cash-receipt-body{padding:12px 16px 10px}.cash-receipt-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:10px}.cash-receipt-grid>div{border:1px solid #d8e5ea;border-radius:10px;padding:8px 10px;background:#f8fbfc}.cash-receipt-grid .wide{grid-column:1/-1}.cash-receipt-grid strong,.cash-receipt-foot strong{display:block;font-size:12px;line-height:1.2}
+    .cash-receipt-total-box{background:linear-gradient(135deg,#b8f000,#ddff75);color:#081d30;border-radius:12px;padding:10px 14px;text-align:center;margin:10px 0;border:1.5px solid #7eae00}.cash-receipt-total-box small{display:block;font-size:10px}.cash-receipt-total-box strong{display:block;font-size:25px;line-height:1.05;margin:2px 0}.cash-receipt-total-box span{display:block;font-weight:800;font-size:10px;line-height:1.2}
+    .cash-receipt-observations{border:1px solid #d8e5ea;border-radius:10px;padding:8px 10px;margin:8px 0}.cash-receipt-observations p{margin:0;white-space:pre-wrap;font-size:11px;line-height:1.25}
+    .cash-receipt-signature-block{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:end;margin:14px 0 10px}.cash-receipt-signature-line{border-top:1.5px solid #183c4d;padding-top:7px;text-align:center;min-height:62px}.cash-receipt-signature-image{display:block;max-width:170px;max-height:46px;object-fit:contain;margin:-46px auto 4px}.cash-receipt-signature-line strong,.cash-receipt-signature-line span{display:block}.cash-receipt-signature-line strong{font-size:12px;line-height:1.2}.cash-receipt-signature-line span{font-size:10px;color:#5a6c78;margin-top:3px;line-height:1.2}.cash-receipt-verification{border:1px solid #c9e8d8;background:#effaf4;border-radius:10px;padding:9px}.cash-receipt-verification strong,.cash-receipt-verification span{display:block}.cash-receipt-verification strong{color:#087142;font-size:12px;line-height:1.2}.cash-receipt-verification span{font-size:10px;margin-top:4px;color:#4e6760;line-height:1.2}
+    .cash-receipt-note{border-left:4px solid #0e8555;background:#edf8f3;padding:8px 10px;border-radius:8px;color:#194535;font-size:10.5px;line-height:1.25;margin-top:8px}
+    .cash-receipt-foot{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 16px 12px}.cash-receipt-foot .wide{grid-column:1/-1}
+    @media(max-width:700px){.cash-receipt-head,.cash-receipt-signature-block{grid-template-columns:1fr;display:grid}.cash-receipt-identity,.cash-receipt-grid,.cash-receipt-foot{grid-template-columns:1fr}.cash-receipt-grid .wide,.cash-receipt-foot .wide{grid-column:auto}.cash-receipt-status{text-align:left;min-width:0}.cash-receipt-signature-image{margin:0 auto 4px}}
+    @media print{html,body{width:100%;height:auto}.cash-receipt-print{margin:0 auto;border-radius:12px;transform:none!important;page-break-inside:avoid;break-inside:avoid}.cash-receipt-head,.cash-receipt-body,.cash-receipt-foot,.cash-receipt-identity{page-break-inside:avoid;break-inside:avoid}}
   `;
 }
 function printCashReceipt(){

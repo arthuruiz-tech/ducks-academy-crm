@@ -1,0 +1,7 @@
+DUCKS CRM PROFESIONAL v2.62
+
+Cambios incluidos:
+- El banner de nuevo ingreso ya no abre todo al hacer clic en cualquier parte.
+- Solo los dos botones visibles dentro de la imagen son clickeables: Comenzar registro e Imprimir formato.
+- El recibo formal de pagos en efectivo fue compactado para que al imprimir o guardar en PDF salga en una sola hoja.
+- No requiere SQL adicional en Supabase.
