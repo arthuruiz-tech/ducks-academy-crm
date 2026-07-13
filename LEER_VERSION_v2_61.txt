@@ -1,0 +1,15 @@
+DUCKS CRM PROFESIONAL v2.61
+
+RECIBO FORMAL DE PAGOS EN EFECTIVO
+- Folio único no repetible por fecha, jugador y código aleatorio.
+- Sello visual PAGADO.
+- Nombre de quien recibe, guardado para futuros recibos.
+- Validación administrativa mediante confirmación obligatoria.
+- Concepto editable y observaciones.
+- Monto en número y letra.
+- Línea de firma/validación y panel para dibujar una firma digital opcional desde celular, tableta o computadora.
+- Fecha y hora de generación en horario de Aguascalientes.
+- Aviso de comprobante interno que no sustituye factura o CFDI.
+- Los metadatos del recibo se guardan dentro del pago, sin crear tablas nuevas.
+- Los recibos de efectivo pueden reabrirse desde la tabla de pagos.
+- No requiere ejecutar SQL adicional en Supabase.

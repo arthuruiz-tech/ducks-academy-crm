@@ -2270,3 +2270,48 @@ button[onclick="installDucksApp()"]{
 @media(max-width:760px){.registration-home-card{grid-template-columns:1fr;text-align:center}.registration-home-icon{margin:auto}.registration-form-header{align-items:flex-start;padding:20px}.registration-form-header img{width:76px;height:76px}.registration-form{padding:16px}.number-scale{grid-template-columns:repeat(5,1fr)}.number-scale.seven{grid-template-columns:repeat(4,1fr)}.registration-submit-bar{flex-direction:column}.registration-submit-bar .btn{width:100%}.application-summary{grid-template-columns:1fr 1fr}.application-detail-row{grid-template-columns:1fr}.radio-cards label{flex:1}.radio-cards span{width:100%;text-align:center}.registration-home-copy .quick-actions{justify-content:center}}
 @media print{body *{visibility:hidden!important}.registration-form-shell,.registration-form-shell *,.registration-success-card,.registration-success-card *,.application-detail,.application-detail *{visibility:visible!important}.registration-form-shell,.registration-success-card,.application-detail{position:absolute;left:0;top:0;width:100%;box-shadow:none!important;border-radius:0!important}.global-top-menu,.registration-submit-bar,.modal-head .btn,.application-detail .actions{display:none!important}.registration-page{background:#fff!important}.registration-form-header{background:#fff!important;color:#000!important;border-bottom:3px solid #000}.registration-form-header p{color:#333!important}}
 .medical-alert-chip{display:inline-block;margin-left:7px;padding:3px 7px;border-radius:999px;background:#ffe2e5;color:#a31728;font-size:11px;font-weight:900;vertical-align:middle}
+
+
+/* v2.60 - banner visual y recibo digital de efectivo */
+.registration-home-banner-card{display:block;padding:0;background:transparent;box-shadow:none}
+.registration-home-banner-button{display:block;width:100%;padding:0;border:0;background:transparent;cursor:pointer}
+.registration-home-banner-image{display:block;width:100%;height:auto;border-radius:28px;box-shadow:0 18px 44px rgba(5,20,35,.18)}
+.registration-home-actions{display:flex;gap:12px;justify-content:flex-end;margin-top:14px}
+.cash-receipt-player-summary{display:grid;gap:4px;padding:12px 14px;border:1px solid #d7e3e6;border-radius:14px;background:#f7fbfc}
+.cash-receipt-player-summary b{font-size:16px;color:#08263c}.cash-receipt-player-summary small{color:#506771}
+.cash-receipt-print{max-width:860px;margin:0 auto;background:#fff;border:3px solid #0d3b5f;border-radius:24px;overflow:hidden;box-shadow:0 10px 35px rgba(0,0,0,.08)}
+.cash-receipt-head{display:flex;justify-content:space-between;gap:18px;align-items:center;padding:24px 28px;background:linear-gradient(135deg,#0a2137,#0e4a69);color:#fff}
+.cash-receipt-brand{display:flex;gap:14px;align-items:center}.cash-receipt-brand img{width:78px;height:78px;object-fit:contain;background:#fff;border-radius:18px;padding:6px}
+.cash-receipt-brand h2{margin:0 0 4px;font-size:26px}.cash-receipt-brand small,.cash-receipt-folio small{opacity:.92}
+.cash-receipt-folio{text-align:right}.cash-receipt-folio strong{display:block;font-size:20px;margin-top:6px}
+.cash-receipt-body{padding:28px}.cash-receipt-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-bottom:20px}
+.cash-receipt-grid>div{border:1px solid #d8e5ea;border-radius:14px;padding:14px;background:#f8fbfc}.cash-receipt-grid small,.cash-receipt-foot small{display:block;color:#5a6c78;margin-bottom:6px}.cash-receipt-grid strong,.cash-receipt-foot strong{display:block}
+.cash-receipt-total-box{background:#b8f000;color:#081d30;border-radius:18px;padding:18px 20px;text-align:center;margin:18px 0}.cash-receipt-total-box strong{display:block;font-size:34px;margin-top:6px}
+.cash-receipt-note{border-left:5px solid #0e8555;background:#edf8f3;padding:14px 16px;border-radius:10px;color:#194535}
+.cash-receipt-foot{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:0 28px 26px}
+.cash-receipt-actions{margin-top:18px;justify-content:flex-end}
+@media(max-width:760px){.registration-home-actions{flex-direction:column}.registration-home-actions .btn{width:100%}.cash-receipt-head,.cash-receipt-foot{grid-template-columns:1fr;display:grid}.cash-receipt-grid{grid-template-columns:1fr}.cash-receipt-brand{align-items:flex-start}.cash-receipt-brand h2{font-size:22px}}
+
+
+/* v2.61 - recibo formal */
+.cash-receipt-formal .cash-receipt-head{background:linear-gradient(135deg,#073f2f,#0d6748)}
+.cash-receipt-status{text-align:center;border:2px solid #e9ffbd;border-radius:14px;padding:10px 16px}
+.cash-receipt-status span{display:block;font-weight:900;font-size:26px;color:#caff42}
+.cash-receipt-status small{display:block;margin-top:2px;color:#fff}
+.cash-receipt-identity{display:grid;grid-template-columns:2fr 1fr;gap:14px;padding:18px 28px;background:#edf7f2;border-bottom:1px solid #d1e7dc}
+.cash-receipt-identity small{display:block;color:#5a6c78;margin-bottom:6px}.cash-receipt-identity strong{font-size:16px;word-break:break-word}
+.cash-receipt-grid .wide{grid-column:1/-1}
+.cash-receipt-total-box span{display:block;font-weight:800;font-size:13px;margin-top:4px}
+.cash-receipt-observations{border:1px solid #d8e5ea;border-radius:14px;padding:14px;margin:16px 0}
+.cash-receipt-observations small{display:block;color:#5a6c78;margin-bottom:6px}.cash-receipt-observations p{margin:0;white-space:pre-wrap}
+.cash-receipt-signature-block{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:end;margin:32px 0 18px}
+.cash-receipt-signature-line{border-top:2px solid #183c4d;padding-top:9px;text-align:center}
+.cash-receipt-signature-line strong,.cash-receipt-signature-line span{display:block}.cash-receipt-signature-line span{font-size:12px;color:#5a6c78;margin-top:4px}
+.cash-receipt-verification{border:1px solid #c9e8d8;background:#effaf4;border-radius:14px;padding:13px}
+.cash-receipt-verification small,.cash-receipt-verification strong,.cash-receipt-verification span{display:block}.cash-receipt-verification small{color:#5a6c78;margin-bottom:6px}.cash-receipt-verification strong{color:#087142}.cash-receipt-verification span{font-size:12px;margin-top:5px;color:#4e6760}
+.cash-receipt-foot .wide{grid-column:1/-1}
+@media(max-width:760px){.cash-receipt-status{text-align:left}.cash-receipt-identity,.cash-receipt-signature-block{grid-template-columns:1fr}.cash-receipt-grid .wide,.cash-receipt-foot .wide{grid-column:auto}}
+
+.cash-signature-field{display:grid;gap:8px}.cash-signature-field>span{font-weight:800;color:#173a4a}
+.cash-signature-field canvas{width:100%;height:150px;border:2px dashed #9fb5bd;border-radius:14px;background:#fff;touch-action:none;cursor:crosshair}
+.cash-receipt-signature-image{display:block;max-width:220px;max-height:72px;object-fit:contain;margin:-78px auto 6px}

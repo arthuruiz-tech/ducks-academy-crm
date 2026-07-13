@@ -1,0 +1,9 @@
+DUCKS CRM PROFESIONAL v2.60
+
+Cambios incluidos:
+- Se reemplaza la sección de Nuevo ingreso por la última imagen/banner aprobada.
+- Se agrega botón de Recibo efectivo en la ventana de Pagos del portal de administración.
+- El botón permite capturar jugador, fecha y monto.
+- El sistema registra el pago confirmado en efectivo y genera un recibo digital listo para imprimir o guardar en PDF.
+- Los pagos ya registrados con método Efectivo también pueden reabrir su recibo desde la tabla de pagos.
+- No requiere SQL adicional en Supabase.

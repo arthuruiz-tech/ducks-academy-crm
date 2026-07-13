@@ -1,6 +1,6 @@
 
 async function forceFreshAssetsOnce(){
-  const key = 'ducks_cache_fix_v2_59_done';
+  const key = 'ducks_cache_fix_v2_61_done';
   if(localStorage.getItem(key)==='yes') return;
   try{
     if('caches' in window){
@@ -14,7 +14,7 @@ async function forceFreshAssetsOnce(){
 }
 forceFreshAssetsOnce();
 
-// Ducks CRM profesional v2.59 - cuestionario digital propio y solicitudes de ingreso
+// Ducks CRM profesional v2.61 - recibo formal con folio, validación administrativa y firma
 const app = document.getElementById('app');
 let sb = null;
 let session = null;
@@ -916,13 +916,13 @@ function renderPublicHome(){
           </div>
         </div>
       </section>
-      <section class="registration-home-card">
-        <div class="registration-home-icon">📝</div>
-        <div class="registration-home-copy">
-          <span class="eyebrow">Nuevos jugadores</span>
-          <h2>Cuestionario de ingreso y salud deportiva</h2>
-          <p>Completa el registro digital de tu hijo directamente en el portal Ducks. No necesitas Google Forms ni descargar otra aplicación.</p>
-          <div class="quick-actions"><button class="btn green" onclick="renderRegistrationForm()">Registrar nuevo jugador</button><button class="btn secondary" onclick="renderRegistrationForm();setTimeout(()=>window.print(),350)">Imprimir formato</button></div>
+      <section class="registration-home-card registration-home-banner-card">
+        <button type="button" class="registration-home-banner-button" onclick="renderRegistrationForm()" aria-label="Abrir registro de nuevos jugadores">
+          <img class="registration-home-banner-image" src="assets/nuevo-ingreso-banner-v260.png?v=2.61" alt="Registro de nuevo jugador Ducks Basketball Academy">
+        </button>
+        <div class="registration-home-actions">
+          <button class="btn green" onclick="renderRegistrationForm()">Registrar nuevo jugador</button>
+          <button class="btn secondary" onclick="renderRegistrationForm();setTimeout(()=>window.print(),350)">Imprimir formato</button>
         </div>
       </section>
       <section class="quick-parent-card parent-entry-card">
@@ -1624,7 +1624,7 @@ async function loadAdminData(){
 }
 async function refresh(){ if(mode==='admin'){await loadAdminData(); renderShell(); renderPage();} }
 function renderShell(){
-  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="notifications">🔔 Avisos <span class="notification-badge hidden" data-notification-badge>0</span></button><button data-page="registrations">📝 Solicitudes de ingreso</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="history">🕘 Historial</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.59: cuestionario digital y solicitudes de ingreso.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><button class="btn secondary notification-bell" onclick="page='notifications';renderPage()">🔔 <span class="notification-badge hidden" data-notification-badge>0</span></button><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
+  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="notifications">🔔 Avisos <span class="notification-badge hidden" data-notification-badge>0</span></button><button data-page="registrations">📝 Solicitudes de ingreso</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="history">🕘 Historial</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.61: cuestionario digital y recibos formales de efectivo.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><button class="btn secondary notification-bell" onclick="page='notifications';renderPage()">🔔 <span class="notification-badge hidden" data-notification-badge>0</span></button><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
   document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page=b.dataset.page; if(page==='public'){renderPublicHome(); return;} renderPage();});
   document.getElementById('search').oninput=e=>{q=e.target.value; renderPage();};
   document.getElementById('authBtn').onclick=logout;
@@ -2164,7 +2164,7 @@ async function confirmReviewedPayment(e){
 
 function renderPayments(){
   setTitle('Pagos');
-  document.getElementById('content').innerHTML=`<div class="notice success"><b>Revisión y saldo por jugador:</b> los pagos pendientes ahora se revisan y confirman directamente desde esta ventana. Cuando el monto confirmado es menor o mayor al adeudo, el CRM conserva la diferencia como adeudo restante o crédito para el siguiente periodo.</div><div class="panel"><div class="panel-head"><h3>Historial de pagos</h3><button class="btn green" onclick="openPaymentForm()">+ Registrar pago</button></div><div class="tablewrap"><table><thead><tr><th>ID</th><th>Alumno</th><th>Fecha</th><th>Periodo</th><th>Monto reportado / confirmado</th><th>Saldo después</th><th>Método</th><th>Estatus</th><th>Evidencia</th><th>Acción</th></tr></thead><tbody>${payments.map(p=>{const pending=p.confirmation_status==='Pendiente de confirmación';const batch=familyPaymentBatchId(p);const pendingGroup=batch?familyPaymentRows(batch,payments).filter(x=>x.confirmation_status==='Pendiente de confirmación'):[];const firstInGroup=!batch||String(pendingGroup[0]?.id)===String(p.id);let action='';if(pending){action=firstInGroup?`<div class="family-admin-actions"><button class="btn green" onclick="openPaymentReview('${p.id}')">${batch?'Revisar familia y confirmar':'Revisar monto y confirmar'}</button></div>`:'<span class="sub">Incluido en revisión familiar</span>';}else{action=`<button class="btn red" onclick="deletePayment('${p.id}')">Eliminar</button>`;}return `<tr><td>${String(p.id).slice(0,8)}</td><td><b>${esc(p.student_name||'')}</b><br><small>${esc(p.player_id)}</small>${batch?`<br><span class="family-payment-chip">Pago familiar · ${pendingGroup.length||familyPaymentRows(batch,payments).length} hijos</span>`:''}</td><td>${esc(p.payment_date)}</td><td>${esc(p.period||'')}</td><td class="amount">${money(p.amount)}</td><td>${paymentBalanceSummary(p,players.find(x=>x.id===p.player_id))}</td><td>${esc(p.method||'')}</td><td><span class="status ${statusClass(p.confirmation_status)}">${esc(p.confirmation_status)}</span></td><td>${p.evidence_url?`<button class="btn secondary" onclick="openEvidencePreview('${p.id}')">Ver evidencia</button>`:'-'}</td><td>${action}</td></tr>`}).join('')||'<tr><td colspan="10">Sin pagos</td></tr>'}</tbody></table></div></div>`;
+  document.getElementById('content').innerHTML=`<div class="notice success"><b>Revisión y saldo por jugador:</b> los pagos pendientes ahora se revisan y confirman directamente desde esta ventana. Cuando el monto confirmado es menor o mayor al adeudo, el CRM conserva la diferencia como adeudo restante o crédito para el siguiente periodo.</div><div class="panel"><div class="panel-head"><h3>Historial de pagos</h3><div class="actions"><button class="btn secondary" onclick="openCashReceiptForm()">🧾 Recibo efectivo</button><button class="btn green" onclick="openPaymentForm()">+ Registrar pago</button></div></div><div class="tablewrap"><table><thead><tr><th>ID</th><th>Alumno</th><th>Fecha</th><th>Periodo</th><th>Monto reportado / confirmado</th><th>Saldo después</th><th>Método</th><th>Estatus</th><th>Evidencia</th><th>Acción</th></tr></thead><tbody>${payments.map(p=>{const pending=p.confirmation_status==='Pendiente de confirmación';const batch=familyPaymentBatchId(p);const pendingGroup=batch?familyPaymentRows(batch,payments).filter(x=>x.confirmation_status==='Pendiente de confirmación'):[];const firstInGroup=!batch||String(pendingGroup[0]?.id)===String(p.id);let action='';if(pending){action=firstInGroup?`<div class="family-admin-actions"><button class="btn green" onclick="openPaymentReview('${p.id}')">${batch?'Revisar familia y confirmar':'Revisar monto y confirmar'}</button></div>`:'<span class="sub">Incluido en revisión familiar</span>';}else{const receiptBtn=String(p.method||'').toLowerCase()==='efectivo'?`<button class="btn secondary" onclick="openCashReceiptPreviewFromPayment('${p.id}')">Recibo</button>`:'';action=`<div class="family-admin-actions">${receiptBtn}<button class="btn red" onclick="deletePayment('${p.id}')">Eliminar</button></div>`;}return `<tr><td>${String(p.id).slice(0,8)}</td><td><b>${esc(p.student_name||'')}</b><br><small>${esc(p.player_id)}</small>${batch?`<br><span class="family-payment-chip">Pago familiar · ${pendingGroup.length||familyPaymentRows(batch,payments).length} hijos</span>`:''}</td><td>${esc(p.payment_date)}</td><td>${esc(p.period||'')}</td><td class="amount">${money(p.amount)}</td><td>${paymentBalanceSummary(p,players.find(x=>x.id===p.player_id))}</td><td>${esc(p.method||'')}</td><td><span class="status ${statusClass(p.confirmation_status)}">${esc(p.confirmation_status)}</span></td><td>${p.evidence_url?`<button class="btn secondary" onclick="openEvidencePreview('${p.id}')">Ver evidencia</button>`:'-'}</td><td>${action}</td></tr>`}).join('')||'<tr><td colspan="10">Sin pagos</td></tr>'}</tbody></table></div></div>`;
 }
 function renderEvidence(){
   setTitle('Evidencias por confirmar');
@@ -2447,6 +2447,245 @@ function openPaymentForm(playerId=''){
   document.getElementById('payPlayer').onchange=()=>{const p=players.find(x=>x.id===document.getElementById('payPlayer').value); if(p) document.getElementById('payAmount').value=p.monthly_fee||0;};
   document.getElementById('paymentForm').onsubmit=savePaymentForm;
 }
+
+function makeCashReceiptFolio(dateISO=todayISO(),playerId=''){
+  const parts=parseISODate(dateISO)||parseISODate(todayISO());
+  const random=(window.crypto?.randomUUID?.()||`${Date.now()}-${Math.random()}`).replace(/[^a-z0-9]/gi,'').slice(-7).toUpperCase();
+  const cleanPlayer=String(playerId||'JUG').replace(/[^a-z0-9]/gi,'').toUpperCase().slice(0,8)||'JUG';
+  return `DUCKS-EF-${parts.year}${String(parts.month).padStart(2,'0')}${String(parts.day).padStart(2,'0')}-${cleanPlayer}-${random}`;
+}
+function receiptMetaTag(meta){
+  return `[DUCKS_RECEIPT_META:${encodeURIComponent(JSON.stringify(meta||{}))}]`;
+}
+function readReceiptMeta(notes){
+  const match=String(notes||'').match(/\[DUCKS_RECEIPT_META:([^\]]+)\]/);
+  if(!match) return {};
+  try{return JSON.parse(decodeURIComponent(match[1]));}catch(_){return {};}
+}
+function defaultCashReceiver(){
+  return localStorage.getItem('ducks_cash_receiver_v261') || session?.user?.user_metadata?.full_name || session?.user?.email || 'Administración Ducks';
+}
+function cashReceiptPlayerSummary(player){
+  if(!player) return '<span class="sub">Selecciona un jugador para continuar.</span>';
+  return `<div class="cash-receipt-player-summary"><b>${esc(player.name)}</b><small>${esc(player.id)} · Tutor: ${esc(player.tutor||'Sin dato')}</small><small>Mensualidad sugerida: ${money(player.monthly_fee||0)}</small></div>`;
+}
+function updateCashReceiptPlayer(){
+  const playerId=document.getElementById('cashReceiptPlayer')?.value||'';
+  const player=players.find(p=>p.id===playerId);
+  const info=document.getElementById('cashReceiptPlayerInfo');
+  if(info) info.innerHTML=cashReceiptPlayerSummary(player);
+  const amountEl=document.getElementById('cashReceiptAmount');
+  if(player && amountEl) amountEl.value=player.monthly_fee||300;
+  const conceptEl=document.getElementById('cashReceiptConcept');
+  if(player && conceptEl && !conceptEl.dataset.edited) conceptEl.value=`Mensualidad ${period(document.getElementById('cashReceiptDate')?.value||todayISO())}`;
+}
+function initCashSignaturePad(){
+  const canvas=document.getElementById('cashReceiptSignature');
+  if(!canvas) return;
+  const ctx=canvas.getContext('2d');
+  ctx.lineWidth=2.2;ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle='#08263c';
+  let drawing=false;
+  const point=e=>{const r=canvas.getBoundingClientRect();return {x:(e.clientX-r.left)*(canvas.width/r.width),y:(e.clientY-r.top)*(canvas.height/r.height)}};
+  const start=e=>{drawing=true;const p=point(e);ctx.beginPath();ctx.moveTo(p.x,p.y);canvas.setPointerCapture?.(e.pointerId);e.preventDefault();};
+  const move=e=>{if(!drawing)return;const p=point(e);ctx.lineTo(p.x,p.y);ctx.stroke();canvas.dataset.signed='yes';e.preventDefault();};
+  const stop=e=>{drawing=false;canvas.releasePointerCapture?.(e.pointerId);};
+  canvas.addEventListener('pointerdown',start);canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerup',stop);canvas.addEventListener('pointercancel',stop);canvas.addEventListener('pointerleave',stop);
+}
+function clearCashSignature(){
+  const canvas=document.getElementById('cashReceiptSignature');
+  if(!canvas)return;
+  canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
+  canvas.dataset.signed='';
+}
+async function uploadCashSignature(folio){
+  const canvas=document.getElementById('cashReceiptSignature');
+  if(!canvas || canvas.dataset.signed!=='yes') return '';
+  const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png',0.95));
+  if(!blob) return '';
+  const file=new File([blob],`${folio}_firma.png`,{type:'image/png'});
+  return uploadFile(file,'firmas-recibos');
+}
+function unitsToWords(n){
+  const u=['','UNO','DOS','TRES','CUATRO','CINCO','SEIS','SIETE','OCHO','NUEVE','DIEZ','ONCE','DOCE','TRECE','CATORCE','QUINCE','DIECISÉIS','DIECISIETE','DIECIOCHO','DIECINUEVE','VEINTE','VEINTIUNO','VEINTIDÓS','VEINTITRÉS','VEINTICUATRO','VEINTICINCO','VEINTISÉIS','VEINTISIETE','VEINTIOCHO','VEINTINUEVE'];
+  if(n<30) return u[n];
+  const tens=['','','TREINTA','CUARENTA','CINCUENTA','SESENTA','SETENTA','OCHENTA','NOVENTA'];
+  const t=Math.floor(n/10),r=n%10;
+  return `${tens[t]}${r?` Y ${u[r]}`:''}`;
+}
+function hundredsToWords(n){
+  if(n===0) return '';
+  if(n===100) return 'CIEN';
+  const hundreds=['','CIENTO','DOSCIENTOS','TRESCIENTOS','CUATROCIENTOS','QUINIENTOS','SEISCIENTOS','SETECIENTOS','OCHOCIENTOS','NOVECIENTOS'];
+  const h=Math.floor(n/100),r=n%100;
+  return `${hundreds[h]}${r?` ${unitsToWords(r)}`:''}`.trim();
+}
+function integerToSpanish(n){
+  n=Math.max(0,Math.floor(Number(n)||0));
+  if(n===0) return 'CERO';
+  if(n>=1000000000) return String(n);
+  const millions=Math.floor(n/1000000); n%=1000000;
+  const thousands=Math.floor(n/1000); const remainder=n%1000;
+  const parts=[];
+  if(millions) parts.push(millions===1?'UN MILLÓN':`${integerToSpanish(millions)} MILLONES`);
+  if(thousands) parts.push(thousands===1?'MIL':`${hundredsToWords(thousands)} MIL`);
+  if(remainder) parts.push(hundredsToWords(remainder));
+  return parts.join(' ').replace(/UNO MIL/g,'UN MIL').replace(/UNO MILLONES/g,'UN MILLONES').trim();
+}
+function amountInWords(amount){
+  const value=Math.max(0,Number(amount)||0);
+  const pesos=Math.floor(value);
+  const cents=Math.round((value-pesos)*100);
+  const words=integerToSpanish(pesos).replace(/UNO$/,'UN');
+  const currency=pesos===1?'PESO':'PESOS';
+  return `${words} ${currency} ${String(cents).padStart(2,'0')}/100 M.N.`;
+}
+function cashReceiptDataFromPayment(player,payment,folio=''){
+  const payDate=payment?.payment_date||todayISO();
+  const meta=readReceiptMeta(payment?.notes);
+  return {
+    folio: folio || String(payment?.notes||'').match(/\[CASH_RECEIPT:([^\]]+)\]/)?.[1] || makeCashReceiptFolio(payDate,player?.id||payment?.player_id),
+    player_id: player?.id || payment?.player_id || '',
+    student_name: player?.name || payment?.student_name || '',
+    tutor: player?.tutor || '',
+    payment_date: payDate,
+    period: payment?.period || period(payDate),
+    amount: Number(payment?.amount||0),
+    method: 'Efectivo',
+    concept: meta.concept || 'Pago en efectivo de mensualidad',
+    observations: meta.observations || '',
+    received_by: meta.received_by || payment?.submitted_by || 'Administración Ducks',
+    signature_url: meta.signature_url || '',
+    validation: meta.validation || 'Validado desde sesión administrativa',
+    generated_at: meta.generated_at || formatAcademyDateTime(payment?.confirmed_at||new Date().toISOString())
+  };
+}
+function cashReceiptHtml(data){
+  const logoSrc=new URL('assets/logo.png', window.location.href).href;
+  return `<section class="cash-receipt-print cash-receipt-formal" id="cashReceiptPrintable">
+    <div class="cash-receipt-head">
+      <div class="cash-receipt-brand"><img src="${logoSrc}" alt="Ducks"><div><h2>Ducks Basketball Academy</h2><small>RECIBO INTERNO DE PAGO</small></div></div>
+      <div class="cash-receipt-status"><span>PAGADO</span><small>Pago recibido en efectivo</small></div>
+    </div>
+    <div class="cash-receipt-identity">
+      <div class="cash-receipt-folio"><small>Folio único</small><strong>${esc(data.folio)}</strong></div>
+      <div><small>Fecha de pago</small><strong>${esc(formatDateDMY(data.payment_date)||data.payment_date)}</strong></div>
+    </div>
+    <div class="cash-receipt-body">
+      <div class="cash-receipt-grid">
+        <div class="wide"><small>Recibimos de / Tutor</small><strong>${esc(data.tutor||'Sin dato')}</strong></div>
+        <div><small>Jugador</small><strong>${esc(data.student_name)}</strong></div>
+        <div><small>ID jugador</small><strong>${esc(data.player_id)}</strong></div>
+        <div><small>Periodo</small><strong>${esc(data.period||'')}</strong></div>
+        <div><small>Método</small><strong>${esc(data.method||'Efectivo')}</strong></div>
+        <div class="wide"><small>Concepto</small><strong>${esc(data.concept||'Pago en efectivo')}</strong></div>
+      </div>
+      <div class="cash-receipt-total-box">
+        <small>Monto recibido</small>
+        <strong>${money(data.amount)}</strong>
+        <span>${esc(amountInWords(data.amount))}</span>
+      </div>
+      ${data.observations?`<div class="cash-receipt-observations"><small>Observaciones</small><p>${esc(data.observations)}</p></div>`:''}
+      <div class="cash-receipt-signature-block">
+        <div class="cash-receipt-signature-line">${data.signature_url?`<img class="cash-receipt-signature-image" src="${esc(data.signature_url)}" alt="Firma de quien recibió">`:''}<strong>${esc(data.received_by||'Administración Ducks')}</strong><span>Nombre y firma/validación de quien recibió</span></div>
+        <div class="cash-receipt-verification"><small>Validación administrativa</small><strong>✓ ${esc(data.validation||'Validado')}</strong><span>${esc(data.generated_at)}</span></div>
+      </div>
+      <div class="cash-receipt-note"><b>Comprobante interno:</b> acredita el pago registrado en el CRM Ducks. No sustituye factura ni CFDI.</div>
+    </div>
+    <div class="cash-receipt-foot">
+      <div><small>Academia</small><strong>Ducks Basketball Academy</strong></div>
+      <div><small>Contacto</small><strong>${esc(ACADEMY_WHATSAPP)}</strong></div>
+      <div class="wide"><small>Ubicación</small><strong>${esc(ACADEMY_ADDRESS)}</strong></div>
+    </div>
+  </section>`;
+}
+function cashReceiptPrintStyles(){
+  return `
+    *{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;background:#f3f5f7;padding:24px;color:#0a2035}
+    .cash-receipt-print{max-width:860px;margin:0 auto;background:#fff;border:3px solid #0d3b5f;border-radius:24px;overflow:hidden;box-shadow:0 10px 35px rgba(0,0,0,.08)}
+    .cash-receipt-head{display:flex;justify-content:space-between;gap:18px;align-items:center;padding:24px 28px;background:linear-gradient(135deg,#073f2f,#0d6748);color:#fff}
+    .cash-receipt-brand{display:flex;gap:14px;align-items:center}.cash-receipt-brand img{width:78px;height:78px;object-fit:contain;background:#fff;border-radius:18px;padding:6px}.cash-receipt-brand h2{margin:0 0 4px;font-size:26px}.cash-receipt-brand small{letter-spacing:1.5px}
+    .cash-receipt-status{text-align:center;border:2px solid #e9ffbd;border-radius:14px;padding:10px 16px}.cash-receipt-status span{display:block;font-weight:900;font-size:26px;color:#caff42}.cash-receipt-status small{display:block;margin-top:2px}
+    .cash-receipt-identity{display:grid;grid-template-columns:2fr 1fr;gap:14px;padding:18px 28px;background:#edf7f2;border-bottom:1px solid #d1e7dc}.cash-receipt-identity small,.cash-receipt-grid small,.cash-receipt-foot small,.cash-receipt-observations small,.cash-receipt-verification small{display:block;color:#5a6c78;margin-bottom:6px}.cash-receipt-identity strong{font-size:16px;word-break:break-all}
+    .cash-receipt-body{padding:28px}.cash-receipt-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-bottom:20px}.cash-receipt-grid>div{border:1px solid #d8e5ea;border-radius:14px;padding:14px;background:#f8fbfc}.cash-receipt-grid .wide{grid-column:1/-1}.cash-receipt-grid strong,.cash-receipt-foot strong{display:block}
+    .cash-receipt-total-box{background:linear-gradient(135deg,#b8f000,#ddff75);color:#081d30;border-radius:18px;padding:18px 20px;text-align:center;margin:18px 0;border:2px solid #7eae00}.cash-receipt-total-box strong{display:block;font-size:38px;margin:6px 0}.cash-receipt-total-box span{display:block;font-weight:800;font-size:13px}
+    .cash-receipt-observations{border:1px solid #d8e5ea;border-radius:14px;padding:14px;margin:16px 0}.cash-receipt-observations p{margin:0;white-space:pre-wrap}
+    .cash-receipt-signature-block{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:end;margin:32px 0 18px}.cash-receipt-signature-line{border-top:2px solid #183c4d;padding-top:9px;text-align:center}.cash-receipt-signature-image{display:block;max-width:220px;max-height:72px;object-fit:contain;margin:-78px auto 6px}.cash-receipt-signature-line strong,.cash-receipt-signature-line span{display:block}.cash-receipt-signature-line span{font-size:12px;color:#5a6c78;margin-top:4px}.cash-receipt-verification{border:1px solid #c9e8d8;background:#effaf4;border-radius:14px;padding:13px}.cash-receipt-verification strong,.cash-receipt-verification span{display:block}.cash-receipt-verification strong{color:#087142}.cash-receipt-verification span{font-size:12px;margin-top:5px;color:#4e6760}
+    .cash-receipt-note{border-left:5px solid #0e8555;background:#edf8f3;padding:14px 16px;border-radius:10px;color:#194535;font-size:13px}
+    .cash-receipt-foot{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:0 28px 26px}.cash-receipt-foot .wide{grid-column:1/-1}
+    @media(max-width:700px){.cash-receipt-head,.cash-receipt-signature-block{grid-template-columns:1fr;display:grid}.cash-receipt-identity,.cash-receipt-grid,.cash-receipt-foot{grid-template-columns:1fr}.cash-receipt-grid .wide,.cash-receipt-foot .wide{grid-column:auto}}
+    @media print{body{background:#fff;padding:0}.cash-receipt-print{box-shadow:none;margin:0;max-width:100%;border-radius:0}}
+  `;
+}
+function printCashReceipt(){
+  const node=document.getElementById('cashReceiptPrintable');
+  if(!node){toast('No se encontró el recibo para imprimir.');return;}
+  const win=window.open('', '_blank', 'width=900,height=1000');
+  if(!win){toast('Permite ventanas emergentes para imprimir el recibo.');return;}
+  win.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Recibo ${esc(node.querySelector('.cash-receipt-folio strong')?.textContent||'Ducks')}</title><style>${cashReceiptPrintStyles()}</style></head><body>${node.outerHTML}<script>setTimeout(()=>window.print(),250)<\/script></body></html>`);
+  win.document.close();
+  win.focus();
+}
+function openCashReceiptPreview(data){
+  const modal=document.createElement('div');
+  modal.className='modalbg open';
+  modal.id='cashReceiptPreviewModal';
+  modal.innerHTML=`<div class="modal wide-modal"><div class="modal-head"><h3>Recibo formal generado</h3><button class="btn secondary" onclick="closeModal('cashReceiptPreviewModal')">Cerrar</button></div><div class="modal-body">${cashReceiptHtml(data)}<div class="actions cash-receipt-actions"><button class="btn secondary" onclick="printCashReceipt()">Imprimir / Guardar PDF</button><button class="btn green" onclick="closeModal('cashReceiptPreviewModal')">Aceptar</button></div></div></div>`;
+  document.body.appendChild(modal);
+}
+function openCashReceiptPreviewFromPayment(paymentId){
+  const payment=payments.find(p=>String(p.id)===String(paymentId));
+  if(!payment){toast('No se encontró el pago.');return;}
+  const player=players.find(p=>p.id===payment.player_id);
+  openCashReceiptPreview(cashReceiptDataFromPayment(player,payment));
+}
+function openCashReceiptForm(playerId=''){
+  const selected=players.find(x=>x.id===playerId) || players[0] || null;
+  const defaultPeriod=period(todayISO());
+  const receiver=defaultCashReceiver();
+  const modal=document.createElement('div'); modal.className='modalbg open'; modal.id='cashReceiptFormModal';
+  modal.innerHTML=`<div class="modal"><div class="modal-head"><h3>Generar recibo formal de efectivo</h3><button class="btn secondary" onclick="closeModal('cashReceiptFormModal')">Cerrar</button></div><div class="modal-body"><div class="notice success"><b>Registro completo:</b> captura los datos del cobro. El CRM guardará el pago como confirmado y emitirá un recibo con folio único y validación administrativa.</div><form id="cashReceiptForm" class="form-grid"><label class="label full">Jugador<select id="cashReceiptPlayer" class="select" required onchange="updateCashReceiptPlayer()"><option value="">Selecciona...</option>${players.map(p=>`<option value="${p.id}" ${selected&&p.id===selected.id?'selected':''}>${p.id} · ${esc(p.name)}</option>`).join('')}</select></label><div id="cashReceiptPlayerInfo" class="full">${cashReceiptPlayerSummary(selected)}</div><label class="label">Fecha<input id="cashReceiptDate" class="input" type="date" value="${todayISO()}" max="${todayISO()}" required onchange="document.getElementById('cashReceiptConcept').value='Mensualidad '+period(this.value)"></label><label class="label">Monto<input id="cashReceiptAmount" class="input" type="number" min="0.01" step="0.01" value="${esc(selected?.monthly_fee||300)}" required></label><label class="label full">Concepto<input id="cashReceiptConcept" class="input" value="Mensualidad ${esc(defaultPeriod)}" oninput="this.dataset.edited='1'" required></label><label class="label full">Recibido por<input id="cashReceiptReceiver" class="input" value="${esc(receiver)}" required><small>Este nombre aparecerá en la línea de validación del recibo.</small></label><label class="label full">Observaciones<textarea id="cashReceiptObservations" class="input" placeholder="Opcional: torneo, inscripción, abono, meses cubiertos, etc."></textarea></label><div class="label full cash-signature-field"><span>Firma digital de quien recibe <small>(opcional, recomendada)</small></span><canvas id="cashReceiptSignature" width="700" height="170"></canvas><div class="actions"><button type="button" class="btn secondary small" onclick="clearCashSignature()">Limpiar firma</button></div></div><label class="consent-check full"><input id="cashReceiptValidation" type="checkbox" required><span>Confirmo que recibí físicamente el efectivo y autorizo registrar este pago como confirmado.</span></label><div class="full actions"><button class="btn green">Registrar pago y generar recibo</button></div></form></div></div>`;
+  document.body.appendChild(modal);
+  document.getElementById('cashReceiptForm').onsubmit=saveCashReceiptForm;
+  initCashSignaturePad();
+}
+async function saveCashReceiptForm(e){
+  e.preventDefault();
+  const submitBtn=e.submitter;
+  try{
+    const player_id=document.getElementById('cashReceiptPlayer').value;
+    const payDate=document.getElementById('cashReceiptDate').value || todayISO();
+    const amount=Number(document.getElementById('cashReceiptAmount').value||0);
+    const concept=document.getElementById('cashReceiptConcept').value.trim();
+    const received_by=document.getElementById('cashReceiptReceiver').value.trim();
+    const observations=document.getElementById('cashReceiptObservations').value.trim();
+    const player=players.find(p=>p.id===player_id);
+    if(!player){toast('Selecciona un jugador.');return;}
+    if(payDate>todayISO()){toast('La fecha no puede ser posterior al día actual.');return;}
+    if(!amount || amount<=0){toast('Captura un monto válido.');return;}
+    if(!concept || !received_by){toast('Completa el concepto y el nombre de quien recibe.');return;}
+    if(!document.getElementById('cashReceiptValidation').checked){toast('Confirma la recepción del efectivo.');return;}
+    if(submitBtn){submitBtn.disabled=true;submitBtn.textContent='Generando recibo...';}
+    localStorage.setItem('ducks_cash_receiver_v261',received_by);
+    const folio=makeCashReceiptFolio(payDate,player_id);
+    const generated_at=formatAcademyDateTime(new Date().toISOString());
+    const signature_url=await uploadCashSignature(folio);
+    const meta={concept,observations,received_by,signature_url,validation:'Validado desde sesión administrativa',generated_at};
+    const note=`[CASH_RECEIPT:${folio}] ${receiptMetaTag(meta)} Pago en efectivo registrado desde administración.`;
+    const row={player_id,student_name:player.name||'',payment_date:payDate,period:period(payDate),amount,method:'Efectivo',notes:note,confirmation_status:'Confirmado',evidence_url:'',evidence_name:'',submitted_by:received_by,confirmed_at:new Date().toISOString()};
+    const {data,error}=await sb.from('payments').insert(row).select().single();
+    if(error){toast(error.message);if(submitBtn){submitBtn.disabled=false;submitBtn.textContent='Registrar pago y generar recibo';}return;}
+    closeModal('cashReceiptFormModal');
+    await refresh();
+    page='payments';
+    renderPage();
+    openCashReceiptPreview(cashReceiptDataFromPayment(player,data||row,folio));
+    toast('Pago en efectivo registrado y recibo formal generado.');
+  }catch(err){
+    console.error(err); toast('No fue posible generar el recibo.');
+    if(submitBtn){submitBtn.disabled=false;submitBtn.textContent='Registrar pago y generar recibo';}
+  }
+}
+
 async function savePaymentForm(e){
   e.preventDefault();
   const player_id=document.getElementById('payPlayer').value;
@@ -2485,7 +2724,7 @@ async function confirmPayment(id){ openPaymentReview(id); }
 async function rejectPayment(id){const {error}=await sb.from('payments').update({confirmation_status:'Rechazado'}).eq('id',id); if(error)toast(error.message); else{toast('Pago rechazado'); await refresh();}}
 async function deletePayment(id){if(!confirm('¿Eliminar pago?'))return; const {error}=await sb.from('payments').delete().eq('id',id); if(error)toast(error.message); else{toast('Pago eliminado'); await refresh();}}
 
-window.renderPublicHome=renderPublicHome; window.renderRegistrationForm=renderRegistrationForm; window.toggleRegistrationDetail=toggleRegistrationDetail; window.renderParentLogin=renderParentLogin; window.renderAdminLogin=renderAdminLogin; window.renderLogin=renderAdminLogin; window.parentLogout=parentLogout; window.copyBank=copyBank; window.openParentPayment=openParentPayment; window.openParentDocument=openParentDocument; window.installDucksApp=installDucksApp; window.goBackSmart=goBackSmart; window.openPlayerForm=openPlayerForm; window.deletePlayer=deletePlayer; window.openPaymentForm=openPaymentForm; window.confirmPayment=confirmPayment; window.rejectPayment=rejectPayment; window.deletePayment=deletePayment; window.closeModal=closeModal; window.copyReminder=copyReminder; window.deleteParentLink=deleteParentLink; window.prefillParent=prefillParent; window.exportCSV=exportCSV; window.exportFullJSON=exportFullJSON; window.exportDocumentsCSV=exportDocumentsCSV; window.resetParentPassword=resetParentPassword; window.autoLinkAccountFromButton=autoLinkAccountFromButton; window.editParentAccount=editParentAccount; window.saveParentAccountChanges=saveParentAccountChanges; window.deleteParentAccount=deleteParentAccount; window.sendParentCredentialsWhatsApp=sendParentCredentialsWhatsApp; window.openFamilyPayment=openFamilyPayment; window.updateFamilyPaymentTotal=updateFamilyPaymentTotal; window.toggleAllFamilyPlayers=toggleAllFamilyPlayers; window.copyFamilyPaymentData=copyFamilyPaymentData; window.confirmFamilyPayment=confirmFamilyPayment; window.rejectFamilyPayment=rejectFamilyPayment; window.openEvidencePreview=openEvidencePreview; window.openPaymentReview=openPaymentReview; window.updatePaymentReviewDifference=updatePaymentReviewDifference; window.confirmReviewedPayment=confirmReviewedPayment;
+window.renderPublicHome=renderPublicHome; window.renderRegistrationForm=renderRegistrationForm; window.toggleRegistrationDetail=toggleRegistrationDetail; window.renderParentLogin=renderParentLogin; window.renderAdminLogin=renderAdminLogin; window.renderLogin=renderAdminLogin; window.parentLogout=parentLogout; window.copyBank=copyBank; window.openParentPayment=openParentPayment; window.openParentDocument=openParentDocument; window.installDucksApp=installDucksApp; window.goBackSmart=goBackSmart; window.openPlayerForm=openPlayerForm; window.deletePlayer=deletePlayer; window.openPaymentForm=openPaymentForm; window.confirmPayment=confirmPayment; window.rejectPayment=rejectPayment; window.deletePayment=deletePayment; window.closeModal=closeModal; window.copyReminder=copyReminder; window.deleteParentLink=deleteParentLink; window.prefillParent=prefillParent; window.exportCSV=exportCSV; window.exportFullJSON=exportFullJSON; window.exportDocumentsCSV=exportDocumentsCSV; window.resetParentPassword=resetParentPassword; window.autoLinkAccountFromButton=autoLinkAccountFromButton; window.editParentAccount=editParentAccount; window.saveParentAccountChanges=saveParentAccountChanges; window.deleteParentAccount=deleteParentAccount; window.sendParentCredentialsWhatsApp=sendParentCredentialsWhatsApp; window.openFamilyPayment=openFamilyPayment; window.updateFamilyPaymentTotal=updateFamilyPaymentTotal; window.toggleAllFamilyPlayers=toggleAllFamilyPlayers; window.copyFamilyPaymentData=copyFamilyPaymentData; window.confirmFamilyPayment=confirmFamilyPayment; window.rejectFamilyPayment=rejectFamilyPayment; window.openEvidencePreview=openEvidencePreview; window.openPaymentReview=openPaymentReview; window.updatePaymentReviewDifference=updatePaymentReviewDifference; window.confirmReviewedPayment=confirmReviewedPayment; window.openCashReceiptForm=openCashReceiptForm; window.updateCashReceiptPlayer=updateCashReceiptPlayer; window.saveCashReceiptForm=saveCashReceiptForm; window.openCashReceiptPreviewFromPayment=openCashReceiptPreviewFromPayment; window.printCashReceipt=printCashReceipt; window.clearCashSignature=clearCashSignature;
 
 init();
 
