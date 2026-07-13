@@ -1,0 +1,8 @@
+DUCKS CRM PROFESIONAL v2.65
+
+Cambios incluidos:
+- Todos los banners públicos, incluido Nuevo ingreso, ahora tienen dos botones funcionales superpuestos con el mismo diseño que Pagos y comprobantes.
+- Calendario, Academia, Entrenamiento, Competencias y Reglamento tienen acciones reales.
+- Ver reglamento abre un visor dentro del portal con las cuatro páginas en imagen, evitando bloqueos de ventanas emergentes o visores PDF.
+- Descargar PDF conserva el reglamento oficial con formato Ducks.
+- No requiere SQL adicional en Supabase.
