@@ -1,0 +1,11 @@
+DUCKS CRM PROFESIONAL v2.64
+
+Cambios incluidos:
+- La imagen de Pagos y comprobantes usa el mismo tamaño que las demás secciones.
+- Se eliminaron estilos anteriores que la comprimían.
+- Los botones Registrar pago y Subir evidencia funcionan desde la propia imagen y continúan después del inicio de sesión.
+- Las imágenes secundarias se redujeron para que el video principal conserve mayor protagonismo.
+- Se aumentó el tamaño de textos, comentarios y botones de apoyo de cada sección.
+- El botón Ver reglamento abre el reglamento oficial con diseño acorde al portal Ducks.
+- El segundo botón permite descargar el reglamento en PDF.
+- No requiere SQL adicional en Supabase.

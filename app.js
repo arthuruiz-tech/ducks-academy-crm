@@ -1,6 +1,6 @@
 
 async function forceFreshAssetsOnce(){
-  const key = 'ducks_cache_fix_v2_63_done';
+  const key = 'ducks_cache_fix_v2_64_done';
   if(localStorage.getItem(key)==='yes') return;
   try{
     if('caches' in window){
@@ -14,7 +14,7 @@ async function forceFreshAssetsOnce(){
 }
 forceFreshAssetsOnce();
 
-// Ducks CRM profesional v2.63 - se integran banners por sección en el portal público
+// Ducks CRM profesional v2.64 - banners ajustados, acciones funcionales y reglamento oficial
 const app = document.getElementById('app');
 let sb = null;
 let session = null;
@@ -876,6 +876,44 @@ function adminQuickMenu(){
 
 function renderSetup(){ app.innerHTML=`${publicQuickMenu()}<div class="public-site with-global-menu"><div class="academy-main"><div class="parent-card"><h1>Configurar Supabase</h1><div class="notice warning">Falta configurar config.js.</div></div></div></div>`; }
 
+function scrollToPublicSection(id){
+  const target=document.getElementById(id);
+  if(target) target.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function showCalendarNotice(){
+  toast('El calendario digital está en preparación. Los horarios oficiales se comunican por los canales de Ducks.');
+}
+function openDucksRegulation(){
+  window.open('assets/reglamento-ducks-portal.pdf?v=2.64','_blank','noopener');
+}
+function downloadDucksRegulation(){
+  const a=document.createElement('a');
+  a.href='assets/reglamento-ducks-portal.pdf?v=2.64';
+  a.download='Reglamento_Interno_Ducks.pdf';
+  document.body.appendChild(a); a.click(); a.remove();
+}
+function runPendingParentEntryAction(){
+  const action=sessionStorage.getItem('ducks_parent_entry_action')||'';
+  sessionStorage.removeItem('ducks_parent_entry_action');
+  if(!action) return;
+  setTimeout(()=>{
+    if(action==='pay') openParentPayNow();
+    if(action==='evidence') openParentPayment();
+  },260);
+}
+async function openParentSectionAction(action='portal'){
+  sessionStorage.setItem('ducks_parent_entry_action',action);
+  if(parentToken){
+    if(!parentProfile) await loadParentData();
+    if(parentProfile){
+      renderParentPortal();
+      runPendingParentEntryAction();
+      return;
+    }
+  }
+  renderParentLogin();
+}
+
 function renderPublicHome(){
   mode='public'; rememberScreen('public:');
   app.innerHTML=`${publicQuickMenu()}<div class="public-site with-global-menu">
@@ -923,24 +961,42 @@ function renderPublicHome(){
           <button type="button" class="registration-banner-hotspot print" onclick="renderRegistrationForm();setTimeout(()=>window.print(),350)" aria-label="Imprimir formato"></button>
         </div>
       </section>
-      <section class="quick-parent-card parent-entry-card visual-banner-section">
-        <img class="section-banner-image" src="assets/pagos-comprobantes-banner-v263.png?v=2.63" alt="Pagos y comprobantes - Portal de Papás Ducks" loading="lazy">
+      <section id="pagos" class="academy-section visual-banner-section interactive-banner-section">
+        <div class="section-banner-wrap">
+          <img class="section-banner-image" src="assets/pagos-comprobantes-banner-v264.png?v=2.64" alt="Pagos y comprobantes - Portal de Papás Ducks" loading="lazy">
+          <button type="button" class="section-hotspot action-green payment-register" onclick="openParentSectionAction('pay')" aria-label="Registrar pago"><span>Registrar pago</span></button>
+          <button type="button" class="section-hotspot action-white payment-evidence" onclick="openParentSectionAction('evidence')" aria-label="Subir evidencia"><span>Subir evidencia</span></button>
+        </div>
+        <p class="section-caption">Administra pagos, consulta saldos y comparte comprobantes de forma rápida y segura desde el Portal de Papás.</p>
       </section>
       <section id="calendario" class="academy-section visual-banner-section">
-        <img class="section-banner-image" src="assets/calendario-juegos-banner-v263.png?v=2.63" alt="Calendario de juegos - Ducks Basketball Academy" loading="lazy">
+        <img class="section-banner-image" src="assets/calendario-juegos-banner-v264.png?v=2.64" alt="Calendario de juegos - Ducks Basketball Academy" loading="lazy">
+        <p class="section-caption">Consulta fechas, horarios, sedes y próximos partidos de todas las categorías Ducks.</p>
+        <div class="section-actions"><button class="btn green section-action-btn" onclick="showCalendarNotice()">Ver partidos</button><button class="btn secondary section-action-btn" onclick="showCalendarNotice()">Calendario completo</button></div>
       </section>
       <section id="academia" class="academy-section visual-banner-section">
-        <img class="section-banner-image" src="assets/academia-banner-v263.png?v=2.63" alt="Academia - Ducks Basketball Academy" loading="lazy">
+        <img class="section-banner-image" src="assets/academia-banner-v264.png?v=2.64" alt="Academia - Ducks Basketball Academy" loading="lazy">
+        <p class="section-caption">Conoce la formación deportiva, los programas y el ambiente de disciplina, respeto y trabajo en equipo de Ducks.</p>
+        <div class="section-actions"><button class="btn green section-action-btn" onclick="scrollToPublicSection('entrenamiento')">Conocer academia</button><button class="btn secondary section-action-btn" onclick="scrollToPublicSection('categorias')">Ver programas</button></div>
       </section>
       <section id="entrenamiento" class="academy-section visual-banner-section">
-        <img class="section-banner-image" src="assets/entrenamiento-banner-v263.png?v=2.63" alt="Entrenamiento - Ducks Basketball Academy" loading="lazy">
+        <img class="section-banner-image" src="assets/entrenamiento-banner-v264.png?v=2.64" alt="Entrenamiento - Ducks Basketball Academy" loading="lazy">
+        <p class="section-caption">Sesiones enfocadas en fundamentos, coordinación, condición física, disciplina y progreso constante.</p>
+        <div class="section-actions"><button class="btn green section-action-btn" onclick="scrollToPublicSection('contacto')">Solicitar información</button><button class="btn secondary section-action-btn" onclick="scrollToPublicSection('contacto')">Consultar horarios</button></div>
       </section>
       <section id="competencias" class="academy-section visual-banner-section">
-        <img class="section-banner-image" src="assets/competencias-comunidad-banner-v263.png?v=2.63" alt="Competencias y comunidad - Ducks Basketball Academy" loading="lazy">
+        <img class="section-banner-image" src="assets/competencias-comunidad-banner-v264.png?v=2.64" alt="Competencias y comunidad - Ducks Basketball Academy" loading="lazy">
+        <p class="section-caption">Participa en torneos, convivencias y actividades que fortalecen la competencia y el espíritu de la familia Ducks.</p>
+        <div class="section-actions"><button class="btn green section-action-btn" onclick="scrollToPublicSection('calendario')">Explorar competencias</button><button class="btn secondary section-action-btn" onclick="scrollToPublicSection('contacto')">Conocer comunidad</button></div>
       </section>
 
-      <section id="reglamento" class="academy-section visual-banner-section rules-section">
-        <img class="section-banner-image" src="assets/reglamento-banner-v263.png?v=2.63" alt="Reglamento Ducks" loading="lazy">
+      <section id="reglamento" class="academy-section visual-banner-section interactive-banner-section rules-section">
+        <div class="section-banner-wrap">
+          <img class="section-banner-image" src="assets/reglamento-banner-v264.png?v=2.64" alt="Reglamento Ducks" loading="lazy">
+          <button type="button" class="section-hotspot action-green regulation-open" onclick="openDucksRegulation()" aria-label="Ver reglamento"><span>Ver reglamento</span></button>
+          <button type="button" class="section-hotspot action-white regulation-download" onclick="downloadDucksRegulation()" aria-label="Descargar reglamento"><span>Descargar PDF</span></button>
+        </div>
+        <p class="section-caption">Consulta el reglamento oficial de la academia: inscripción, asistencia, conducta, seguridad, torneos, responsabilidades y sanciones.</p>
       </section>
 
       <section id="categorias" class="academy-section">
@@ -1149,6 +1205,7 @@ async function parentLogin(e){
         return;
       }
       renderParentPortal();
+      runPendingParentEntryAction();
       return;
     }
     lastError = data?.[0]?.message || 'Usuario o contraseña incorrectos';
@@ -1607,7 +1664,7 @@ async function loadAdminData(){
 }
 async function refresh(){ if(mode==='admin'){await loadAdminData(); renderShell(); renderPage();} }
 function renderShell(){
-  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="notifications">🔔 Avisos <span class="notification-badge hidden" data-notification-badge>0</span></button><button data-page="registrations">📝 Solicitudes de ingreso</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="history">🕘 Historial</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.63: imágenes personalizadas en secciones del portal público y recibos de efectivo en una sola hoja.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><button class="btn secondary notification-bell" onclick="page='notifications';renderPage()">🔔 <span class="notification-badge hidden" data-notification-badge>0</span></button><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
+  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="notifications">🔔 Avisos <span class="notification-badge hidden" data-notification-badge>0</span></button><button data-page="registrations">📝 Solicitudes de ingreso</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="history">🕘 Historial</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.64: banners equilibrados, pagos funcionales y reglamento oficial con diseño Ducks.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><button class="btn secondary notification-bell" onclick="page='notifications';renderPage()">🔔 <span class="notification-badge hidden" data-notification-badge>0</span></button><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
   document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page=b.dataset.page; if(page==='public'){renderPublicHome(); return;} renderPage();});
   document.getElementById('search').oninput=e=>{q=e.target.value; renderPage();};
   document.getElementById('authBtn').onclick=logout;
@@ -2710,7 +2767,7 @@ async function confirmPayment(id){ openPaymentReview(id); }
 async function rejectPayment(id){const {error}=await sb.from('payments').update({confirmation_status:'Rechazado'}).eq('id',id); if(error)toast(error.message); else{toast('Pago rechazado'); await refresh();}}
 async function deletePayment(id){if(!confirm('¿Eliminar pago?'))return; const {error}=await sb.from('payments').delete().eq('id',id); if(error)toast(error.message); else{toast('Pago eliminado'); await refresh();}}
 
-window.renderPublicHome=renderPublicHome; window.renderRegistrationForm=renderRegistrationForm; window.toggleRegistrationDetail=toggleRegistrationDetail; window.renderParentLogin=renderParentLogin; window.renderAdminLogin=renderAdminLogin; window.renderLogin=renderAdminLogin; window.parentLogout=parentLogout; window.copyBank=copyBank; window.openParentPayment=openParentPayment; window.openParentDocument=openParentDocument; window.installDucksApp=installDucksApp; window.goBackSmart=goBackSmart; window.openPlayerForm=openPlayerForm; window.deletePlayer=deletePlayer; window.openPaymentForm=openPaymentForm; window.confirmPayment=confirmPayment; window.rejectPayment=rejectPayment; window.deletePayment=deletePayment; window.closeModal=closeModal; window.copyReminder=copyReminder; window.deleteParentLink=deleteParentLink; window.prefillParent=prefillParent; window.exportCSV=exportCSV; window.exportFullJSON=exportFullJSON; window.exportDocumentsCSV=exportDocumentsCSV; window.resetParentPassword=resetParentPassword; window.autoLinkAccountFromButton=autoLinkAccountFromButton; window.editParentAccount=editParentAccount; window.saveParentAccountChanges=saveParentAccountChanges; window.deleteParentAccount=deleteParentAccount; window.sendParentCredentialsWhatsApp=sendParentCredentialsWhatsApp; window.openFamilyPayment=openFamilyPayment; window.updateFamilyPaymentTotal=updateFamilyPaymentTotal; window.toggleAllFamilyPlayers=toggleAllFamilyPlayers; window.copyFamilyPaymentData=copyFamilyPaymentData; window.confirmFamilyPayment=confirmFamilyPayment; window.rejectFamilyPayment=rejectFamilyPayment; window.openEvidencePreview=openEvidencePreview; window.openPaymentReview=openPaymentReview; window.updatePaymentReviewDifference=updatePaymentReviewDifference; window.confirmReviewedPayment=confirmReviewedPayment; window.openCashReceiptForm=openCashReceiptForm; window.updateCashReceiptPlayer=updateCashReceiptPlayer; window.saveCashReceiptForm=saveCashReceiptForm; window.openCashReceiptPreviewFromPayment=openCashReceiptPreviewFromPayment; window.printCashReceipt=printCashReceipt; window.clearCashSignature=clearCashSignature;
+window.openParentSectionAction=openParentSectionAction; window.openDucksRegulation=openDucksRegulation; window.downloadDucksRegulation=downloadDucksRegulation; window.scrollToPublicSection=scrollToPublicSection; window.showCalendarNotice=showCalendarNotice; window.renderPublicHome=renderPublicHome; window.renderRegistrationForm=renderRegistrationForm; window.toggleRegistrationDetail=toggleRegistrationDetail; window.renderParentLogin=renderParentLogin; window.renderAdminLogin=renderAdminLogin; window.renderLogin=renderAdminLogin; window.parentLogout=parentLogout; window.copyBank=copyBank; window.openParentPayment=openParentPayment; window.openParentDocument=openParentDocument; window.installDucksApp=installDucksApp; window.goBackSmart=goBackSmart; window.openPlayerForm=openPlayerForm; window.deletePlayer=deletePlayer; window.openPaymentForm=openPaymentForm; window.confirmPayment=confirmPayment; window.rejectPayment=rejectPayment; window.deletePayment=deletePayment; window.closeModal=closeModal; window.copyReminder=copyReminder; window.deleteParentLink=deleteParentLink; window.prefillParent=prefillParent; window.exportCSV=exportCSV; window.exportFullJSON=exportFullJSON; window.exportDocumentsCSV=exportDocumentsCSV; window.resetParentPassword=resetParentPassword; window.autoLinkAccountFromButton=autoLinkAccountFromButton; window.editParentAccount=editParentAccount; window.saveParentAccountChanges=saveParentAccountChanges; window.deleteParentAccount=deleteParentAccount; window.sendParentCredentialsWhatsApp=sendParentCredentialsWhatsApp; window.openFamilyPayment=openFamilyPayment; window.updateFamilyPaymentTotal=updateFamilyPaymentTotal; window.toggleAllFamilyPlayers=toggleAllFamilyPlayers; window.copyFamilyPaymentData=copyFamilyPaymentData; window.confirmFamilyPayment=confirmFamilyPayment; window.rejectFamilyPayment=rejectFamilyPayment; window.openEvidencePreview=openEvidencePreview; window.openPaymentReview=openPaymentReview; window.updatePaymentReviewDifference=updatePaymentReviewDifference; window.confirmReviewedPayment=confirmReviewedPayment; window.openCashReceiptForm=openCashReceiptForm; window.updateCashReceiptPlayer=updateCashReceiptPlayer; window.saveCashReceiptForm=saveCashReceiptForm; window.openCashReceiptPreviewFromPayment=openCashReceiptPreviewFromPayment; window.printCashReceipt=printCashReceipt; window.clearCashSignature=clearCashSignature;
 
 init();
 
