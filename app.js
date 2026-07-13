@@ -1,6 +1,6 @@
 
 async function forceFreshAssetsOnce(){
-  const key = 'ducks_cache_fix_v2_67_done';
+  const key = 'ducks_cache_fix_v2_68_done';
   if(localStorage.getItem(key)==='yes') return;
   try{
     if('caches' in window){
@@ -983,61 +983,75 @@ function renderPublicHome(){
           </div>
         </div>
       </section>
-      <section class="registration-home-card registration-home-banner-card interactive-banner-section">
+      <section class="registration-home-card registration-home-banner-card visual-banner-section">
         <div class="registration-home-banner-wrap section-banner-wrap" aria-label="Registro de nuevo jugador Ducks Basketball Academy">
-          <img class="registration-home-banner-image" src="assets/nuevo-ingreso-banner-v260.png?v=2.65" alt="Registro de nuevo jugador Ducks Basketball Academy">
-          <button type="button" class="section-hotspot action-green registration-primary" onclick="renderRegistrationForm()" aria-label="Comenzar registro"><span>Comenzar registro</span></button>
-          <button type="button" class="section-hotspot action-white registration-secondary" onclick="renderRegistrationForm();setTimeout(()=>window.print(),350)" aria-label="Imprimir formato"><span>Imprimir formato</span></button>
+          <img class="registration-home-banner-image" src="assets/nuevo-ingreso-banner-v260.png?v=2.68" alt="Registro de nuevo jugador Ducks Basketball Academy">
+        </div>
+        <div class="section-actions">
+          <button type="button" class="btn green section-action-btn" onclick="renderRegistrationForm()">Comenzar registro</button>
+          <button type="button" class="btn secondary section-action-btn" onclick="renderRegistrationForm();setTimeout(()=>window.print(),350)">Imprimir formato</button>
         </div>
       </section>
-      <section id="pagos" class="academy-section visual-banner-section interactive-banner-section">
+      <section id="pagos" class="academy-section visual-banner-section">
         <div class="section-banner-wrap">
-          <img class="section-banner-image" src="assets/pagos-comprobantes-banner-v264.png?v=2.65" alt="Pagos y comprobantes - Portal de Papás Ducks" loading="lazy">
-          <button type="button" class="section-hotspot action-green payment-register" onclick="openParentSectionAction('pay')" aria-label="Registrar pago"><span>Registrar pago</span></button>
-          <button type="button" class="section-hotspot action-white payment-evidence" onclick="openParentSectionAction('evidence')" aria-label="Subir evidencia"><span>Subir evidencia</span></button>
+          <img class="section-banner-image" src="assets/pagos-comprobantes-banner-v264.png?v=2.68" alt="Pagos y comprobantes - Portal de Papás Ducks" loading="lazy">
         </div>
         <p class="section-caption">Administra pagos, consulta saldos y comparte comprobantes de forma rápida y segura desde el Portal de Papás.</p>
+        <div class="section-actions">
+          <button type="button" class="btn green section-action-btn" onclick="openParentSectionAction('pay')">Registrar pago</button>
+          <button type="button" class="btn secondary section-action-btn" onclick="openParentSectionAction('evidence')">Subir evidencia</button>
+        </div>
       </section>
-      <section id="calendario" class="academy-section visual-banner-section interactive-banner-section">
+      <section id="calendario" class="academy-section visual-banner-section">
         <div class="section-banner-wrap">
-          <img class="section-banner-image" src="assets/calendario-juegos-banner-v264.png?v=2.65" alt="Calendario de juegos - Ducks Basketball Academy" loading="lazy">
-          <button type="button" class="section-hotspot action-green calendar-primary" onclick="showCalendarNotice()" aria-label="Ver partidos"><span>Ver partidos</span></button>
-          <button type="button" class="section-hotspot action-white calendar-secondary" onclick="showCalendarNotice()" aria-label="Calendario completo"><span>Calendario completo</span></button>
+          <img class="section-banner-image" src="assets/calendario-juegos-banner-v264.png?v=2.68" alt="Calendario de juegos - Ducks Basketball Academy" loading="lazy">
         </div>
         <p class="section-caption">Consulta fechas, horarios, sedes y próximos partidos de todas las categorías Ducks.</p>
+        <div class="section-actions">
+          <button type="button" class="btn green section-action-btn" onclick="showCalendarNotice()">Ver partidos</button>
+          <button type="button" class="btn secondary section-action-btn" onclick="showCalendarNotice()">Calendario completo</button>
+        </div>
       </section>
-      <section id="academia" class="academy-section visual-banner-section interactive-banner-section">
+      <section id="academia" class="academy-section visual-banner-section">
         <div class="section-banner-wrap">
-          <img class="section-banner-image" src="assets/academia-banner-v264.png?v=2.65" alt="Academia - Ducks Basketball Academy" loading="lazy">
-          <button type="button" class="section-hotspot action-green academy-primary" onclick="openAcademyStory()" aria-label="Nuestra historia"><span>Nuestra historia</span></button>
-          <button type="button" class="section-hotspot action-white academy-secondary" onclick="scrollToPublicSection('entrenamiento')" aria-label="Conoce más"><span>Conoce más</span></button>
+          <img class="section-banner-image" src="assets/academia-banner-v264.png?v=2.68" alt="Academia - Ducks Basketball Academy" loading="lazy">
         </div>
         <p class="section-caption">Conoce la formación deportiva, los programas y el ambiente de disciplina, respeto y trabajo en equipo de Ducks.</p>
+        <div class="section-actions">
+          <button type="button" class="btn green section-action-btn" onclick="openAcademyStory()">Nuestra historia</button>
+          <button type="button" class="btn secondary section-action-btn" onclick="scrollToPublicSection('entrenamiento')">Conoce más</button>
+        </div>
       </section>
-      <section id="entrenamiento" class="academy-section visual-banner-section interactive-banner-section">
+      <section id="entrenamiento" class="academy-section visual-banner-section">
         <div class="section-banner-wrap">
-          <img class="section-banner-image" src="assets/entrenamiento-banner-v264.png?v=2.65" alt="Entrenamiento - Ducks Basketball Academy" loading="lazy">
-          <button type="button" class="section-hotspot action-green training-primary" onclick="openTrainingInfo()" aria-label="Explorar sesiones"><span>Explorar sesiones</span></button>
-          <button type="button" class="section-hotspot action-white training-secondary" onclick="openDucksWhatsApp('Hola, quiero conocer los horarios de entrenamiento de Ducks Basketball Academy.')" aria-label="Ver horarios"><span>Ver horarios</span></button>
+          <img class="section-banner-image" src="assets/entrenamiento-banner-v264.png?v=2.68" alt="Entrenamiento - Ducks Basketball Academy" loading="lazy">
         </div>
         <p class="section-caption">Sesiones enfocadas en fundamentos, coordinación, condición física, disciplina y progreso constante.</p>
+        <div class="section-actions">
+          <button type="button" class="btn green section-action-btn" onclick="openTrainingInfo()">Explorar sesiones</button>
+          <button type="button" class="btn secondary section-action-btn" onclick="openDucksWhatsApp('Hola, quiero conocer los horarios de entrenamiento de Ducks Basketball Academy.')">Ver horarios</button>
+        </div>
       </section>
-      <section id="competencias" class="academy-section visual-banner-section interactive-banner-section">
+      <section id="competencias" class="academy-section visual-banner-section">
         <div class="section-banner-wrap">
-          <img class="section-banner-image" src="assets/competencias-comunidad-banner-v264.png?v=2.65" alt="Competencias y comunidad - Ducks Basketball Academy" loading="lazy">
-          <button type="button" class="section-hotspot action-green competition-primary" onclick="scrollToPublicSection('calendario')" aria-label="Explorar competencias"><span>Explorar competencias</span></button>
-          <button type="button" class="section-hotspot action-white competition-secondary" onclick="openCommunityInfo()" aria-label="Ver comunidad"><span>Ver comunidad</span></button>
+          <img class="section-banner-image" src="assets/competencias-comunidad-banner-v264.png?v=2.68" alt="Competencias y comunidad - Ducks Basketball Academy" loading="lazy">
         </div>
         <p class="section-caption">Participa en torneos, convivencias y actividades que fortalecen la competencia y el espíritu de la familia Ducks.</p>
+        <div class="section-actions">
+          <button type="button" class="btn green section-action-btn" onclick="scrollToPublicSection('calendario')">Explorar competencias</button>
+          <button type="button" class="btn secondary section-action-btn" onclick="openCommunityInfo()">Ver comunidad</button>
+        </div>
       </section>
 
-      <section id="reglamento" class="academy-section visual-banner-section interactive-banner-section rules-section">
+      <section id="reglamento" class="academy-section visual-banner-section rules-section">
         <div class="section-banner-wrap">
-          <img class="section-banner-image" src="assets/reglamento-banner-v264.png?v=2.65" alt="Reglamento Ducks" loading="lazy">
-          <button type="button" class="section-hotspot action-green regulation-open" onclick="openDucksRegulation()" aria-label="Ver reglamento"><span>Ver reglamento</span></button>
-          <button type="button" class="section-hotspot action-white regulation-download" onclick="downloadDucksRegulation()" aria-label="Descargar reglamento"><span>Descargar PDF</span></button>
+          <img class="section-banner-image" src="assets/reglamento-banner-v264.png?v=2.68" alt="Reglamento Ducks" loading="lazy">
         </div>
         <p class="section-caption">Consulta el reglamento oficial de la academia: inscripción, asistencia, conducta, seguridad, torneos, responsabilidades y sanciones.</p>
+        <div class="section-actions">
+          <button type="button" class="btn green section-action-btn" onclick="openDucksRegulation()">Ver reglamento</button>
+          <button type="button" class="btn secondary section-action-btn" onclick="downloadDucksRegulation()">Descargar PDF</button>
+        </div>
       </section>
 
       <section id="categorias" class="academy-section">
@@ -1705,7 +1719,7 @@ async function loadAdminData(){
 }
 async function refresh(){ if(mode==='admin'){await loadAdminData(); renderShell(); renderPage();} }
 function renderShell(){
-  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="notifications">🔔 Avisos <span class="notification-badge hidden" data-notification-badge>0</span></button><button data-page="registrations">📝 Solicitudes de ingreso</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="history">🕘 Historial</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.67: ajuste fino de botones en banners y reglamento Ducks de una página.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><button class="btn secondary notification-bell" onclick="page='notifications';renderPage()">🔔 <span class="notification-badge hidden" data-notification-badge>0</span></button><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
+  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="notifications">🔔 Avisos <span class="notification-badge hidden" data-notification-badge>0</span></button><button data-page="registrations">📝 Solicitudes de ingreso</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="history">🕘 Historial</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.68: se eliminan botones sobre las imágenes y se dejan botones funcionales debajo de cada sección.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><button class="btn secondary notification-bell" onclick="page='notifications';renderPage()">🔔 <span class="notification-badge hidden" data-notification-badge>0</span></button><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
   document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page=b.dataset.page; if(page==='public'){renderPublicHome(); return;} renderPage();});
   document.getElementById('search').oninput=e=>{q=e.target.value; renderPage();};
   document.getElementById('authBtn').onclick=logout;

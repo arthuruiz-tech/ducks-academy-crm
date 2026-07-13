@@ -1,4 +1,5 @@
-DUCKS CRM PROFESIONAL v2.67
+DUCKS CRM PROFESIONAL v2.68
 
-Este paquete limpio está listo para Vercel y contiene menos de 100 archivos.
-Cambios: realineación fina de botones en Academia, Entrenamiento, Competencias y Reglamento; reglamento de 1 página.
+Se eliminaron los botones sobre las imágenes para evitar desajustes.
+Ahora cada sección conserva su imagen y muestra debajo botones funcionales con el mismo formato visual.
+Paquete limpio para Vercel con menos de 100 archivos.
