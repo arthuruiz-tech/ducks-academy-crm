@@ -3089,3 +3089,166 @@ button[onclick="installDucksApp()"]{
   .player-priority-card .family-head h2{font-size:23px!important}
   .player-priority-card .family-kpis b{font-size:18px!important}
 }
+
+/* v2.89 - historial contraído y datos bancarios compactos para móvil */
+.parent-payment-history > summary{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:10px!important;
+  list-style:none!important;
+}
+.parent-payment-history > summary::-webkit-details-marker{display:none}
+.parent-payment-history > summary::after{
+  content:'⌄';
+  flex:0 0 auto;
+  font-size:22px;
+  line-height:1;
+  color:#0b5139;
+  transition:transform .2s ease;
+}
+.parent-payment-history[open] > summary::after{transform:rotate(180deg)}
+.parent-payment-history > summary span{min-width:0}
+.parent-payment-history > summary small{
+  margin-left:auto;
+  color:#60796d;
+  font-size:12px;
+  font-weight:800;
+  white-space:nowrap;
+}
+
+/* Reduce espacio vertical y mantiene todos los datos dentro de la pantalla */
+.parent-card + .bank-card,
+.academy-main > .bank-card{
+  margin-top:14px!important;
+}
+.academy-main > .bank-card{
+  padding:16px!important;
+  border-radius:18px!important;
+}
+.academy-main > .bank-card .bank-head{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) 52px!important;
+  align-items:center!important;
+  gap:10px!important;
+  margin-bottom:10px!important;
+}
+.academy-main > .bank-card .bank-head h2{
+  margin:3px 0!important;
+  font-size:20px!important;
+  line-height:1.15!important;
+}
+.academy-main > .bank-card .bank-head p{
+  margin:0!important;
+  font-size:12.5px!important;
+  line-height:1.35!important;
+}
+.academy-main > .bank-card .bank-head img{
+  width:52px!important;
+  height:52px!important;
+  padding:3px!important;
+  border-radius:12px!important;
+}
+.academy-main > .bank-card .bank-grid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:8px!important;
+}
+.academy-main > .bank-card .bank-item{
+  min-width:0!important;
+  padding:10px!important;
+  border-radius:12px!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto!important;
+  grid-template-areas:'label button' 'value button'!important;
+  align-items:center!important;
+  column-gap:8px!important;
+  row-gap:2px!important;
+}
+.academy-main > .bank-card .bank-item.full{
+  grid-column:1/-1!important;
+}
+.academy-main > .bank-card .bank-item small{grid-area:label;font-size:10px!important}
+.academy-main > .bank-card .bank-item strong{
+  grid-area:value;
+  min-width:0!important;
+  font-size:15px!important;
+  line-height:1.2!important;
+  letter-spacing:.2px!important;
+  overflow-wrap:anywhere!important;
+  word-break:break-word!important;
+}
+.academy-main > .bank-card .bank-item .btn{
+  grid-area:button;
+  min-width:0!important;
+  padding:7px 9px!important;
+  font-size:11px!important;
+  white-space:nowrap!important;
+}
+
+@media(max-width:760px){
+  .parent-payment-history > summary{
+    padding:12px!important;
+    font-size:15px!important;
+  }
+  .parent-payment-history > summary small{font-size:10.5px!important}
+  .academy-main > .bank-card{
+    margin:12px 0 0!important;
+    padding:11px!important;
+    border-radius:15px!important;
+  }
+  .academy-main > .bank-card .bank-head{
+    grid-template-columns:minmax(0,1fr) 42px!important;
+    gap:8px!important;
+    margin-bottom:8px!important;
+  }
+  .academy-main > .bank-card .bank-chip{
+    padding:4px 7px!important;
+    font-size:9px!important;
+  }
+  .academy-main > .bank-card .bank-head h2{
+    font-size:17px!important;
+    margin:2px 0!important;
+  }
+  .academy-main > .bank-card .bank-head p{
+    font-size:11px!important;
+    line-height:1.28!important;
+  }
+  .academy-main > .bank-card .bank-head img{
+    width:42px!important;
+    height:42px!important;
+    border-radius:10px!important;
+  }
+  .academy-main > .bank-card .bank-grid{
+    grid-template-columns:1fr!important;
+    gap:6px!important;
+  }
+  .academy-main > .bank-card .bank-item,
+  .academy-main > .bank-card .bank-item.full{
+    grid-column:auto!important;
+    padding:8px 9px!important;
+    grid-template-columns:minmax(0,1fr) auto!important;
+    border-radius:11px!important;
+  }
+  .academy-main > .bank-card .bank-item small{font-size:9px!important}
+  .academy-main > .bank-card .bank-item strong{
+    font-size:13px!important;
+    line-height:1.15!important;
+  }
+  .academy-main > .bank-card .bank-item .btn{
+    padding:6px 8px!important;
+    font-size:10px!important;
+  }
+}
+
+@media(max-width:380px){
+  .parent-payment-history > summary small{display:none}
+  .academy-main > .bank-card .bank-item{
+    grid-template-columns:minmax(0,1fr)!important;
+    grid-template-areas:'label' 'value' 'button'!important;
+  }
+  .academy-main > .bank-card .bank-item .btn{
+    width:100%!important;
+    margin-top:5px!important;
+  }
+}

@@ -1575,7 +1575,7 @@ function renderParentPortal(){
         </div>
         <div class="player-photo-side"><img src="${playerPhotoUrl(p)}" alt="Foto de ${esc(p.name)}"></div>
       </div>
-      <details class="history-box parent-payment-history" open><summary>Historial de pagos de ${esc(p.name)}</summary>${renderParentPaymentHistory(p)}</details>
+      <details class="history-box parent-payment-history"><summary><span>Historial de pagos de ${esc(p.name)}</span><small>Toca para consultar</small></summary>${renderParentPaymentHistory(p)}</details>
       <div class="doc-actions">
         <button class="btn green pay-now-main-btn" onclick="openParentPayNow('${p.id}')">💳 Pagar ahora</button>
         <button class="btn secondary" onclick="openParentPayment('${p.id}')">Subir comprobante</button>
