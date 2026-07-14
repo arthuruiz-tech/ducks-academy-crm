@@ -2654,3 +2654,83 @@ button[onclick="installDucksApp()"]{
     font-size:clamp(16px,3.8vw,20px);
   }
 }
+
+
+/* v2.80 - texto contenido e historial privado por hijo */
+.interactive-banner-section .section-hotspot span{
+  box-sizing:border-box!important;
+  overflow:hidden!important;
+  white-space:normal!important;
+  word-break:normal!important;
+  text-overflow:clip!important;
+  max-width:100%!important;
+  max-height:100%!important;
+  line-height:1.02!important;
+  padding:1px 3px!important;
+  letter-spacing:-.35px!important;
+}
+.section-hotspot.registration-primary span,
+.section-hotspot.payment-register span,
+.section-hotspot.calendar-primary span,
+.section-hotspot.academy-primary span,
+.section-hotspot.training-primary span,
+.section-hotspot.competition-primary span,
+.section-hotspot.regulation-open span,
+.section-hotspot.categories-primary span,
+.section-hotspot.values-primary span,
+.section-hotspot.contact-primary span{
+  left:25%!important;right:14%!important;top:18%!important;bottom:18%!important;
+  font-size:clamp(11px,1.12vw,17px)!important;
+}
+.section-hotspot.registration-secondary span,
+.section-hotspot.payment-evidence span,
+.section-hotspot.calendar-secondary span,
+.section-hotspot.academy-secondary span,
+.section-hotspot.training-secondary span,
+.section-hotspot.competition-secondary span,
+.section-hotspot.regulation-download span,
+.section-hotspot.categories-secondary span,
+.section-hotspot.values-secondary span,
+.section-hotspot.contact-secondary span{
+  left:23%!important;right:12%!important;top:17%!important;bottom:17%!important;
+  font-size:clamp(10px,1.02vw,16px)!important;
+}
+.parent-payment-history{margin-top:16px;border:1px solid #cfe4d8!important;background:#f8fcfa!important}
+.parent-payment-history>summary{font-size:17px;font-weight:950;color:#0b5139;padding:15px 16px;cursor:pointer}
+.parent-payment-history-wrap{overflow-x:auto;padding:0 12px 14px}
+.parent-payment-history-table{width:100%;border-collapse:collapse;min-width:660px;background:#fff;border-radius:14px;overflow:hidden}
+.parent-payment-history-table th{background:#0d4a37;color:#fff;text-align:left;padding:11px 10px;font-size:13px}
+.parent-payment-history-table td{padding:11px 10px;border-bottom:1px solid #e2eee7;font-size:13px;color:#17382d;vertical-align:middle}
+.parent-payment-history-table tr:last-child td{border-bottom:0}
+.parent-history-evidence{padding:7px 10px!important;font-size:12px!important;min-width:0!important}
+.parent-payment-empty{display:grid;gap:5px;text-align:center;padding:22px 14px;margin:0 12px 14px;background:#fff;border-radius:14px;color:#53685d}
+.parent-payment-empty b{color:#164c38;font-size:16px}
+@media(max-width:760px){
+  .section-hotspot.registration-primary span,
+  .section-hotspot.payment-register span,
+  .section-hotspot.calendar-primary span,
+  .section-hotspot.academy-primary span,
+  .section-hotspot.training-primary span,
+  .section-hotspot.competition-primary span,
+  .section-hotspot.regulation-open span,
+  .section-hotspot.categories-primary span,
+  .section-hotspot.values-primary span,
+  .section-hotspot.contact-primary span{
+    left:25%!important;right:12%!important;top:14%!important;bottom:14%!important;
+    font-size:clamp(9px,2.55vw,13px)!important;
+  }
+  .section-hotspot.registration-secondary span,
+  .section-hotspot.payment-evidence span,
+  .section-hotspot.calendar-secondary span,
+  .section-hotspot.academy-secondary span,
+  .section-hotspot.training-secondary span,
+  .section-hotspot.competition-secondary span,
+  .section-hotspot.regulation-download span,
+  .section-hotspot.categories-secondary span,
+  .section-hotspot.values-secondary span,
+  .section-hotspot.contact-secondary span{
+    left:22%!important;right:9%!important;top:13%!important;bottom:13%!important;
+    font-size:clamp(8px,2.35vw,12px)!important;
+  }
+  .parent-payment-history>summary{font-size:16px;padding:14px}
+}

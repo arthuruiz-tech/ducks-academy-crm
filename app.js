@@ -1373,11 +1373,16 @@ async function loadParentData(){
   if(error){toast('Error cargando portal: '+error.message); return;}
   if(!data || !data.ok){toast(data?.message || 'Sesión inválida'); parentToken=''; localStorage.removeItem('ducks_parent_token_v213'); renderParentLogin(); return;}
   parentProfile=data.account;
-  parentPlayers=data.players||[];
-  parentPayments=data.payments||[];
+  parentPlayers=Array.isArray(data.players)?data.players:[];
+  const allowedPlayerIds=new Set(parentPlayers.map(p=>String(p.id)));
+  parentPayments=(Array.isArray(data.payments)?data.payments:[])
+    .filter(p=>allowedPlayerIds.has(String(p.player_id)))
+    .sort((a,b)=>String(b.payment_date||b.created_at||'').localeCompare(String(a.payment_date||a.created_at||'')));
   const docs = await sb.rpc('ducks_parent_documents_v218',{p_token:parentToken});
-  if(!docs.error && docs.data?.ok){ parentDocuments = docs.data.documents || []; }
-  else { parentDocuments = []; }
+  if(!docs.error && docs.data?.ok){
+    parentDocuments=(Array.isArray(docs.data.documents)?docs.data.documents:[])
+      .filter(d=>allowedPlayerIds.has(String(d.player_id)));
+  } else { parentDocuments = []; }
 }
 
 async function parentChangeOwnPassword(){
@@ -1548,11 +1553,20 @@ async function submitFamilyPayment(e){
   }
 }
 
+function renderParentPaymentHistory(player){
+  const allowedPlayerIds=new Set(parentPlayers.map(p=>String(p.id)));
+  if(!allowedPlayerIds.has(String(player?.id))) return '<div class="notice warning">Jugador no autorizado para esta cuenta.</div>';
+  const rows=parentPayments
+    .filter(p=>String(p.player_id)===String(player.id) && allowedPlayerIds.has(String(p.player_id)))
+    .sort((a,b)=>String(b.payment_date||b.created_at||'').localeCompare(String(a.payment_date||a.created_at||'')));
+  if(!rows.length) return `<div class="parent-payment-empty"><b>Sin pagos registrados</b><span>Aún no existe historial de pagos para ${esc(player.name)}.</span></div>`;
+  return `<div class="parent-payment-history-wrap"><table class="parent-payment-history-table"><thead><tr><th>Fecha</th><th>Periodo</th><th>Monto</th><th>Método</th><th>Estatus</th><th>Comprobante</th></tr></thead><tbody>${rows.map(h=>`<tr><td>${esc(formatDateDMY(h.payment_date)||h.payment_date||'-')}</td><td>${esc(h.period||'-')}</td><td><b>${money(h.amount)}</b></td><td>${esc(h.method||'-')}</td><td><span class="status ${statusClass(h.confirmation_status)}">${esc(h.confirmation_status||'-')}</span></td><td>${h.evidence_url?`<button type="button" class="btn secondary parent-history-evidence" onclick="openEvidencePreview('${h.id}')">Ver</button>`:'-'}</td></tr>`).join('')}</tbody></table></div>`;
+}
+
 function renderParentPortal(){
   mode='parentPortal'; rememberScreen('parentPortal:');
   const cards = parentPlayers.map(p=>{
     const c=calc(p,parentPayments);
-    const history=parentPayments.filter(x=>x.player_id===p.id).slice(0,8);
     return `<div class="family-player-card player-priority-card">
       <div class="player-card-top">
         <div class="player-info-side">
@@ -1561,7 +1575,7 @@ function renderParentPortal(){
         </div>
         <div class="player-photo-side"><img src="${playerPhotoUrl(p)}" alt="Foto de ${esc(p.name)}"></div>
       </div>
-      <details class="history-box"><summary>Ver historial y comprobantes</summary>${history.length?`<table class="mini-table"><thead><tr><th>Fecha</th><th>Monto</th><th>Estatus</th><th>Evidencia</th></tr></thead><tbody>${history.map(h=>`<tr><td>${esc(h.payment_date)}</td><td>${money(h.amount)}</td><td><span class="status ${statusClass(h.confirmation_status)}">${esc(h.confirmation_status)}</span></td><td>${h.evidence_url?`<button type="button" class="btn secondary" onclick="openEvidencePreview('${h.id}')">Ver</button>`:'-'}</td></tr>`).join('')}</tbody></table>`:'<p class="sub">Sin pagos registrados.</p>'}</details>
+      <details class="history-box parent-payment-history" open><summary>Historial de pagos de ${esc(p.name)}</summary>${renderParentPaymentHistory(p)}</details>
       <div class="doc-actions">
         <button class="btn green pay-now-main-btn" onclick="openParentPayNow('${p.id}')">💳 Pagar ahora</button>
         <button class="btn secondary" onclick="openParentPayment('${p.id}')">Subir comprobante</button>
@@ -2922,7 +2936,7 @@ async function confirmPayment(id){ openPaymentReview(id); }
 async function rejectPayment(id){const {error}=await sb.from('payments').update({confirmation_status:'Rechazado'}).eq('id',id); if(error)toast(error.message); else{toast('Pago rechazado'); await refresh();}}
 async function deletePayment(id){if(!confirm('¿Eliminar pago?'))return; const {error}=await sb.from('payments').delete().eq('id',id); if(error)toast(error.message); else{toast('Pago eliminado'); await refresh();}}
 
-window.openPortalSearch=openPortalSearch; window.renderPortalSearchResults=renderPortalSearchResults; window.portalSearchGo=portalSearchGo; window.openCategoriesInfo=openCategoriesInfo; window.openValuesInfo=openValuesInfo; window.openAcademyMap=openAcademyMap; window.openParentSectionAction=openParentSectionAction; window.openDucksRegulation=openDucksRegulation; window.downloadDucksRegulation=downloadDucksRegulation; window.scrollToPublicSection=scrollToPublicSection; window.showCalendarNotice=showCalendarNotice; window.openDucksWhatsApp=openDucksWhatsApp; window.openAcademyStory=openAcademyStory; window.openTrainingInfo=openTrainingInfo; window.openCommunityInfo=openCommunityInfo; window.openDucksRegulation=openDucksRegulation; window.downloadDucksRegulation=downloadDucksRegulation; window.showCalendarNotice=showCalendarNotice; window.scrollToPublicSection=scrollToPublicSection; window.openPortalSearch=openPortalSearch; window.renderPortalSearchResults=renderPortalSearchResults; window.portalSearchGo=portalSearchGo; window.openCategoriesInfo=openCategoriesInfo; window.openValuesInfo=openValuesInfo; window.openAcademyMap=openAcademyMap; window.openParentSectionAction=openParentSectionAction; window.renderPublicHome=renderPublicHome; window.renderRegistrationForm=renderRegistrationForm; window.toggleRegistrationDetail=toggleRegistrationDetail; window.renderParentLogin=renderParentLogin; window.renderAdminLogin=renderAdminLogin; window.renderLogin=renderAdminLogin; window.parentLogout=parentLogout; window.copyBank=copyBank; window.openParentPayment=openParentPayment; window.openParentDocument=openParentDocument; window.installDucksApp=installDucksApp; window.goBackSmart=goBackSmart; window.openPlayerForm=openPlayerForm; window.deletePlayer=deletePlayer; window.openPaymentForm=openPaymentForm; window.confirmPayment=confirmPayment; window.rejectPayment=rejectPayment; window.deletePayment=deletePayment; window.closeModal=closeModal; window.copyReminder=copyReminder; window.deleteParentLink=deleteParentLink; window.prefillParent=prefillParent; window.exportCSV=exportCSV; window.exportFullJSON=exportFullJSON; window.exportDocumentsCSV=exportDocumentsCSV; window.resetParentPassword=resetParentPassword; window.autoLinkAccountFromButton=autoLinkAccountFromButton; window.editParentAccount=editParentAccount; window.saveParentAccountChanges=saveParentAccountChanges; window.deleteParentAccount=deleteParentAccount; window.sendParentCredentialsWhatsApp=sendParentCredentialsWhatsApp; window.openFamilyPayment=openFamilyPayment; window.updateFamilyPaymentTotal=updateFamilyPaymentTotal; window.toggleAllFamilyPlayers=toggleAllFamilyPlayers; window.copyFamilyPaymentData=copyFamilyPaymentData; window.confirmFamilyPayment=confirmFamilyPayment; window.rejectFamilyPayment=rejectFamilyPayment; window.openEvidencePreview=openEvidencePreview; window.openPaymentReview=openPaymentReview; window.updatePaymentReviewDifference=updatePaymentReviewDifference; window.confirmReviewedPayment=confirmReviewedPayment; window.openCashReceiptForm=openCashReceiptForm; window.updateCashReceiptPlayer=updateCashReceiptPlayer; window.saveCashReceiptForm=saveCashReceiptForm; window.openCashReceiptPreviewFromPayment=openCashReceiptPreviewFromPayment; window.printCashReceipt=printCashReceipt; window.clearCashSignature=clearCashSignature;
+window.renderParentPaymentHistory=renderParentPaymentHistory; window.openPortalSearch=openPortalSearch; window.renderPortalSearchResults=renderPortalSearchResults; window.portalSearchGo=portalSearchGo; window.openCategoriesInfo=openCategoriesInfo; window.openValuesInfo=openValuesInfo; window.openAcademyMap=openAcademyMap; window.openParentSectionAction=openParentSectionAction; window.openDucksRegulation=openDucksRegulation; window.downloadDucksRegulation=downloadDucksRegulation; window.scrollToPublicSection=scrollToPublicSection; window.showCalendarNotice=showCalendarNotice; window.openDucksWhatsApp=openDucksWhatsApp; window.openAcademyStory=openAcademyStory; window.openTrainingInfo=openTrainingInfo; window.openCommunityInfo=openCommunityInfo; window.openDucksRegulation=openDucksRegulation; window.downloadDucksRegulation=downloadDucksRegulation; window.showCalendarNotice=showCalendarNotice; window.scrollToPublicSection=scrollToPublicSection; window.openPortalSearch=openPortalSearch; window.renderPortalSearchResults=renderPortalSearchResults; window.portalSearchGo=portalSearchGo; window.openCategoriesInfo=openCategoriesInfo; window.openValuesInfo=openValuesInfo; window.openAcademyMap=openAcademyMap; window.openParentSectionAction=openParentSectionAction; window.renderPublicHome=renderPublicHome; window.renderRegistrationForm=renderRegistrationForm; window.toggleRegistrationDetail=toggleRegistrationDetail; window.renderParentLogin=renderParentLogin; window.renderAdminLogin=renderAdminLogin; window.renderLogin=renderAdminLogin; window.parentLogout=parentLogout; window.copyBank=copyBank; window.openParentPayment=openParentPayment; window.openParentDocument=openParentDocument; window.installDucksApp=installDucksApp; window.goBackSmart=goBackSmart; window.openPlayerForm=openPlayerForm; window.deletePlayer=deletePlayer; window.openPaymentForm=openPaymentForm; window.confirmPayment=confirmPayment; window.rejectPayment=rejectPayment; window.deletePayment=deletePayment; window.closeModal=closeModal; window.copyReminder=copyReminder; window.deleteParentLink=deleteParentLink; window.prefillParent=prefillParent; window.exportCSV=exportCSV; window.exportFullJSON=exportFullJSON; window.exportDocumentsCSV=exportDocumentsCSV; window.resetParentPassword=resetParentPassword; window.autoLinkAccountFromButton=autoLinkAccountFromButton; window.editParentAccount=editParentAccount; window.saveParentAccountChanges=saveParentAccountChanges; window.deleteParentAccount=deleteParentAccount; window.sendParentCredentialsWhatsApp=sendParentCredentialsWhatsApp; window.openFamilyPayment=openFamilyPayment; window.updateFamilyPaymentTotal=updateFamilyPaymentTotal; window.toggleAllFamilyPlayers=toggleAllFamilyPlayers; window.copyFamilyPaymentData=copyFamilyPaymentData; window.confirmFamilyPayment=confirmFamilyPayment; window.rejectFamilyPayment=rejectFamilyPayment; window.openEvidencePreview=openEvidencePreview; window.openPaymentReview=openPaymentReview; window.updatePaymentReviewDifference=updatePaymentReviewDifference; window.confirmReviewedPayment=confirmReviewedPayment; window.openCashReceiptForm=openCashReceiptForm; window.updateCashReceiptPlayer=updateCashReceiptPlayer; window.saveCashReceiptForm=saveCashReceiptForm; window.openCashReceiptPreviewFromPayment=openCashReceiptPreviewFromPayment; window.printCashReceipt=printCashReceipt; window.clearCashSignature=clearCashSignature;
 
 init();
 

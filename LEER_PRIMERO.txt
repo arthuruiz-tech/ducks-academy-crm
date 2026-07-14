@@ -1,6 +1,6 @@
-DUCKS CRM PROFESIONAL v2.79
+DUCKS CRM PROFESIONAL v2.80
 
-Cambio principal:
-- Texto de los botones de cada sección más grande y legible, especialmente en celular.
-- Se mantienen los botones dentro de las imágenes, sus enlaces y su alineación.
-- Paquete limpio para Vercel.
+- Texto de botones ajustado para no salir del área.
+- Historial de pagos completo por cada hijo en Portal de Papás.
+- Filtro estricto por IDs de jugadores vinculados a la cuenta del tutor.
+- No requiere SQL adicional.
