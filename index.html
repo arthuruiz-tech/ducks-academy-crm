@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Ducks Basketball Academy</title>
-  <link rel="stylesheet" href="styles.css?v=2.86.0">
+  <link rel="stylesheet" href="styles.css?v=2.87.0">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="config.js?v=2.86.0"></script>
+  <script src="config.js?v=2.87.0"></script>
 
   <link rel="manifest" href="./manifest.webmanifest">
   <meta name="theme-color" content="#061528">
@@ -38,57 +38,14 @@
 
   <link rel="preload" href="assets/nuevo-ingreso-banner-v274.webp?v=2.74" as="image" type="image/webp" fetchpriority="high">
 
-  <style>
-    #ducksStartup{position:fixed;inset:0;z-index:20000;background:radial-gradient(circle at 50% 42%,#0d5b43 0,#073d31 38%,#061528 100%);display:grid;place-items:center;overflow:hidden;opacity:1;visibility:visible;transition:opacity .35s ease,visibility .35s ease}
-    #ducksStartup.is-hidden{opacity:0;visibility:hidden;pointer-events:none}
-    #ducksStartup .startup-icon{position:relative;width:clamp(150px,38vw,220px);aspect-ratio:1/1;border-radius:24px;overflow:hidden;background:#071d2d;box-shadow:0 18px 42px rgba(0,0,0,.42),0 0 0 3px rgba(184,240,0,.78),0 0 32px rgba(184,240,0,.22);animation:ducksStartupPulse 1.7s ease-in-out infinite}
-    #ducksStartup video{width:100%;height:100%;object-fit:cover;display:block;background:#071d2d}
-    #ducksStartup .startup-icon::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(6,21,40,.10));pointer-events:none}
-    #ducksStartup .startup-brand{position:absolute;left:50%;top:calc(50% + clamp(102px,25vw,145px));transform:translateX(-50%);z-index:2;color:#fff;font:800 clamp(14px,3.5vw,20px)/1.2 Arial,sans-serif;letter-spacing:.2px;text-align:center;text-shadow:0 2px 10px rgba(0,0,0,.45);white-space:nowrap}
-    @keyframes ducksStartupPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.025)}}
-    @media(max-width:480px){#ducksStartup .startup-icon{width:min(42vw,180px);border-radius:20px}#ducksStartup .startup-brand{top:calc(50% + min(27vw,118px));font-size:15px}}
-    @media (prefers-reduced-motion:reduce){#ducksStartup .startup-icon{animation:none;background:#0b4d38 url('assets/ducks-startup-poster-v285.webp') center/cover no-repeat}#ducksStartup video{display:none}}
-  </style>
 </head>
 <body>
 
-  <div id="ducksStartup" aria-label="Abriendo Ducks Basketball Academy">
-    <div class="startup-icon">
-      <video id="ducksStartupVideo" autoplay muted playsinline preload="metadata" poster="assets/ducks-startup-poster-v285.webp">
-        <source src="assets/ducks-startup-v285.mp4" type="video/mp4">
-      </video>
-    </div>
-    <div class="startup-brand">Ducks Basketball Academy</div>
-  </div>
   <div id="app"></div>
   <div id="toast" class="toast"></div>
-  <script src="app.js?v=2.86.0"></script>
+  <script src="app.js?v=2.87.0"></script>
 
-<script>
-(function(){
-  const splash=document.getElementById('ducksStartup');
-  const video=document.getElementById('ducksStartupVideo');
-  const started=performance.now();
-  let closed=false;
-  function closeSplash(){
-    if(closed||!splash)return;
-    const wait=Math.max(0,900-(performance.now()-started));
-    setTimeout(()=>{
-      if(closed)return; closed=true; splash.classList.add('is-hidden');
-      setTimeout(()=>splash.remove(),450);
-    },wait);
-  }
-  const app=document.getElementById('app');
-  const observer=new MutationObserver(()=>{if(app&&app.children.length){observer.disconnect();closeSplash();}});
-  if(app) observer.observe(app,{childList:true,subtree:false});
-  window.addEventListener('load',()=>setTimeout(closeSplash,350),{once:true});
-  setTimeout(closeSplash,4200);
-  if(video){
-    video.addEventListener('ended',closeSplash,{once:true});
-    video.play().catch(()=>{});
-  }
-})();
-</script>
+
 
 <script>
   window.deferredDucksInstallPrompt = null;
