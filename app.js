@@ -912,7 +912,10 @@ function openCommunityInfo(){
 }
 
 function openCategoriesInfo(){
-  const modal = ensureModal('categoriesInfoModal');
+  document.getElementById('categoriesInfoModal')?.remove();
+  const modal=document.createElement('div');
+  modal.className='modalbg open';
+  modal.id='categoriesInfoModal';
   modal.innerHTML=`<div class="modal categories-detail-modal"><div class="modal-head"><div><h3>Categorías Ducks</h3><small>Desarrollo deportivo según edad y etapa</small></div><button class="btn secondary" onclick="closeModal('categoriesInfoModal')">Cerrar</button></div><div class="modal-body categories-detail-body">
     <div class="notice success"><b>Formación progresiva:</b> cada etapa tiene objetivos diferentes. La prioridad es respetar el desarrollo físico, técnico, emocional y competitivo de cada jugador.</div>
     <div class="categories-detail-grid">
@@ -968,11 +971,16 @@ function openCategoriesInfo(){
     </div>
     <div class="actions categories-detail-actions"><button class="btn green" onclick="closeModal('categoriesInfoModal');openDucksWhatsApp('Hola, quiero saber qué categoría corresponde a mi hijo en Ducks Basketball Academy.')">Consultar categoría</button><button class="btn secondary" onclick="closeModal('categoriesInfoModal')">Cerrar</button></div>
   </div></div>`;
+  document.body.appendChild(modal);
 }
 
 function openValuesInfo(){
-  const modal = ensureModal('valuesInfoModal');
+  document.getElementById('valuesInfoModal')?.remove();
+  const modal=document.createElement('div');
+  modal.className='modalbg open';
+  modal.id='valuesInfoModal';
   modal.innerHTML=`<div class="modal wide-modal section-info-modal"><div class="modal-head"><div><h3>Valores Ducks</h3><small>Formación integral dentro y fuera de la cancha</small></div><button class="btn secondary" onclick="closeModal('valuesInfoModal')">Cerrar</button></div><div class="modal-body"><div class="section-info-grid"><article><h4>Respeto y disciplina</h4><p>Fomentamos orden, responsabilidad, puntualidad y una convivencia sana.</p></article><article><h4>Trabajo en equipo</h4><p>Enseñamos a colaborar, competir con juego limpio y apoyar a la familia Ducks.</p></article><article><h4>Esfuerzo y compañerismo</h4><p>Buscamos que cada jugador crezca con actitud positiva y compromiso constante.</p></article></div><div class="actions"><button class="btn green" onclick="closeModal('valuesInfoModal');openDucksWhatsApp('Hola, quiero conocer más sobre los valores y la formación integral de Ducks Basketball Academy.')">Vivir Ducks</button><button class="btn secondary" onclick="closeModal('valuesInfoModal');scrollToPublicSection('academia')">Conocer academia</button></div></div></div>`;
+  document.body.appendChild(modal);
 }
 
 function openAcademyMap(){

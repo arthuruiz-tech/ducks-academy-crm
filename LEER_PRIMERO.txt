@@ -1,6 +1,6 @@
-DUCKS CRM PROFESIONAL v2.72
+DUCKS CRM PROFESIONAL v2.73
 
-Cambio principal:
-- El botón Ver categorías abre una ventana interna detallada con Peques, Infantil, Intermedio y Juvenil.
-- Incluye objetivos técnicos, físicos, tácticos, emocionales y competitivos por edad.
-- Paquete limpio para Vercel.
+Corrección principal:
+- El botón Ver categorías ahora abre correctamente la ventana interna con el detalle de los cuatro niveles.
+- También se corrigió la ventana de Valores, que tenía la misma dependencia inexistente.
+- No requiere SQL adicional.
