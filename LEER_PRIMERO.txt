@@ -1,5 +1,7 @@
-DUCKS CRM PROFESIONAL v2.68
+DUCKS CRM PROFESIONAL v2.70
 
-Se eliminaron los botones sobre las imágenes para evitar desajustes.
-Ahora cada sección conserva su imagen y muestra debajo botones funcionales con el mismo formato visual.
-Paquete limpio para Vercel con menos de 100 archivos.
+Mejoras incluidas:
+- Se mantienen los botones dentro de las imágenes.
+- Se amplió el área clicable para facilitar el uso en celular.
+- Se agregó hover/foco visual suave sobre cada botón.
+- Paquete limpio para Vercel con menos de 100 archivos.

@@ -2382,3 +2382,61 @@ button[onclick="installDucksApp()"]{
 .visual-banner-section .section-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:14px}
 .visual-banner-section .section-actions .btn{font-size:18px!important;line-height:1.2!important;padding:14px 24px!important;min-width:210px}
 @media(max-width:760px){.visual-banner-section .section-actions .btn{width:100%;max-width:320px;font-size:17px!important;padding:12px 16px!important}}
+
+
+/* v2.69 - hotspots invisibles alineados a botones impresos */
+.interactive-banner-section .section-hotspot{display:block !important;position:absolute;z-index:5;background:transparent !important;border:none !important;box-shadow:none !important;padding:0 !important;min-width:0 !important;color:transparent !important;font-size:0 !important;line-height:0 !important;cursor:pointer;border-radius:22px;outline:none}
+.interactive-banner-section .section-hotspot span{position:absolute !important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.interactive-banner-section .section-hotspot:hover,.interactive-banner-section .section-hotspot:focus-visible{background:rgba(18,102,255,.08) !important;box-shadow:0 0 0 2px rgba(18,102,255,.28) inset,0 0 0 3px rgba(18,102,255,.18) !important}
+.section-actions{display:none !important}
+.section-hotspot.registration-primary{left:5.99%;top:67.58%;width:23.78%;height:11.91%}
+.section-hotspot.registration-secondary{left:31.14%;top:67.58%;width:15.17%;height:11.91%}
+.section-hotspot.payment-register{left:3.84%;top:74.61%;width:21.55%;height:10.94%}
+.section-hotspot.payment-evidence{left:26.43%;top:74.90%;width:18.42%;height:10.64%}
+.section-hotspot.calendar-primary{left:5.21%;top:70.70%;width:21.74%;height:11.33%}
+.section-hotspot.calendar-secondary{left:28.97%;top:70.90%;width:18.23%;height:11.04%}
+.section-hotspot.academy-primary{left:5.47%;top:67.48%;width:19.66%;height:10.84%}
+.section-hotspot.academy-secondary{left:26.11%;top:67.48%;width:18.68%;height:10.84%}
+.section-hotspot.training-primary{left:6.12%;top:67.19%;width:22.14%;height:10.25%}
+.section-hotspot.training-secondary{left:30.01%;top:67.19%;width:18.16%;height:10.25%}
+.section-hotspot.competition-primary{left:5.92%;top:68.85%;width:22.59%;height:10.16%}
+.section-hotspot.competition-secondary{left:29.95%;top:68.85%;width:15.30%;height:10.16%}
+.section-hotspot.regulation-open{left:4.95%;top:71.19%;width:21.48%;height:10.06%}
+.section-hotspot.regulation-download{left:28.06%;top:71.19%;width:18.55%;height:10.06%}
+
+
+/* v2.70 - hotspots ampliados y hover mejorado */
+.interactive-banner-section .section-hotspot{transition:background .18s ease, box-shadow .18s ease, transform .12s ease;border-radius:24px}
+.interactive-banner-section .section-hotspot:hover,.interactive-banner-section .section-hotspot:focus-visible{background:rgba(255,255,255,.08) !important;box-shadow:0 0 0 2px rgba(18,102,255,.34) inset,0 0 0 4px rgba(18,102,255,.18),0 8px 18px rgba(0,0,0,.10) !important}
+.interactive-banner-section .section-hotspot:active{transform:scale(.985)}
+.section-hotspot.registration-primary{left:5.4%;top:67.0%;width:24.9%;height:13.0%}
+.section-hotspot.registration-secondary{left:30.6%;top:67.0%;width:16.3%;height:13.0%}
+.section-hotspot.payment-register{left:3.2%;top:74.0%;width:22.8%;height:12.0%}
+.section-hotspot.payment-evidence{left:25.8%;top:74.1%;width:19.5%;height:11.7%}
+.section-hotspot.calendar-primary{left:4.6%;top:70.1%;width:23.0%;height:12.0%}
+.section-hotspot.calendar-secondary{left:28.4%;top:70.2%;width:19.5%;height:11.8%}
+.section-hotspot.academy-primary{left:4.9%;top:66.9%;width:21.0%;height:11.9%}
+.section-hotspot.academy-secondary{left:25.7%;top:66.9%;width:20.0%;height:11.9%}
+.section-hotspot.training-primary{left:5.5%;top:66.7%;width:23.5%;height:11.3%}
+.section-hotspot.training-secondary{left:29.4%;top:66.7%;width:19.2%;height:11.3%}
+.section-hotspot.competition-primary{left:5.3%;top:68.3%;width:23.8%;height:11.2%}
+.section-hotspot.competition-secondary{left:29.3%;top:68.3%;width:16.5%;height:11.2%}
+.section-hotspot.regulation-open{left:4.3%;top:70.6%;width:22.8%;height:11.1%}
+.section-hotspot.regulation-download{left:27.5%;top:70.6%;width:19.5%;height:11.1%}
+@media(max-width:760px){
+  .interactive-banner-section .section-hotspot:hover,.interactive-banner-section .section-hotspot:focus-visible{background:rgba(255,255,255,.06) !important;box-shadow:0 0 0 2px rgba(18,102,255,.30) inset,0 0 0 3px rgba(18,102,255,.14) !important}
+  .section-hotspot.registration-primary{left:5.0%;top:68.1%;width:25.0%;height:14.1%}
+  .section-hotspot.registration-secondary{left:30.2%;top:68.1%;width:16.5%;height:14.1%}
+  .section-hotspot.payment-register{left:2.9%;top:73.6%;width:23.3%;height:13.8%}
+  .section-hotspot.payment-evidence{left:25.9%;top:73.6%;width:18.9%;height:13.8%}
+  .section-hotspot.calendar-primary{left:4.5%;top:69.8%;width:23.3%;height:13.0%}
+  .section-hotspot.calendar-secondary{left:28.2%;top:69.8%;width:20.3%;height:13.0%}
+  .section-hotspot.academy-primary{left:4.6%;top:68.3%;width:22.0%;height:12.2%}
+  .section-hotspot.academy-secondary{left:25.7%;top:68.3%;width:20.6%;height:12.2%}
+  .section-hotspot.training-primary{left:5.2%;top:68.0%;width:24.0%;height:11.9%}
+  .section-hotspot.training-secondary{left:29.3%;top:68.0%;width:19.0%;height:11.9%}
+  .section-hotspot.competition-primary{left:5.0%;top:69.4%;width:24.5%;height:11.8%}
+  .section-hotspot.competition-secondary{left:29.2%;top:69.4%;width:17.0%;height:11.8%}
+  .section-hotspot.regulation-open{left:4.0%;top:70.1%;width:23.2%;height:11.7%}
+  .section-hotspot.regulation-download{left:27.4%;top:70.1%;width:19.0%;height:11.7%}
+}
