@@ -2735,7 +2735,7 @@ button[onclick="installDucksApp()"]{
   .parent-payment-history>summary{font-size:16px;padding:14px}
 }
 
-/* v2.81 - botones reales, limpios y proporcionales sobre los banners */
+/* v2.82 - botones reales, limpios y proporcionales sobre los banners */
 .interactive-banner-section .section-hotspot{
   display:flex!important;
   align-items:center!important;
@@ -2836,4 +2836,32 @@ button[onclick="installDucksApp()"]{
   .section-hotspot.competition-secondary{width:17.8%!important}
   .section-hotspot.regulation-download{width:19.8%!important}
   .section-hotspot.registration-secondary{width:17.5%!important}
+}
+
+/* v2.82 - cobertura fina del botón impreso del banner */
+.interactive-banner-section .section-hotspot{
+  isolation:isolate!important;
+  overflow:visible!important;
+}
+.interactive-banner-section .section-hotspot::before{
+  content:"";
+  position:absolute;
+  inset:-3px -5px;
+  border-radius:999px;
+  background:inherit;
+  border:inherit;
+  box-shadow:0 7px 18px rgba(0,0,0,.18);
+  z-index:-1;
+  pointer-events:none;
+}
+.interactive-banner-section .section-hotspot span{
+  position:relative!important;
+  z-index:1!important;
+}
+@media(max-width:760px){
+  .interactive-banner-section .section-hotspot::before{
+    inset:-2px -4px;
+    border-radius:15px;
+    box-shadow:0 4px 11px rgba(0,0,0,.18);
+  }
 }
