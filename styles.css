@@ -2440,3 +2440,20 @@ button[onclick="installDucksApp()"]{
   .section-hotspot.regulation-open{left:4.0%;top:70.1%;width:23.2%;height:11.7%}
   .section-hotspot.regulation-download{left:27.4%;top:70.1%;width:19.0%;height:11.7%}
 }
+
+
+/* v2.71 - categorías, valores y contacto como banners visuales */
+.section-hotspot.categories-primary{left:4.45%;top:73.15%;width:22.10%;height:10.95%}
+.section-hotspot.categories-secondary{left:27.20%;top:73.15%;width:20.00%;height:10.80%}
+.section-hotspot.values-primary{left:4.60%;top:72.00%;width:22.20%;height:11.00%}
+.section-hotspot.values-secondary{left:27.30%;top:72.00%;width:19.80%;height:10.80%}
+.section-hotspot.contact-primary{left:4.35%;top:72.40%;width:22.90%;height:10.95%}
+.section-hotspot.contact-secondary{left:28.15%;top:72.45%;width:19.90%;height:10.60%}
+@media(max-width:760px){
+  .section-hotspot.categories-primary{left:4.10%;top:73.20%;width:22.80%;height:12.00%}
+  .section-hotspot.categories-secondary{left:27.10%;top:73.20%;width:20.50%;height:11.80%}
+  .section-hotspot.values-primary{left:4.20%;top:72.20%;width:22.90%;height:12.00%}
+  .section-hotspot.values-secondary{left:27.20%;top:72.20%;width:20.20%;height:11.70%}
+  .section-hotspot.contact-primary{left:4.00%;top:72.50%;width:23.40%;height:11.90%}
+  .section-hotspot.contact-secondary{left:28.00%;top:72.50%;width:20.20%;height:11.60%}
+}

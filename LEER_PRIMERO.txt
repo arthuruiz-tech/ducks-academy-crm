@@ -1,7 +1,6 @@
-DUCKS CRM PROFESIONAL v2.70
+DUCKS CRM PROFESIONAL v2.71
 
-Mejoras incluidas:
-- Se mantienen los botones dentro de las imágenes.
-- Se amplió el área clicable para facilitar el uso en celular.
-- Se agregó hover/foco visual suave sobre cada botón.
-- Paquete limpio para Vercel con menos de 100 archivos.
+Cambios:
+- Nuevas imágenes integradas en Categorías, Valores y Contacto.
+- Hotspots alineados en cada una.
+- Contacto usa imagen con información visual de la academia.
