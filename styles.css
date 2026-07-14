@@ -2865,3 +2865,27 @@ button[onclick="installDucksApp()"]{
     box-shadow:0 4px 11px rgba(0,0,0,.18);
   }
 }
+
+/* v2.83 - botones más rectos con sombra reforzada */
+.interactive-banner-section .section-hotspot{
+  border-radius:7px!important;
+  box-shadow:0 10px 24px rgba(0,0,0,.34),0 3px 7px rgba(0,0,0,.24)!important;
+}
+.interactive-banner-section .section-hotspot::before{
+  border-radius:8px!important;
+  box-shadow:0 12px 28px rgba(0,0,0,.36),0 4px 9px rgba(0,0,0,.25)!important;
+}
+.interactive-banner-section .section-hotspot:hover,
+.interactive-banner-section .section-hotspot:focus-visible{
+  box-shadow:0 15px 32px rgba(0,0,0,.40),0 5px 11px rgba(0,0,0,.27),0 0 0 3px rgba(184,240,0,.42)!important;
+}
+@media(max-width:760px){
+  .interactive-banner-section .section-hotspot{
+    border-radius:6px!important;
+    box-shadow:0 8px 18px rgba(0,0,0,.34),0 3px 6px rgba(0,0,0,.24)!important;
+  }
+  .interactive-banner-section .section-hotspot::before{
+    border-radius:7px!important;
+    box-shadow:0 9px 21px rgba(0,0,0,.36),0 3px 7px rgba(0,0,0,.25)!important;
+  }
+}
