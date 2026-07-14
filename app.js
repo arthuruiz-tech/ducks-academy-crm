@@ -847,17 +847,70 @@ function publicQuickMenu(){
       <button class="global-brand-btn" onclick="renderPublicHome()">
         <img src="assets/logo.png" alt="Ducks"><span>Ducks Academy</span>
       </button>
-      <nav class="global-links">
-        <button onclick="renderPublicHome()">Inicio</button>
-        <button onclick="renderParentLogin()">Portal de Papás</button>
+      <nav class="global-links compact-public-links">
         <button class="registration-menu-btn" onclick="renderRegistrationForm()">Nuevo ingreso</button>
-        <button onclick="renderPublicHome();setTimeout(()=>document.getElementById('calendario')?.scrollIntoView({behavior:'smooth'}),120)">Calendario</button>
         <button onclick="renderPublicHome();setTimeout(()=>document.getElementById('academia')?.scrollIntoView({behavior:'smooth'}),120)">Academia</button>
         <button onclick="renderPublicHome();setTimeout(()=>document.getElementById('contacto')?.scrollIntoView({behavior:'smooth'}),120)">Contacto</button>
       </nav>
       <button class="admin-image-btn global-admin" title="Administrador" aria-label="Administrador" onclick="renderAdminLogin()"><img src="assets/ducks-admin-header.png" alt="Administrador"></button>
     </div>
-  </header>`;
+  </header>
+  <nav class="public-bottom-nav" aria-label="Navegación principal inferior">
+    <button type="button" onclick="renderPublicHome()"><span class="bottom-nav-icon">⌂</span><span>Inicio</span></button>
+    <button type="button" onclick="renderParentLogin()"><span class="bottom-nav-icon">♙</span><span>Mi cuenta</span></button>
+    <button type="button" onclick="openPortalSearch()"><span class="bottom-nav-icon">⌕</span><span>Buscar</span></button>
+    <button type="button" onclick="renderPublicHome();setTimeout(()=>document.getElementById('calendario')?.scrollIntoView({behavior:'smooth',block:'start'}),150)"><span class="bottom-nav-icon">▣</span><span>Calendario</span></button>
+  </nav>`;
+}
+
+const PORTAL_SEARCH_INDEX = [
+  {title:'Inicio', section:'inicio', keywords:'inicio principal video portada ducks academia'},
+  {title:'Nuevo ingreso', action:'registration', keywords:'nuevo ingreso registro jugador cuestionario salud inscripción inscripcion'},
+  {title:'Pagos y comprobantes', section:'pagos', keywords:'pago pagos comprobante evidencia transferencia efectivo mensualidad portal papás padres'},
+  {title:'Calendario de juegos', section:'calendario', keywords:'calendario juego juegos partido partidos torneo fecha horario sede'},
+  {title:'Academia', section:'academia', keywords:'academia quiénes somos quienes somos historia formación deportiva'},
+  {title:'Entrenamiento', section:'entrenamiento', keywords:'entrenamiento sesiones horarios técnica fundamentos preparación física'},
+  {title:'Competencias y comunidad', section:'competencias', keywords:'competencia competencias comunidad torneos familia convivencia'},
+  {title:'Reglamento Ducks', section:'reglamento', keywords:'reglamento reglas normas disciplina seguridad conducta'},
+  {title:'Categorías', section:'categorias', keywords:'categorias categorías peques infantil intermedia juvenil edades niveles grupo'},
+  {title:'Valores', section:'valores', keywords:'valores respeto disciplina trabajo equipo esfuerzo compañerismo'},
+  {title:'Contacto', section:'contacto', keywords:'contacto whatsapp teléfono telefono ubicación ubicacion dirección direccion informes'},
+  {title:'Mi cuenta / Portal de Papás', action:'account', keywords:'mi cuenta portal papas papás padres usuario contraseña login sesión sesion'}
+];
+function portalSearchNormalize(value=''){
+  return String(value).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+}
+function portalSearchGo(itemTitle){
+  const item=PORTAL_SEARCH_INDEX.find(x=>x.title===itemTitle);
+  if(!item) return;
+  closeModal('portalSearchModal');
+  if(item.action==='registration') return renderRegistrationForm();
+  if(item.action==='account') return renderParentLogin();
+  renderPublicHome();
+  setTimeout(()=>document.getElementById(item.section)?.scrollIntoView({behavior:'smooth',block:'start'}),160);
+}
+function renderPortalSearchResults(query=''){
+  const host=document.getElementById('portalSearchResults');
+  if(!host) return;
+  const q=portalSearchNormalize(query);
+  const words=q.split(/\s+/).filter(Boolean);
+  const matches=PORTAL_SEARCH_INDEX.filter(item=>{
+    if(!words.length) return true;
+    const haystack=portalSearchNormalize(`${item.title} ${item.keywords}`);
+    return words.every(word=>haystack.includes(word));
+  });
+  host.innerHTML=matches.length?matches.map(item=>`<button type="button" class="portal-search-result" onclick="portalSearchGo('${item.title.replace(/'/g,"\'")}')"><span class="portal-search-result-icon">${item.action==='account'?'♙':item.action==='registration'?'＋':'⌁'}</span><span><b>${item.title}</b><small>${item.keywords.split(' ').slice(0,7).join(' ')}</small></span><span class="portal-search-arrow">›</span></button>`).join(''):`<div class="portal-search-empty"><b>No encontramos coincidencias.</b><span>Prueba con palabras como pagos, horarios, categorías, reglamento o contacto.</span></div>`;
+}
+function openPortalSearch(){
+  const previous=document.getElementById('portalSearchModal');
+  if(previous) previous.remove();
+  const modal=document.createElement('div');
+  modal.className='modalbg open portal-search-overlay';
+  modal.id='portalSearchModal';
+  modal.innerHTML=`<div class="modal portal-search-modal"><div class="modal-head"><div><h3>Buscar en el portal</h3><small>Encuentra rápidamente cualquier sección</small></div><button class="btn secondary" onclick="closeModal('portalSearchModal')">Cerrar</button></div><div class="modal-body"><label class="portal-search-box"><span>⌕</span><input id="portalSearchInput" type="search" autocomplete="off" placeholder="Ejemplo: pagos, categorías, horarios..." oninput="renderPortalSearchResults(this.value)"></label><div id="portalSearchResults" class="portal-search-results"></div></div></div>`;
+  document.body.appendChild(modal);
+  renderPortalSearchResults('');
+  setTimeout(()=>document.getElementById('portalSearchInput')?.focus(),80);
 }
 
 function adminQuickMenu(){
@@ -2869,7 +2922,7 @@ async function confirmPayment(id){ openPaymentReview(id); }
 async function rejectPayment(id){const {error}=await sb.from('payments').update({confirmation_status:'Rechazado'}).eq('id',id); if(error)toast(error.message); else{toast('Pago rechazado'); await refresh();}}
 async function deletePayment(id){if(!confirm('¿Eliminar pago?'))return; const {error}=await sb.from('payments').delete().eq('id',id); if(error)toast(error.message); else{toast('Pago eliminado'); await refresh();}}
 
-window.openCategoriesInfo=openCategoriesInfo; window.openValuesInfo=openValuesInfo; window.openAcademyMap=openAcademyMap; window.openParentSectionAction=openParentSectionAction; window.openDucksRegulation=openDucksRegulation; window.downloadDucksRegulation=downloadDucksRegulation; window.scrollToPublicSection=scrollToPublicSection; window.showCalendarNotice=showCalendarNotice; window.openDucksWhatsApp=openDucksWhatsApp; window.openAcademyStory=openAcademyStory; window.openTrainingInfo=openTrainingInfo; window.openCommunityInfo=openCommunityInfo; window.openDucksRegulation=openDucksRegulation; window.downloadDucksRegulation=downloadDucksRegulation; window.showCalendarNotice=showCalendarNotice; window.scrollToPublicSection=scrollToPublicSection; window.openCategoriesInfo=openCategoriesInfo; window.openValuesInfo=openValuesInfo; window.openAcademyMap=openAcademyMap; window.openParentSectionAction=openParentSectionAction; window.renderPublicHome=renderPublicHome; window.renderRegistrationForm=renderRegistrationForm; window.toggleRegistrationDetail=toggleRegistrationDetail; window.renderParentLogin=renderParentLogin; window.renderAdminLogin=renderAdminLogin; window.renderLogin=renderAdminLogin; window.parentLogout=parentLogout; window.copyBank=copyBank; window.openParentPayment=openParentPayment; window.openParentDocument=openParentDocument; window.installDucksApp=installDucksApp; window.goBackSmart=goBackSmart; window.openPlayerForm=openPlayerForm; window.deletePlayer=deletePlayer; window.openPaymentForm=openPaymentForm; window.confirmPayment=confirmPayment; window.rejectPayment=rejectPayment; window.deletePayment=deletePayment; window.closeModal=closeModal; window.copyReminder=copyReminder; window.deleteParentLink=deleteParentLink; window.prefillParent=prefillParent; window.exportCSV=exportCSV; window.exportFullJSON=exportFullJSON; window.exportDocumentsCSV=exportDocumentsCSV; window.resetParentPassword=resetParentPassword; window.autoLinkAccountFromButton=autoLinkAccountFromButton; window.editParentAccount=editParentAccount; window.saveParentAccountChanges=saveParentAccountChanges; window.deleteParentAccount=deleteParentAccount; window.sendParentCredentialsWhatsApp=sendParentCredentialsWhatsApp; window.openFamilyPayment=openFamilyPayment; window.updateFamilyPaymentTotal=updateFamilyPaymentTotal; window.toggleAllFamilyPlayers=toggleAllFamilyPlayers; window.copyFamilyPaymentData=copyFamilyPaymentData; window.confirmFamilyPayment=confirmFamilyPayment; window.rejectFamilyPayment=rejectFamilyPayment; window.openEvidencePreview=openEvidencePreview; window.openPaymentReview=openPaymentReview; window.updatePaymentReviewDifference=updatePaymentReviewDifference; window.confirmReviewedPayment=confirmReviewedPayment; window.openCashReceiptForm=openCashReceiptForm; window.updateCashReceiptPlayer=updateCashReceiptPlayer; window.saveCashReceiptForm=saveCashReceiptForm; window.openCashReceiptPreviewFromPayment=openCashReceiptPreviewFromPayment; window.printCashReceipt=printCashReceipt; window.clearCashSignature=clearCashSignature;
+window.openPortalSearch=openPortalSearch; window.renderPortalSearchResults=renderPortalSearchResults; window.portalSearchGo=portalSearchGo; window.openCategoriesInfo=openCategoriesInfo; window.openValuesInfo=openValuesInfo; window.openAcademyMap=openAcademyMap; window.openParentSectionAction=openParentSectionAction; window.openDucksRegulation=openDucksRegulation; window.downloadDucksRegulation=downloadDucksRegulation; window.scrollToPublicSection=scrollToPublicSection; window.showCalendarNotice=showCalendarNotice; window.openDucksWhatsApp=openDucksWhatsApp; window.openAcademyStory=openAcademyStory; window.openTrainingInfo=openTrainingInfo; window.openCommunityInfo=openCommunityInfo; window.openDucksRegulation=openDucksRegulation; window.downloadDucksRegulation=downloadDucksRegulation; window.showCalendarNotice=showCalendarNotice; window.scrollToPublicSection=scrollToPublicSection; window.openPortalSearch=openPortalSearch; window.renderPortalSearchResults=renderPortalSearchResults; window.portalSearchGo=portalSearchGo; window.openCategoriesInfo=openCategoriesInfo; window.openValuesInfo=openValuesInfo; window.openAcademyMap=openAcademyMap; window.openParentSectionAction=openParentSectionAction; window.renderPublicHome=renderPublicHome; window.renderRegistrationForm=renderRegistrationForm; window.toggleRegistrationDetail=toggleRegistrationDetail; window.renderParentLogin=renderParentLogin; window.renderAdminLogin=renderAdminLogin; window.renderLogin=renderAdminLogin; window.parentLogout=parentLogout; window.copyBank=copyBank; window.openParentPayment=openParentPayment; window.openParentDocument=openParentDocument; window.installDucksApp=installDucksApp; window.goBackSmart=goBackSmart; window.openPlayerForm=openPlayerForm; window.deletePlayer=deletePlayer; window.openPaymentForm=openPaymentForm; window.confirmPayment=confirmPayment; window.rejectPayment=rejectPayment; window.deletePayment=deletePayment; window.closeModal=closeModal; window.copyReminder=copyReminder; window.deleteParentLink=deleteParentLink; window.prefillParent=prefillParent; window.exportCSV=exportCSV; window.exportFullJSON=exportFullJSON; window.exportDocumentsCSV=exportDocumentsCSV; window.resetParentPassword=resetParentPassword; window.autoLinkAccountFromButton=autoLinkAccountFromButton; window.editParentAccount=editParentAccount; window.saveParentAccountChanges=saveParentAccountChanges; window.deleteParentAccount=deleteParentAccount; window.sendParentCredentialsWhatsApp=sendParentCredentialsWhatsApp; window.openFamilyPayment=openFamilyPayment; window.updateFamilyPaymentTotal=updateFamilyPaymentTotal; window.toggleAllFamilyPlayers=toggleAllFamilyPlayers; window.copyFamilyPaymentData=copyFamilyPaymentData; window.confirmFamilyPayment=confirmFamilyPayment; window.rejectFamilyPayment=rejectFamilyPayment; window.openEvidencePreview=openEvidencePreview; window.openPaymentReview=openPaymentReview; window.updatePaymentReviewDifference=updatePaymentReviewDifference; window.confirmReviewedPayment=confirmReviewedPayment; window.openCashReceiptForm=openCashReceiptForm; window.updateCashReceiptPlayer=updateCashReceiptPlayer; window.saveCashReceiptForm=saveCashReceiptForm; window.openCashReceiptPreviewFromPayment=openCashReceiptPreviewFromPayment; window.printCashReceipt=printCashReceipt; window.clearCashSignature=clearCashSignature;
 
 init();
 

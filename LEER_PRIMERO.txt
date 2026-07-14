@@ -1,10 +1,8 @@
-DUCKS CRM PROFESIONAL v2.74 — OPTIMIZADO
+DUCKS CRM PROFESIONAL v2.75
 
-Mejoras de rendimiento:
-- Los 10 banners fueron convertidos a WebP de alta calidad y tamaño adecuado para pantalla.
-- La carga total de imágenes se redujo significativamente sin perder calidad visual perceptible.
-- Las imágenes secundarias usan carga diferida y decodificación asíncrona.
-- Se priorizan el video principal y el primer banner visible.
-- La caché de Vercel y del service worker fue optimizada para visitas posteriores mucho más rápidas.
-- Se conserva toda la funcionalidad, información y alineación de botones.
-- No requiere SQL adicional.
+Cambios:
+- Menú superior simplificado: Nuevo ingreso, Academia y Contacto.
+- Menú inferior fijo: Inicio, Mi cuenta, Buscar y Calendario.
+- Mi cuenta abre Portal de Papás.
+- Buscar permite localizar secciones y funciones del portal por palabras.
+- Paquete optimizado y limpio para Vercel.
