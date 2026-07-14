@@ -913,7 +913,61 @@ function openCommunityInfo(){
 
 function openCategoriesInfo(){
   const modal = ensureModal('categoriesInfoModal');
-  modal.innerHTML=`<div class="modal wide-modal section-info-modal"><div class="modal-head"><div><h3>Categorías Ducks</h3><small>Grupos por edad y desarrollo</small></div><button class="btn secondary" onclick="closeModal('categoriesInfoModal')">Cerrar</button></div><div class="modal-body"><div class="section-info-grid"><article><h4>Peques</h4><p>Niños de 6 a 8 años con enfoque en coordinación, fundamentos y adaptación al juego.</p></article><article><h4>Infantil</h4><p>Jugadores de 9 a 11 años fortaleciendo técnica, disciplina y comprensión del juego.</p></article><article><h4>Intermedia y Juvenil</h4><p>De 12 a 18 años, con mayor desarrollo táctico, competitivo y preparación para torneos.</p></article></div><div class="actions"><button class="btn green" onclick="closeModal('categoriesInfoModal');openDucksWhatsApp('Hola, quiero información sobre las categorías y el grupo ideal para mi hijo en Ducks Basketball Academy.')">Consultar grupo</button><button class="btn secondary" onclick="closeModal('categoriesInfoModal');scrollToPublicSection('contacto')">Contactar academia</button></div></div></div>`;
+  modal.innerHTML=`<div class="modal categories-detail-modal"><div class="modal-head"><div><h3>Categorías Ducks</h3><small>Desarrollo deportivo según edad y etapa</small></div><button class="btn secondary" onclick="closeModal('categoriesInfoModal')">Cerrar</button></div><div class="modal-body categories-detail-body">
+    <div class="notice success"><b>Formación progresiva:</b> cada etapa tiene objetivos diferentes. La prioridad es respetar el desarrollo físico, técnico, emocional y competitivo de cada jugador.</div>
+    <div class="categories-detail-grid">
+      <article class="category-detail-card peques">
+        <div class="category-detail-head"><span>6–8 años</span><h4>Peques o Iniciación</h4></div>
+        <p class="category-intro">El balón es casi secundario; lo prioritario es el desarrollo motor general.</p>
+        <ul>
+          <li>Habilidades motrices básicas: correr, saltar, lanzar, atrapar y cambiar de dirección.</li>
+          <li>Coordinación óculo-manual con balón, sin exigir perfección técnica: bote simple, recepción y pases cortos.</li>
+          <li>Aprendizaje mediante juegos, relevos, dinámicas y actividades cortas y variadas.</li>
+          <li>Balón y aro adaptados a su tamaño, cuando sea posible.</li>
+          <li>Cero presión por el resultado; el objetivo es que disfruten y se enamoren del deporte.</li>
+          <li>Se recomienda que también practiquen otros deportes.</li>
+        </ul>
+      </article>
+      <article class="category-detail-card infantil">
+        <div class="category-detail-head"><span>9–11 años</span><h4>Infantil · Aprendizaje de habilidades</h4></div>
+        <p class="category-intro">Es la “ventana dorada” del aprendizaje motor: la técnica adquirida aquí tiene gran impacto a largo plazo.</p>
+        <ul>
+          <li>Fundamentos individuales con atención a la forma: tiro, bote con ambas manos, pases de pecho y picado.</li>
+          <li>Defensa básica: postura y desplazamientos laterales.</li>
+          <li>Introducción a conceptos tácticos simples: espacios y movimiento sin balón.</li>
+          <li>Juegos reducidos 3c3 y 4c4 para aumentar el contacto con el balón.</li>
+          <li>Competencia sana, sin colocar el resultado como prioridad.</li>
+          <li>Trabajo continuo de coordinación, agilidad y equilibrio.</li>
+        </ul>
+      </article>
+      <article class="category-detail-card intermedia">
+        <div class="category-detail-head"><span>12–14 años</span><h4>Intermedio o Consolidación</h4></div>
+        <p class="category-intro">Coincide con la pubertad y el estirón; pueden existir cambios temporales en la coordinación.</p>
+        <ul>
+          <li>Perfeccionamiento técnico bajo presión: velocidad, tiro en movimiento y finalizaciones.</li>
+          <li>Fuerza estructurada con peso corporal, estabilidad y prevención de lesiones.</li>
+          <li>Evitar cargas pesadas mientras continúa el desarrollo óseo.</li>
+          <li>Táctica de equipo: sistemas de ataque y defensa, bloqueos y ayudas defensivas.</li>
+          <li>Lectura de juego y toma de decisiones.</li>
+          <li>Trabajo por posición sin perder la versatilidad.</li>
+          <li>Manejo emocional: frustración, disciplina y competitividad sana.</li>
+        </ul>
+      </article>
+      <article class="category-detail-card juvenil">
+        <div class="category-detail-head"><span>15–18 años</span><h4>Juvenil · Especialización y alto rendimiento</h4></div>
+        <ul>
+          <li>Especialización por posición y perfeccionamiento de habilidades específicas.</li>
+          <li>Preparación física avanzada: fuerza progresiva, potencia, velocidad y resistencia específica.</li>
+          <li>Táctica avanzada, ajustes según el rival y roles definidos.</li>
+          <li>Preparación mental: presión competitiva, liderazgo y resiliencia.</li>
+          <li>El resultado y la competencia adquieren mayor relevancia.</li>
+          <li>Nutrición deportiva y prevención de lesiones más especializada.</li>
+          <li>Para proyección universitaria o profesional, desarrollo de un perfil de juego propio.</li>
+        </ul>
+      </article>
+    </div>
+    <div class="actions categories-detail-actions"><button class="btn green" onclick="closeModal('categoriesInfoModal');openDucksWhatsApp('Hola, quiero saber qué categoría corresponde a mi hijo en Ducks Basketball Academy.')">Consultar categoría</button><button class="btn secondary" onclick="closeModal('categoriesInfoModal')">Cerrar</button></div>
+  </div></div>`;
 }
 
 function openValuesInfo(){

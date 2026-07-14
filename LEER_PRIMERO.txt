@@ -1,6 +1,6 @@
-DUCKS CRM PROFESIONAL v2.71
+DUCKS CRM PROFESIONAL v2.72
 
-Cambios:
-- Nuevas imágenes integradas en Categorías, Valores y Contacto.
-- Hotspots alineados en cada una.
-- Contacto usa imagen con información visual de la academia.
+Cambio principal:
+- El botón Ver categorías abre una ventana interna detallada con Peques, Infantil, Intermedio y Juvenil.
+- Incluye objetivos técnicos, físicos, tácticos, emocionales y competitivos por edad.
+- Paquete limpio para Vercel.
