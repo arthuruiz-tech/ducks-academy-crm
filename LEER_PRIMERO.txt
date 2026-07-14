@@ -1,6 +1,6 @@
-DUCKS CRM PROFESIONAL v2.78
+DUCKS CRM PROFESIONAL v2.79
 
-Cambios:
-- Logo principal de Ducks Basketball Academy más grande y dominante.
-- Icono de administrador reducido y discreto.
-- Ajustes aplicados en escritorio y celular.
+Cambio principal:
+- Texto de los botones de cada sección más grande y legible, especialmente en celular.
+- Se mantienen los botones dentro de las imágenes, sus enlaces y su alineación.
+- Paquete limpio para Vercel.

@@ -2564,3 +2564,93 @@ button[onclick="installDucksApp()"]{
   .admin-image-btn,.global-admin{width:40px!important;min-width:40px!important;height:40px!important}
   .admin-image-btn img,.global-admin img{width:40px!important;max-width:40px!important;height:40px!important}
 }
+
+
+/* v2.79 - texto grande y legible en botones de banners */
+.interactive-banner-section .section-hotspot span{
+  position:absolute !important;
+  width:auto !important;
+  height:auto !important;
+  margin:0 !important;
+  overflow:visible !important;
+  clip:auto !important;
+  white-space:normal !important;
+  border:0 !important;
+  display:flex !important;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  font-weight:900;
+  font-family:Arial,Helvetica,sans-serif;
+  line-height:1.05;
+  letter-spacing:-.2px;
+  border-radius:8px;
+  padding:2px 5px;
+  z-index:2;
+  pointer-events:none;
+}
+/* Botones verdes: se cubre solo la zona del texto para conservar icono y flecha */
+.section-hotspot.registration-primary span,
+.section-hotspot.payment-register span,
+.section-hotspot.calendar-primary span,
+.section-hotspot.academy-primary span,
+.section-hotspot.training-primary span,
+.section-hotspot.competition-primary span,
+.section-hotspot.regulation-open span,
+.section-hotspot.categories-primary span,
+.section-hotspot.values-primary span,
+.section-hotspot.contact-primary span{
+  left:24%; right:12%; top:15%; bottom:15%;
+  color:#fff;
+  background:linear-gradient(135deg,#079b32,#007d28);
+  font-size:clamp(15px,1.45vw,23px);
+}
+/* Botones blancos */
+.section-hotspot.registration-secondary span,
+.section-hotspot.payment-evidence span,
+.section-hotspot.calendar-secondary span,
+.section-hotspot.academy-secondary span,
+.section-hotspot.training-secondary span,
+.section-hotspot.competition-secondary span,
+.section-hotspot.regulation-download span,
+.section-hotspot.categories-secondary span,
+.section-hotspot.values-secondary span,
+.section-hotspot.contact-secondary span{
+  left:22%; right:10%; top:13%; bottom:13%;
+  color:#0b3c2d;
+  background:#fff;
+  font-size:clamp(15px,1.35vw,22px);
+}
+@media(max-width:760px){
+  .interactive-banner-section .section-hotspot span{
+    line-height:1.02;
+    padding:1px 3px;
+    border-radius:6px;
+  }
+  .section-hotspot.registration-primary span,
+  .section-hotspot.payment-register span,
+  .section-hotspot.calendar-primary span,
+  .section-hotspot.academy-primary span,
+  .section-hotspot.training-primary span,
+  .section-hotspot.competition-primary span,
+  .section-hotspot.regulation-open span,
+  .section-hotspot.categories-primary span,
+  .section-hotspot.values-primary span,
+  .section-hotspot.contact-primary span{
+    left:22%; right:8%; top:10%; bottom:10%;
+    font-size:clamp(16px,4vw,21px);
+  }
+  .section-hotspot.registration-secondary span,
+  .section-hotspot.payment-evidence span,
+  .section-hotspot.calendar-secondary span,
+  .section-hotspot.academy-secondary span,
+  .section-hotspot.training-secondary span,
+  .section-hotspot.competition-secondary span,
+  .section-hotspot.regulation-download span,
+  .section-hotspot.categories-secondary span,
+  .section-hotspot.values-secondary span,
+  .section-hotspot.contact-secondary span{
+    left:18%; right:6%; top:8%; bottom:8%;
+    font-size:clamp(16px,3.8vw,20px);
+  }
+}
