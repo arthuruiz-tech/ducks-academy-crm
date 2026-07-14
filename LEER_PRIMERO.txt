@@ -1,4 +1,4 @@
-DUCKS CRM v2.83
+DUCKS CRM v2.84
 Botones más rectos, esquinas ligeramente redondeadas y sombra reforzada.
 
 DUCKS CRM PROFESIONAL v2.80

@@ -2889,3 +2889,81 @@ button[onclick="installDucksApp()"]{
     box-shadow:0 9px 21px rgba(0,0,0,.36),0 3px 7px rgba(0,0,0,.25)!important;
   }
 }
+
+/* v2.84 - separación y alineación de botones secundarios */
+.interactive-banner-section .section-hotspot.registration-secondary,
+.interactive-banner-section .section-hotspot.payment-evidence,
+.interactive-banner-section .section-hotspot.calendar-secondary,
+.interactive-banner-section .section-hotspot.academy-secondary,
+.interactive-banner-section .section-hotspot.training-secondary,
+.interactive-banner-section .section-hotspot.competition-secondary,
+.interactive-banner-section .section-hotspot.regulation-download,
+.interactive-banner-section .section-hotspot.categories-secondary,
+.interactive-banner-section .section-hotspot.values-secondary,
+.interactive-banner-section .section-hotspot.contact-secondary{
+  margin-left:0.65%!important;
+  box-shadow:0 6px 15px rgba(0,0,0,.22),0 2px 5px rgba(0,0,0,.16)!important;
+}
+.interactive-banner-section .section-hotspot.registration-secondary::before,
+.interactive-banner-section .section-hotspot.payment-evidence::before,
+.interactive-banner-section .section-hotspot.calendar-secondary::before,
+.interactive-banner-section .section-hotspot.academy-secondary::before,
+.interactive-banner-section .section-hotspot.training-secondary::before,
+.interactive-banner-section .section-hotspot.competition-secondary::before,
+.interactive-banner-section .section-hotspot.regulation-download::before,
+.interactive-banner-section .section-hotspot.categories-secondary::before,
+.interactive-banner-section .section-hotspot.values-secondary::before,
+.interactive-banner-section .section-hotspot.contact-secondary::before{
+  inset:-3px -4px!important;
+  box-shadow:0 7px 17px rgba(0,0,0,.23),0 2px 5px rgba(0,0,0,.16)!important;
+}
+.interactive-banner-section .section-hotspot.registration-secondary:hover,
+.interactive-banner-section .section-hotspot.payment-evidence:hover,
+.interactive-banner-section .section-hotspot.calendar-secondary:hover,
+.interactive-banner-section .section-hotspot.academy-secondary:hover,
+.interactive-banner-section .section-hotspot.training-secondary:hover,
+.interactive-banner-section .section-hotspot.competition-secondary:hover,
+.interactive-banner-section .section-hotspot.regulation-download:hover,
+.interactive-banner-section .section-hotspot.categories-secondary:hover,
+.interactive-banner-section .section-hotspot.values-secondary:hover,
+.interactive-banner-section .section-hotspot.contact-secondary:hover,
+.interactive-banner-section .section-hotspot.registration-secondary:focus-visible,
+.interactive-banner-section .section-hotspot.payment-evidence:focus-visible,
+.interactive-banner-section .section-hotspot.calendar-secondary:focus-visible,
+.interactive-banner-section .section-hotspot.academy-secondary:focus-visible,
+.interactive-banner-section .section-hotspot.training-secondary:focus-visible,
+.interactive-banner-section .section-hotspot.competition-secondary:focus-visible,
+.interactive-banner-section .section-hotspot.regulation-download:focus-visible,
+.interactive-banner-section .section-hotspot.categories-secondary:focus-visible,
+.interactive-banner-section .section-hotspot.values-secondary:focus-visible,
+.interactive-banner-section .section-hotspot.contact-secondary:focus-visible{
+  box-shadow:0 9px 20px rgba(0,0,0,.25),0 3px 6px rgba(0,0,0,.17),0 0 0 3px rgba(184,240,0,.32)!important;
+}
+@media(max-width:760px){
+  .interactive-banner-section .section-hotspot.registration-secondary,
+  .interactive-banner-section .section-hotspot.payment-evidence,
+  .interactive-banner-section .section-hotspot.calendar-secondary,
+  .interactive-banner-section .section-hotspot.academy-secondary,
+  .interactive-banner-section .section-hotspot.training-secondary,
+  .interactive-banner-section .section-hotspot.competition-secondary,
+  .interactive-banner-section .section-hotspot.regulation-download,
+  .interactive-banner-section .section-hotspot.categories-secondary,
+  .interactive-banner-section .section-hotspot.values-secondary,
+  .interactive-banner-section .section-hotspot.contact-secondary{
+    margin-left:0.9%!important;
+    box-shadow:0 4px 10px rgba(0,0,0,.20),0 2px 4px rgba(0,0,0,.14)!important;
+  }
+  .interactive-banner-section .section-hotspot.registration-secondary::before,
+  .interactive-banner-section .section-hotspot.payment-evidence::before,
+  .interactive-banner-section .section-hotspot.calendar-secondary::before,
+  .interactive-banner-section .section-hotspot.academy-secondary::before,
+  .interactive-banner-section .section-hotspot.training-secondary::before,
+  .interactive-banner-section .section-hotspot.competition-secondary::before,
+  .interactive-banner-section .section-hotspot.regulation-download::before,
+  .interactive-banner-section .section-hotspot.categories-secondary::before,
+  .interactive-banner-section .section-hotspot.values-secondary::before,
+  .interactive-banner-section .section-hotspot.contact-secondary::before{
+    inset:-2px -3px!important;
+    box-shadow:0 5px 12px rgba(0,0,0,.21),0 2px 4px rgba(0,0,0,.14)!important;
+  }
+}
