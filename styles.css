@@ -2548,3 +2548,19 @@ button[onclick="installDucksApp()"]{
   .portal-search-overlay{padding:8px!important}
   .portal-search-modal{max-height:100%!important}
 }
+
+
+/* v2.78 - logo principal dominante y administrador discreto */
+.global-brand-btn{gap:14px!important;max-width:min(60vw,520px)!important}
+.global-brand-btn img{width:74px!important;height:74px!important;max-width:74px!important;border-radius:19px!important;padding:4px!important;object-fit:contain!important;filter:drop-shadow(0 7px 14px rgba(0,0,0,.28))!important}
+.global-brand-btn span{font-size:20px!important;line-height:1.12!important;font-weight:950!important;white-space:normal!important;text-align:left!important}
+.admin-image-btn,.global-admin{width:48px!important;min-width:48px!important;height:48px!important;opacity:.92!important}
+.admin-image-btn img,.global-admin img{width:48px!important;max-width:48px!important;height:48px!important;object-fit:contain!important;filter:drop-shadow(0 4px 8px rgba(0,0,0,.24))!important}
+.admin-image-btn:hover,.global-admin:hover{transform:scale(1.06)!important;opacity:1!important}
+@media(max-width:760px){
+  .global-brand-btn{max-width:74vw!important;gap:10px!important}
+  .global-brand-btn img{width:64px!important;height:64px!important;max-width:64px!important;border-radius:17px!important}
+  .global-brand-btn span{font-size:17px!important;max-width:220px!important}
+  .admin-image-btn,.global-admin{width:40px!important;min-width:40px!important;height:40px!important}
+  .admin-image-btn img,.global-admin img{width:40px!important;max-width:40px!important;height:40px!important}
+}
