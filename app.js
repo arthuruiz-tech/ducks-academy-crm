@@ -845,7 +845,7 @@ function publicQuickMenu(){
   return `<header class="global-top-menu">
     <div class="global-menu-inner">
       <button class="global-brand-btn" onclick="renderPublicHome()">
-        <img src="assets/logo.png" alt="Ducks"><span>Ducks Academy</span>
+        <img src="assets/logo.png" alt="Ducks Basketball Academy"><span>Ducks Basketball Academy</span>
       </button>
       <nav class="global-links compact-public-links">
         <button class="registration-menu-btn" onclick="renderRegistrationForm()">Nuevo ingreso</button>
@@ -856,10 +856,10 @@ function publicQuickMenu(){
     </div>
   </header>
   <nav class="public-bottom-nav" aria-label="Navegación principal inferior">
-    <button type="button" onclick="renderPublicHome()"><span class="bottom-nav-icon">⌂</span><span>Inicio</span></button>
-    <button type="button" onclick="renderParentLogin()"><span class="bottom-nav-icon">♙</span><span>Mi cuenta</span></button>
-    <button type="button" onclick="openPortalSearch()"><span class="bottom-nav-icon">⌕</span><span>Buscar</span></button>
-    <button type="button" onclick="renderPublicHome();setTimeout(()=>document.getElementById('calendario')?.scrollIntoView({behavior:'smooth',block:'start'}),150)"><span class="bottom-nav-icon">▣</span><span>Calendario</span></button>
+    <button type="button" onclick="renderPublicHome()" aria-label="Inicio"><span class="bottom-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"></path><path d="M5.5 10.5V20h13v-9.5"></path><path d="M9.5 20v-6h5v6"></path></svg></span><span>Inicio</span></button>
+    <button type="button" onclick="renderParentLogin()" aria-label="Mi cuenta"><span class="bottom-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"></circle><path d="M5.5 20c.5-4.2 2.7-6.3 6.5-6.3s6 2.1 6.5 6.3"></path></svg></span><span>Mi cuenta</span></button>
+    <button type="button" onclick="openPortalSearch()" aria-label="Buscar"><span class="bottom-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="5.8"></circle><path d="m15.2 15.2 4.3 4.3"></path></svg></span><span>Buscar</span></button>
+    <button type="button" onclick="renderPublicHome();setTimeout(()=>document.getElementById('calendario')?.scrollIntoView({behavior:'smooth',block:'start'}),150)" aria-label="Calendario"><span class="bottom-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="15" rx="2"></rect><path d="M7 3.5v4M17 3.5v4M3.5 10h17"></path><path d="M8 14h.01M12 14h.01M16 14h.01M8 17.5h.01M12 17.5h.01"></path></svg></span><span>Calendario</span></button>
   </nav>`;
 }
 
@@ -893,9 +893,9 @@ function renderPortalSearchResults(query=''){
   const host=document.getElementById('portalSearchResults');
   if(!host) return;
   const q=portalSearchNormalize(query);
+  if(!q){ host.innerHTML=''; return; }
   const words=q.split(/\s+/).filter(Boolean);
   const matches=PORTAL_SEARCH_INDEX.filter(item=>{
-    if(!words.length) return true;
     const haystack=portalSearchNormalize(`${item.title} ${item.keywords}`);
     return words.every(word=>haystack.includes(word));
   });
@@ -907,9 +907,8 @@ function openPortalSearch(){
   const modal=document.createElement('div');
   modal.className='modalbg open portal-search-overlay';
   modal.id='portalSearchModal';
-  modal.innerHTML=`<div class="modal portal-search-modal"><div class="modal-head"><div><h3>Buscar en el portal</h3><small>Encuentra rápidamente cualquier sección</small></div><button class="btn secondary" onclick="closeModal('portalSearchModal')">Cerrar</button></div><div class="modal-body"><label class="portal-search-box"><span>⌕</span><input id="portalSearchInput" type="search" autocomplete="off" placeholder="Ejemplo: pagos, categorías, horarios..." oninput="renderPortalSearchResults(this.value)"></label><div id="portalSearchResults" class="portal-search-results"></div></div></div>`;
+  modal.innerHTML=`<div class="modal portal-search-modal"><div class="modal-head"><div><h3>Buscar en el portal</h3><small>Escribe una palabra para localizar una sección</small></div><button class="btn secondary" onclick="closeModal('portalSearchModal')">Cerrar</button></div><div class="modal-body"><label class="portal-search-box"><span>⌕</span><input id="portalSearchInput" type="search" autocomplete="off" placeholder="Ejemplo: pagos, categorías, horarios..." oninput="renderPortalSearchResults(this.value)"></label><div id="portalSearchResults" class="portal-search-results"></div></div></div>`;
   document.body.appendChild(modal);
-  renderPortalSearchResults('');
   setTimeout(()=>document.getElementById('portalSearchInput')?.focus(),80);
 }
 
@@ -1820,7 +1819,7 @@ async function loadAdminData(){
 }
 async function refresh(){ if(mode==='admin'){await loadAdminData(); renderShell(); renderPage();} }
 function renderShell(){
-  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="notifications">🔔 Avisos <span class="notification-badge hidden" data-notification-badge>0</span></button><button data-page="registrations">📝 Solicitudes de ingreso</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="history">🕘 Historial</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.70: hotspots ampliados y hover mejorado sobre los botones de las imágenes.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><button class="btn secondary notification-bell" onclick="page='notifications';renderPage()">🔔 <span class="notification-badge hidden" data-notification-badge>0</span></button><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
+  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="notifications">🔔 Avisos <span class="notification-badge hidden" data-notification-badge>0</span></button><button data-page="registrations">📝 Solicitudes de ingreso</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="history">🕘 Historial</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.77: navegación visual mejorada, buscador limpio y ventanas contenidas.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><button class="btn secondary notification-bell" onclick="page='notifications';renderPage()">🔔 <span class="notification-badge hidden" data-notification-badge>0</span></button><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
   document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page=b.dataset.page; if(page==='public'){renderPublicHome(); return;} renderPage();});
   document.getElementById('search').oninput=e=>{q=e.target.value; renderPage();};
   document.getElementById('authBtn').onclick=logout;

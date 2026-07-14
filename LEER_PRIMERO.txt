@@ -1,7 +1,8 @@
-DUCKS CRM PROFESIONAL v2.76
+DUCKS CRM PROFESIONAL v2.77
 
-Corrección:
-- Al entrar a Pagos y comprobantes se elimina cualquier sesión anterior del Portal de Papás.
-- Siempre se abre la pantalla de usuario y contraseña para iniciar una sesión nueva.
-- Solo después del acceso correcto se abre Registrar pago o Subir evidencia.
-- No requiere SQL adicional.
+Cambios:
+- Buscar abre solo el campo; los resultados aparecen únicamente al escribir.
+- Logo principal más grande y nombre Ducks Basketball Academy.
+- Menú inferior con iconos SVG más grandes y agradables.
+- Todas las ventanas quedan contenidas entre el menú superior e inferior y conservan visible el botón Cerrar.
+- Paquete limpio para Vercel.
