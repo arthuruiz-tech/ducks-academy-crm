@@ -2470,3 +2470,9 @@ button[onclick="installDucksApp()"]{
 .category-detail-card ul{margin:0;padding-left:20px}.category-detail-card li{margin:0 0 8px;line-height:1.42;color:#173b30}.category-detail-card li::marker{color:#0b8f46}
 .categories-detail-actions{position:sticky;bottom:0;background:rgba(238,246,241,.96);backdrop-filter:blur(8px);padding:16px 0 4px;justify-content:center}
 @media(max-width:780px){.categories-detail-modal{width:100vw;max-height:100vh;border-radius:0}.categories-detail-body{padding:12px}.categories-detail-grid{grid-template-columns:1fr;gap:12px}.category-detail-card{padding:15px;border-radius:16px}.category-detail-head{display:block}.category-detail-head h4{text-align:left;margin-top:8px;font-size:18px}.categories-detail-actions{flex-direction:column}.categories-detail-actions .btn{width:100%}}
+
+
+/* v2.74 - rendimiento visual */
+.visual-banner-section{content-visibility:auto;contain-intrinsic-size:900px 600px}
+.section-banner-image,.registration-home-banner-image{background:#fff}
+@media(prefers-reduced-motion:reduce){.hero-video{display:none}.clean-video-hero{background:#073f2f}}

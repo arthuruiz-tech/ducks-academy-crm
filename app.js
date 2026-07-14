@@ -1064,14 +1064,14 @@ function renderPublicHome(){
       </section>
       <section class="registration-home-card registration-home-banner-card interactive-banner-section">
         <div class="registration-home-banner-wrap section-banner-wrap" aria-label="Registro de nuevo jugador Ducks Basketball Academy">
-          <img class="registration-home-banner-image" src="assets/nuevo-ingreso-banner-v260.png?v=2.69" alt="Registro de nuevo jugador Ducks Basketball Academy">
+          <img class="registration-home-banner-image" src="assets/nuevo-ingreso-banner-v274.webp?v=2.74" loading="eager" decoding="async" fetchpriority="high" alt="Registro de nuevo jugador Ducks Basketball Academy">
           <button type="button" class="section-hotspot registration-primary" onclick="renderRegistrationForm()" aria-label="Comenzar registro"><span>Comenzar registro</span></button>
           <button type="button" class="section-hotspot registration-secondary" onclick="renderRegistrationForm();setTimeout(()=>window.print(),350)" aria-label="Imprimir formato"><span>Imprimir formato</span></button>
         </div>
       </section>
       <section id="pagos" class="academy-section visual-banner-section interactive-banner-section">
         <div class="section-banner-wrap">
-          <img class="section-banner-image" src="assets/pagos-comprobantes-banner-v264.png?v=2.69" alt="Pagos y comprobantes - Portal de Papás Ducks" loading="lazy">
+          <img class="section-banner-image" src="assets/pagos-comprobantes-banner-v274.webp?v=2.74" alt="Pagos y comprobantes - Portal de Papás Ducks" loading="lazy" decoding="async">
           <button type="button" class="section-hotspot payment-register" onclick="openParentSectionAction('pay')" aria-label="Registrar pago"><span>Registrar pago</span></button>
           <button type="button" class="section-hotspot payment-evidence" onclick="openParentSectionAction('evidence')" aria-label="Subir evidencia"><span>Subir evidencia</span></button>
         </div>
@@ -1079,7 +1079,7 @@ function renderPublicHome(){
       </section>
       <section id="calendario" class="academy-section visual-banner-section interactive-banner-section">
         <div class="section-banner-wrap">
-          <img class="section-banner-image" src="assets/calendario-juegos-banner-v264.png?v=2.69" alt="Calendario de juegos - Ducks Basketball Academy" loading="lazy">
+          <img class="section-banner-image" src="assets/calendario-juegos-banner-v274.webp?v=2.74" alt="Calendario de juegos - Ducks Basketball Academy" loading="lazy" decoding="async">
           <button type="button" class="section-hotspot calendar-primary" onclick="showCalendarNotice()" aria-label="Ver partidos"><span>Ver partidos</span></button>
           <button type="button" class="section-hotspot calendar-secondary" onclick="showCalendarNotice()" aria-label="Calendario completo"><span>Calendario completo</span></button>
         </div>
@@ -1087,7 +1087,7 @@ function renderPublicHome(){
       </section>
       <section id="academia" class="academy-section visual-banner-section interactive-banner-section">
         <div class="section-banner-wrap">
-          <img class="section-banner-image" src="assets/academia-banner-v264.png?v=2.69" alt="Academia - Ducks Basketball Academy" loading="lazy">
+          <img class="section-banner-image" src="assets/academia-banner-v274.webp?v=2.74" alt="Academia - Ducks Basketball Academy" loading="lazy" decoding="async">
           <button type="button" class="section-hotspot academy-primary" onclick="openAcademyStory()" aria-label="Nuestra historia"><span>Nuestra historia</span></button>
           <button type="button" class="section-hotspot academy-secondary" onclick="scrollToPublicSection('entrenamiento')" aria-label="Conoce más"><span>Conoce más</span></button>
         </div>
@@ -1095,7 +1095,7 @@ function renderPublicHome(){
       </section>
       <section id="entrenamiento" class="academy-section visual-banner-section interactive-banner-section">
         <div class="section-banner-wrap">
-          <img class="section-banner-image" src="assets/entrenamiento-banner-v264.png?v=2.69" alt="Entrenamiento - Ducks Basketball Academy" loading="lazy">
+          <img class="section-banner-image" src="assets/entrenamiento-banner-v274.webp?v=2.74" alt="Entrenamiento - Ducks Basketball Academy" loading="lazy" decoding="async">
           <button type="button" class="section-hotspot training-primary" onclick="openTrainingInfo()" aria-label="Explorar sesiones"><span>Explorar sesiones</span></button>
           <button type="button" class="section-hotspot training-secondary" onclick="openDucksWhatsApp('Hola, quiero conocer los horarios de entrenamiento de Ducks Basketball Academy.')" aria-label="Ver horarios"><span>Ver horarios</span></button>
         </div>
@@ -1103,7 +1103,7 @@ function renderPublicHome(){
       </section>
       <section id="competencias" class="academy-section visual-banner-section interactive-banner-section">
         <div class="section-banner-wrap">
-          <img class="section-banner-image" src="assets/competencias-comunidad-banner-v264.png?v=2.69" alt="Competencias y comunidad - Ducks Basketball Academy" loading="lazy">
+          <img class="section-banner-image" src="assets/competencias-comunidad-banner-v274.webp?v=2.74" alt="Competencias y comunidad - Ducks Basketball Academy" loading="lazy" decoding="async">
           <button type="button" class="section-hotspot competition-primary" onclick="scrollToPublicSection('calendario')" aria-label="Explorar competencias"><span>Explorar competencias</span></button>
           <button type="button" class="section-hotspot competition-secondary" onclick="openCommunityInfo()" aria-label="Ver comunidad"><span>Ver comunidad</span></button>
         </div>
@@ -1112,7 +1112,7 @@ function renderPublicHome(){
 
       <section id="reglamento" class="academy-section visual-banner-section interactive-banner-section rules-section">
         <div class="section-banner-wrap">
-          <img class="section-banner-image" src="assets/reglamento-banner-v264.png?v=2.69" alt="Reglamento Ducks" loading="lazy">
+          <img class="section-banner-image" src="assets/reglamento-banner-v274.webp?v=2.74" alt="Reglamento Ducks" loading="lazy" decoding="async">
           <button type="button" class="section-hotspot regulation-open" onclick="openDucksRegulation()" aria-label="Ver reglamento"><span>Ver reglamento</span></button>
           <button type="button" class="section-hotspot regulation-download" onclick="downloadDucksRegulation()" aria-label="Descargar reglamento"><span>Descargar PDF</span></button>
         </div>
@@ -1121,7 +1121,7 @@ function renderPublicHome(){
 
       <section id="categorias" class="academy-section visual-banner-section interactive-banner-section">
         <div class="section-banner-wrap">
-          <img class="section-banner-image" src="assets/categorias-banner-v271.png?v=2.71" alt="Categorías Ducks Basketball Academy" loading="lazy">
+          <img class="section-banner-image" src="assets/categorias-banner-v274.webp?v=2.74" alt="Categorías Ducks Basketball Academy" loading="lazy" decoding="async">
           <button type="button" class="section-hotspot categories-primary" onclick="openCategoriesInfo()" aria-label="Ver categorías"><span>Ver categorías</span></button>
           <button type="button" class="section-hotspot categories-secondary" onclick="openDucksWhatsApp('Hola, quiero información sobre las categorías y el grupo ideal para mi hijo en Ducks Basketball Academy.')" aria-label="Consultar grupo"><span>Consultar grupo</span></button>
         </div>
@@ -1130,7 +1130,7 @@ function renderPublicHome(){
 
       <section id="valores" class="academy-section visual-banner-section interactive-banner-section">
         <div class="section-banner-wrap">
-          <img class="section-banner-image" src="assets/valores-banner-v271.png?v=2.71" alt="Valores Ducks Basketball Academy" loading="lazy">
+          <img class="section-banner-image" src="assets/valores-banner-v274.webp?v=2.74" alt="Valores Ducks Basketball Academy" loading="lazy" decoding="async">
           <button type="button" class="section-hotspot values-primary" onclick="openValuesInfo()" aria-label="Nuestros valores"><span>Nuestros valores</span></button>
           <button type="button" class="section-hotspot values-secondary" onclick="openDucksWhatsApp('Hola, quiero conocer más sobre los valores y la formación integral de Ducks Basketball Academy.')" aria-label="Vivir Ducks"><span>Vivir Ducks</span></button>
         </div>
@@ -1139,7 +1139,7 @@ function renderPublicHome(){
 
       <section id="contacto" class="academy-section visual-banner-section interactive-banner-section">
         <div class="section-banner-wrap">
-          <img class="section-banner-image" src="assets/contacto-banner-v271.png?v=2.71" alt="Contacto Ducks Basketball Academy" loading="lazy">
+          <img class="section-banner-image" src="assets/contacto-banner-v274.webp?v=2.74" alt="Contacto Ducks Basketball Academy" loading="lazy" decoding="async">
           <button type="button" class="section-hotspot contact-primary" onclick="openDucksWhatsApp('Hola, quiero información de Ducks Basketball Academy sobre inscripciones, horarios, pagos o torneos.')" aria-label="Enviar mensaje"><span>Enviar mensaje</span></button>
           <button type="button" class="section-hotspot contact-secondary" onclick="openAcademyMap()" aria-label="Ver ubicación"><span>Ver ubicación</span></button>
         </div>

@@ -1,6 +1,10 @@
-DUCKS CRM PROFESIONAL v2.73
+DUCKS CRM PROFESIONAL v2.74 — OPTIMIZADO
 
-Corrección principal:
-- El botón Ver categorías ahora abre correctamente la ventana interna con el detalle de los cuatro niveles.
-- También se corrigió la ventana de Valores, que tenía la misma dependencia inexistente.
+Mejoras de rendimiento:
+- Los 10 banners fueron convertidos a WebP de alta calidad y tamaño adecuado para pantalla.
+- La carga total de imágenes se redujo significativamente sin perder calidad visual perceptible.
+- Las imágenes secundarias usan carga diferida y decodificación asíncrona.
+- Se priorizan el video principal y el primer banner visible.
+- La caché de Vercel y del service worker fue optimizada para visitas posteriores mucho más rápidas.
+- Se conserva toda la funcionalidad, información y alineación de botones.
 - No requiere SQL adicional.
