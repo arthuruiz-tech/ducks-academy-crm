@@ -1062,16 +1062,17 @@ function runPendingParentEntryAction(){
     if(action==='evidence') openParentPayment();
   },260);
 }
+function resetParentSessionForFreshLogin(){
+  parentToken='';
+  parentProfile=null;
+  parentPlayers=[];
+  parentPayments=[];
+  parentDocuments=[];
+  localStorage.removeItem('ducks_parent_token_v213');
+}
 async function openParentSectionAction(action='portal'){
   sessionStorage.setItem('ducks_parent_entry_action',action);
-  if(parentToken){
-    if(!parentProfile) await loadParentData();
-    if(parentProfile){
-      renderParentPortal();
-      runPendingParentEntryAction();
-      return;
-    }
-  }
+  resetParentSessionForFreshLogin();
   renderParentLogin();
 }
 
@@ -1302,7 +1303,7 @@ function renderParentLogin(){
     <main class="academy-main">
       <div class="login-card">
         <div class="parent-title"><img src="assets/logo.png"><div><h1>Portal de Papás</h1><div class="sub">Acceso privado por familia</div></div></div>
-        <div class="notice success"><b>Protección de información:</b> al iniciar sesión se limpia cualquier sesión anterior y solo verás tus hijos asignados.</div>
+        <div class="notice success"><b>Protección de información:</b> al entrar desde Pagos y comprobantes se inicia una sesión nueva. Después de identificarte, solo verás tus hijos asignados.</div>
         <form id="parentLoginForm" class="parent-form">
           <label class="label full">Usuario<input id="parentUser" class="input" required placeholder="Correo, teléfono o usuario"></label>
           <label class="label full">Contraseña<input id="parentPassword" class="input" type="password" required placeholder="Contraseña"></label>

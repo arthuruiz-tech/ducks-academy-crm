@@ -1,8 +1,7 @@
-DUCKS CRM PROFESIONAL v2.75
+DUCKS CRM PROFESIONAL v2.76
 
-Cambios:
-- Menú superior simplificado: Nuevo ingreso, Academia y Contacto.
-- Menú inferior fijo: Inicio, Mi cuenta, Buscar y Calendario.
-- Mi cuenta abre Portal de Papás.
-- Buscar permite localizar secciones y funciones del portal por palabras.
-- Paquete optimizado y limpio para Vercel.
+Corrección:
+- Al entrar a Pagos y comprobantes se elimina cualquier sesión anterior del Portal de Papás.
+- Siempre se abre la pantalla de usuario y contraseña para iniciar una sesión nueva.
+- Solo después del acceso correcto se abre Registrar pago o Subir evidencia.
+- No requiere SQL adicional.
