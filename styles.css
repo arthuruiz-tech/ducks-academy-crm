@@ -4044,3 +4044,92 @@ button[onclick="installDucksApp()"]{
   .ducks-mockup-home{height:100vh;min-height:100vh}
   .ducks-mockup-wrap{height:100vh;width:100vw}
 }
+
+
+
+/* v2.105 - video ajustado bajo el diseño + bell y banner corregidos */
+.mockup-video-card{
+  position:absolute;
+  left:6.2%;
+  top:29.25%;
+  width:86.9%;
+  height:13.5%;
+  z-index:2;
+  display:grid;
+  grid-template-columns:44% 56%;
+  background:transparent;
+  overflow:hidden;
+  border-radius:3.1vh;
+  pointer-events:none;
+}
+.mockup-video-copy{
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  padding:0 5.6% 0 7.3%;
+  background:linear-gradient(108deg,rgba(10,87,61,.96) 0%,rgba(7,97,69,.92) 68%,rgba(7,97,69,.72) 100%);
+  border-radius:3.1vh 0 0 3.1vh;
+}
+.mockup-video-copy h3{
+  margin:0;
+  color:#fff;
+  font-size:3.15vh;
+  line-height:1.08;
+  font-weight:900;
+  letter-spacing:-.01em;
+  text-wrap:balance;
+}
+.mockup-video-media{
+  position:relative;
+  overflow:hidden;
+  border-radius:0 3.1vh 3.1vh 0;
+}
+.mockup-video-media::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:linear-gradient(90deg,rgba(8,72,52,.14) 0%,rgba(8,72,52,0) 10%);
+  z-index:1;
+}
+.mockup-video-el{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+  transform:scale(1.01);
+}
+.mockup-bell-overlay,
+.mockup-bottom-overlay{
+  position:absolute;
+  z-index:2;
+  pointer-events:none;
+  display:block;
+}
+.mockup-bell-overlay{
+  left:83.8%;
+  top:4.7%;
+  width:12.6%;
+  height:auto;
+  object-fit:contain;
+}
+.mockup-bottom-overlay{
+  left:49.2%;
+  top:82.6%;
+  width:45.2%;
+  height:11.8%;
+  object-fit:cover;
+  border-radius:0 0 2.7vh 0;
+}
+.hs-video{
+  left:5.15%;
+  top:28.55%;
+  width:89.45%;
+  height:16.05%;
+}
+@media (max-width:760px){
+  .mockup-video-card{left:6.2%;top:29.15%;width:86.9%;height:13.4%;border-radius:22px;}
+  .mockup-video-copy{border-radius:22px 0 0 22px;}
+  .mockup-video-media{border-radius:0 22px 22px 0;}
+  .mockup-video-copy h3{font-size:2.7vh;}
+  .mockup-bottom-overlay{top:82.45%;height:11.65%;}
+}

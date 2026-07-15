@@ -1158,13 +1158,14 @@ function renderPublicHome(){
 
         <div class="mockup-video-card" aria-hidden="true">
           <div class="mockup-video-copy">
-            <span>VIDEO DESTACADO</span>
             <h3>Entrena tu mente,<br>domina el juego</h3>
           </div>
           <div class="mockup-video-media">
             <video class="mockup-video-el" src="assets/hero-video.mp4" autoplay muted loop playsinline preload="metadata"></video>
           </div>
         </div>
+        <img src="assets/home-bell-overlay.webp" alt="" class="mockup-bell-overlay" aria-hidden="true">
+        <img src="assets/home-bottom-overlay.webp" alt="" class="mockup-bottom-overlay" aria-hidden="true">
 
         <button class="mockup-hotspot hs-bell" type="button" aria-label="Avisos" onclick="openPublicNotifications()"></button>
         <button class="mockup-hotspot hs-video" type="button" aria-label="Video destacado" onclick="openAcademyStory()"></button>

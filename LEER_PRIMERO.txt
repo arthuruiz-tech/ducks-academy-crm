@@ -1,10 +1,10 @@
-DUCKS CRM PROFESIONAL v2.104
+DUCKS CRM PROFESIONAL v2.105
 
 Cambios:
-- Ajuste fino para evitar recorte lateral en celular.
-- Portada sigue mostrándose en una sola pantalla.
-- Se integró el video real de la academia en la zona de video principal.
-- Se eliminaron visualmente el botón play, el tiempo y el texto "Ver video".
-- Se mantienen los hotspots y funciones del portal.
+- El video de portada se integró por debajo del diseño del área de video.
+- Se eliminó el texto "VIDEO DESTACADO" y se mantuvo el texto principal.
+- Se ajustó la campana para que ya no se vea estirada.
+- Se ajustó la imagen inferior de la academia para que ya no se vea estirada.
+- Se conservaron todas las funciones del portal.
 
 No requiere SQL adicional.
