@@ -1837,7 +1837,7 @@ async function loadAdminData(){
 }
 async function refresh(){ if(mode==='admin'){await loadAdminData(); renderShell(); renderPage();} }
 function renderShell(){
-  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="notifications">🔔 Avisos <span class="notification-badge hidden" data-notification-badge>0</span></button><button data-page="registrations">📝 Solicitudes de ingreso</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="history">🕘 Historial</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.95: recibos con imagen WhatsApp sin texto, sello real más grande y una sola página.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><button class="btn secondary notification-bell" onclick="page='notifications';renderPage()">🔔 <span class="notification-badge hidden" data-notification-badge>0</span></button><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
+  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="notifications">🔔 Avisos <span class="notification-badge hidden" data-notification-badge>0</span></button><button data-page="registrations">📝 Solicitudes de ingreso</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="history">🕘 Historial</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.96: corrección para generar recibo, WhatsApp sin texto, sello real y una sola página.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><button class="btn secondary notification-bell" onclick="page='notifications';renderPage()">🔔 <span class="notification-badge hidden" data-notification-badge>0</span></button><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
   document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page=b.dataset.page; if(page==='public'){renderPublicHome(); return;} renderPage();});
   document.getElementById('search').oninput=e=>{q=e.target.value; renderPage();};
   document.getElementById('authBtn').onclick=logout;
@@ -2791,6 +2791,7 @@ function cashReceiptDataFromPayment(player,payment,folio=''){
 }
 function cashReceiptHtml(data){
   const logoSrc=new URL('assets/logo.png', window.location.href).href;
+  const stampAngle=resolveCashReceiptStampAngle(data);
   return `<section class="cash-receipt-print cash-receipt-formal" id="cashReceiptPrintable">
     <div class="cash-receipt-head">
       <div class="cash-receipt-brand"><img src="${logoSrc}" alt="Ducks"><div><h2>Ducks Basketball Academy</h2><small>RECIBO INTERNO DE PAGO</small></div></div>
@@ -3210,7 +3211,7 @@ async function saveCashReceiptForm(e){
     openCashReceiptPreview(cashReceiptDataFromPayment(player,data||row,folio));
     toast('Pago en efectivo registrado y recibo formal generado.');
   }catch(err){
-    console.error(err); toast('No fue posible generar el recibo.');
+    console.error(err); toast('No fue posible generar el recibo: '+(err?.message||err));
     if(submitBtn){submitBtn.disabled=false;submitBtn.textContent='Registrar pago y generar recibo';}
   }
 }

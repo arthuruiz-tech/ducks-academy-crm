@@ -1,8 +1,8 @@
-DUCKS CRM PROFESIONAL v2.95
+DUCKS CRM PROFESIONAL v2.96
 
-Cambios:
+Corrección:
+- Se corrigió el error que impedía generar el recibo cuando el sello estaba activo.
+- El sello mantiene tamaño grande y rotación tipo tinta real.
 - WhatsApp comparte únicamente la imagen del recibo, sin texto.
-- Si el dispositivo no admite adjuntar desde el navegador, descarga la imagen y abre WhatsApp sin mensaje.
-- El sello de pagado es más grande y con rotación tipo tinta real.
-- El ángulo del sello se guarda con cada recibo nuevo.
 - La impresión sigue ajustada a una sola página.
+- No requiere SQL adicional.
