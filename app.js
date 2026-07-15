@@ -1154,7 +1154,7 @@ function renderPublicHome(){
   app.innerHTML=`<div class="public-site ducks-mockup-home">
     <main class="ducks-mockup-wrap">
       <section id="inicio" class="ducks-mockup-screen" aria-label="Portada principal Ducks Basketball Academy">
-        <img src="assets/home-premium-v302.webp" alt="Portada principal Ducks Basketball Academy" class="ducks-mockup-image" fetchpriority="high">
+        <img src="assets/home-premium-v306.webp" alt="Portada principal Ducks Basketball Academy" class="ducks-mockup-image" fetchpriority="high">
 
         <button class="mockup-hotspot hs-bell" type="button" aria-label="Avisos" onclick="openPublicNotifications()"></button>
         <button class="mockup-hotspot hs-video" type="button" aria-label="Video destacado" onclick="openAcademyStory()"></button>

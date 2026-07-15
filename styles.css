@@ -3860,7 +3860,7 @@ button[onclick="installDucksApp()"]{
 
 
 
-/* v2.103 - portada fullscreen por altura real del celular */
+/* v2.106 - portada ajustada sin recorte lateral y hero limpio */
 .ducks-mockup-home{
   height:100svh;
   height:100dvh;
@@ -3874,10 +3874,12 @@ button[onclick="installDucksApp()"]{
   background:linear-gradient(180deg,#f4f4f4 0%,#ececec 100%);
 }
 .ducks-mockup-wrap{
-  height:100svh;
-  height:100dvh;
-  width:calc(100svh * .563);
-  width:calc(100dvh * .563);
+  width:min(calc(100vw - 4px), calc((100svh - 4px) * .5628));
+  width:min(calc(100vw - 4px), calc((100dvh - 4px) * .5628));
+  aspect-ratio:941 / 1672;
+  max-height:calc(100svh - 4px);
+  max-height:calc(100dvh - 4px);
+  height:auto;
   max-width:none;
   min-width:0;
   padding:0 !important;
@@ -3885,40 +3887,36 @@ button[onclick="installDucksApp()"]{
   position:relative;
   overflow:visible;
   flex:0 0 auto;
+  transform:translateY(-10px);
 }
 .ducks-mockup-screen{
-  height:100%;
   width:100%;
+  height:100%;
+  aspect-ratio:941 / 1672;
   border-radius:0;
   overflow:visible;
 }
 .ducks-mockup-image{
-  height:100%;
   width:100%;
+  height:100%;
   max-width:none;
-  object-fit:fill;
+  object-fit:contain;
+  object-position:center center;
   border-radius:0;
   box-shadow:none;
   display:block;
 }
-@media (max-aspect-ratio: 9/16){
-  .ducks-mockup-home{
-    justify-content:center;
-  }
+@media (max-width:760px){
+  .ducks-mockup-home{padding:0 !important}
   .ducks-mockup-wrap{
-    transform:scale(1.015);
-    transform-origin:center center;
-  }
-}
-@media (min-aspect-ratio: 10/16){
-  .ducks-mockup-wrap{
-    height:100svh;
-    height:100dvh;
-    width:calc(100svh * .563);
-    width:calc(100dvh * .563);
+    width:min(calc(100vw - 2px), calc((100svh - 2px) * .5628));
+    width:min(calc(100vw - 2px), calc((100dvh - 2px) * .5628));
+    max-height:calc(100svh - 2px);
+    max-height:calc(100dvh - 2px);
+    transform:translateY(-12px);
   }
 }
 @supports not (height:100dvh){
   .ducks-mockup-home{height:100vh;min-height:100vh}
-  .ducks-mockup-wrap{height:100vh;width:calc(100vh * .563)}
+  .ducks-mockup-wrap{width:min(calc(100vw - 4px), calc((100vh - 4px) * .5628));max-height:calc(100vh - 4px);transform:translateY(-10px)}
 }
