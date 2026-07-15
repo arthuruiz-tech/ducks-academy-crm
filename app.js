@@ -1191,10 +1191,6 @@ function renderPublicHome(){
         <div class="mockup-section-gap gap-video"></div>
         <div class="mockup-section-gap gap-cards"></div>
         <div class="mockup-section-gap gap-banner"></div>
-        <div class="mockup-bell-visual" aria-hidden="true">
-          <span class="mockup-bell-icon">🔔</span>
-          ${publicNotificationBadgeCount()?`<span class="mockup-bell-badge">${publicNotificationBadgeCount()>99?'99+':publicNotificationBadgeCount()}</span>`:''}
-        </div>
 
         <button class="mockup-hotspot hs-bell" type="button" aria-label="Avisos" onclick="openPublicNotifications()"></button>
         <button class="mockup-hotspot hs-video" type="button" aria-label="Video destacado" onclick="openAcademyStory()"></button>

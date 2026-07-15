@@ -4195,3 +4195,48 @@ button[onclick="installDucksApp()"]{
   .mockup-bell-icon{font-size:2.05vh}
   .mockup-bell-badge{min-width:1.8vh;height:1.8vh;font-size:.88vh}
 }
+
+
+/* v2.112 - campana original del arte y mejor ajuste vertical */
+.mockup-bell-visual,
+.mockup-bell-icon,
+.mockup-bell-badge{display:none !important;}
+.ducks-mockup-home{
+  position:relative;
+  background:#ececec !important;
+}
+.ducks-mockup-home::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  background:
+    linear-gradient(180deg, rgba(244,244,244,.95), rgba(236,236,236,.92)),
+    url('assets/home-premium-v306.webp') center center / cover no-repeat;
+  filter:blur(22px) saturate(1.02);
+  opacity:.78;
+  transform:scale(1.08);
+  pointer-events:none;
+}
+.ducks-mockup-wrap{
+  position:relative;
+  z-index:1;
+  width:min(104vw, calc(100dvh * .586));
+  max-height:100dvh;
+  transform:translateY(-4px) !important;
+}
+.ducks-mockup-screen{overflow:visible;}
+.mockup-section-gap{height:.58%;background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.96),rgba(255,255,255,0));z-index:2}
+.gap-video{top:45.52%}
+.gap-cards{top:62.82%}
+.gap-banner{top:80.34%}
+.hs-bell{left:84.0% !important;top:5.15% !important;width:10.5% !important;height:6.7% !important;border-radius:24px !important;z-index:20 !important}
+.hs-nav-home,.hs-nav-news,.hs-nav-messages,.hs-nav-more{top:91.58% !important;height:6.18% !important}
+.hs-nav-logo{top:90.55% !important;height:7.25% !important}
+@media (max-width:760px){
+  .ducks-mockup-home{min-height:100dvh;height:100dvh;background:#ececec !important;}
+  .ducks-mockup-wrap{width:min(110vw, calc(100dvh * .62));max-height:100dvh;transform:translateY(-6px) !important;}
+}
+@supports not (height:100dvh){
+  .ducks-mockup-wrap{width:min(104vw, calc(100vh * .586));max-height:100vh;}
+  @media (max-width:760px){.ducks-mockup-wrap{width:min(110vw, calc(100vh * .62));max-height:100vh;}}
+}

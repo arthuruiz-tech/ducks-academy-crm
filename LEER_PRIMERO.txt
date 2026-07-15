@@ -1,8 +1,6 @@
-DUCKS CRM PROFESIONAL v2.110
+DUCKS CRM PROFESIONAL v2.112
 
 Cambios:
-- Campana pública: solo muestra avisos generales y cumpleaños.
-- Número oculto por defecto; solo aparece si hay avisos nuevos sin leer.
-- Se reducen visualmente los espacios en blanco superior e inferior con fondo integrado.
-- Se elimina el empalme del menú inferior usando solo los hotspots alineados al diseño base.
-- Se mantienen laterales y funcionalidad del portal.
+- Se vuelve a usar la campana original del arte, sin campana sobrepuesta.
+- Se mejoró el ajuste visual superior e inferior para reducir los espacios vacíos.
+- Se conservó la funcionalidad del clic en la campana y el menú inferior.
