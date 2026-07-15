@@ -1837,7 +1837,7 @@ async function loadAdminData(){
 }
 async function refresh(){ if(mode==='admin'){await loadAdminData(); renderShell(); renderPage();} }
 function renderShell(){
-  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="notifications">🔔 Avisos <span class="notification-badge hidden" data-notification-badge>0</span></button><button data-page="registrations">📝 Solicitudes de ingreso</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="history">🕘 Historial</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.94: recibos con imagen WhatsApp, mensaje corto, sello/firma y una sola página.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><button class="btn secondary notification-bell" onclick="page='notifications';renderPage()">🔔 <span class="notification-badge hidden" data-notification-badge>0</span></button><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
+  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="notifications">🔔 Avisos <span class="notification-badge hidden" data-notification-badge>0</span></button><button data-page="registrations">📝 Solicitudes de ingreso</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="history">🕘 Historial</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.95: recibos con imagen WhatsApp sin texto, sello real más grande y una sola página.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><button class="btn secondary notification-bell" onclick="page='notifications';renderPage()">🔔 <span class="notification-badge hidden" data-notification-badge>0</span></button><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
   document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page=b.dataset.page; if(page==='public'){renderPublicHome(); return;} renderPage();});
   document.getElementById('search').oninput=e=>{q=e.target.value; renderPage();};
   document.getElementById('authBtn').onclick=logout;
@@ -2752,6 +2752,20 @@ function amountInWords(amount){
   const currency=pesos===1?'PESO':'PESOS';
   return `${words} ${currency} ${String(cents).padStart(2,'0')}/100 M.N.`;
 }
+function generateCashReceiptStampAngle(){
+  const choices=[-28,-24,-20,-16,-12,12,16,20,24,28];
+  return choices[Math.floor(Math.random()*choices.length)];
+}
+function resolveCashReceiptStampAngle(data){
+  const stored=Number(data?.stamp_angle);
+  if(Number.isFinite(stored) && stored!==0) return stored;
+  const seed=String(data?.folio||data?.player_id||'DUCKS');
+  let hash=0;
+  for(let i=0;i<seed.length;i++){ hash=((hash<<5)-hash)+seed.charCodeAt(i); hash|=0; }
+  const choices=[-28,-24,-20,-16,-12,12,16,20,24,28];
+  return choices[Math.abs(hash)%choices.length];
+}
+
 function cashReceiptDataFromPayment(player,payment,folio=''){
   const payDate=payment?.payment_date||todayISO();
   const meta=readReceiptMeta(payment?.notes);
@@ -2769,6 +2783,7 @@ function cashReceiptDataFromPayment(player,payment,folio=''){
     received_by: meta.received_by || payment?.submitted_by || 'Administración Ducks',
     signature_url: meta.signature_url || '',
     stamp_url: meta.stamp_url || '',
+    stamp_angle: Number(meta.stamp_angle||0) || 0,
     use_stamp: meta.use_stamp === true || meta.use_stamp === 'true' || !!meta.stamp_url,
     validation: meta.validation || 'Validado desde sesión administrativa',
     generated_at: meta.generated_at || formatAcademyDateTime(payment?.confirmed_at||new Date().toISOString())
@@ -2801,7 +2816,7 @@ function cashReceiptHtml(data){
       </div>
       ${data.observations?`<div class="cash-receipt-observations"><small>Observaciones</small><p>${esc(data.observations)}</p></div>`:''}
       <div class="cash-receipt-signature-block">
-        <div class="cash-receipt-signature-line"><div class="cash-receipt-signature-proof">${data.use_stamp?`<img class="cash-receipt-stamp-image" src="${esc(data.stamp_url||officialReceiptStampUrl())}" alt="Sello oficial de pago recibido">`:''}${data.signature_url?`<img class="cash-receipt-signature-image" src="${esc(data.signature_url)}" alt="Firma de quien recibió">`:''}</div><strong>${esc(data.received_by||'Administración Ducks')}</strong><span>Nombre y firma/validación de quien recibió</span></div>
+        <div class="cash-receipt-signature-line"><div class="cash-receipt-signature-proof">${data.use_stamp?`<img class="cash-receipt-stamp-image" style="transform:rotate(${stampAngle}deg)" src="${esc(data.stamp_url||officialReceiptStampUrl())}" alt="Sello oficial de pago recibido">`:''}${data.signature_url?`<img class="cash-receipt-signature-image" src="${esc(data.signature_url)}" alt="Firma de quien recibió">`:''}</div><strong>${esc(data.received_by||'Administración Ducks')}</strong><span>Nombre y firma/validación de quien recibió</span></div>
         <div class="cash-receipt-verification"><small>Validación administrativa</small><strong>✓ ${esc(data.validation||'Validado')}</strong><span>${esc(data.generated_at)}</span></div>
       </div>
       <div class="cash-receipt-note"><b>Comprobante interno:</b> acredita el pago registrado en el CRM Ducks. No sustituye factura ni CFDI.</div>
@@ -2982,7 +2997,12 @@ async function buildCashReceiptImageBlob(data){
   if(data.stamp_url || data.use_stamp){
     try{
       const stamp=await loadImageForCanvas(data.stamp_url || officialReceiptStampUrl());
-      ctx.drawImage(stamp,156,y+42,168,168);
+      const stampAngle=resolveCashReceiptStampAngle(data) * Math.PI / 180;
+      ctx.save();
+      ctx.translate(305,y+122);
+      ctx.rotate(stampAngle);
+      ctx.drawImage(stamp,-112,-112,224,224);
+      ctx.restore();
     }catch(e){}
   }
   if(data.signature_url){
@@ -3067,11 +3087,7 @@ async function prepareCashReceiptShareImage(data){
 }
 
 function cashReceiptWhatsappMessage(data){
-  return `Recibo Ducks Basketball Academy
-Folio: ${data.folio||''}
-Jugador: ${data.student_name||''}
-Monto: ${money(data.amount||0)}
-Estatus: PAGADO`;
+  return '';
 }
 async function sendCashReceiptWhatsApp(){
   const data=window.currentCashReceiptData;
@@ -3090,15 +3106,10 @@ async function sendCashReceiptWhatsApp(){
     window.currentCashReceiptImageFile=file;
   }
 
-  const message=cashReceiptWhatsappMessage(data);
   if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
     try{
-      await navigator.share({
-        title:'Recibo Ducks Basketball Academy',
-        text:message,
-        files:[file]
-      });
-      toast('Selecciona WhatsApp. Se compartirá la imagen del recibo con mensaje corto.');
+      await navigator.share({ files:[file] });
+      toast('Selecciona WhatsApp para enviar únicamente la imagen del recibo.');
       return;
     }catch(err){
       if(String(err?.name||'')==='AbortError') return;
@@ -3107,10 +3118,9 @@ async function sendCashReceiptWhatsApp(){
   }
 
   downloadBlobFile(blob, file.name);
-  const extra='\\n\\nAdjunto recibo en imagen.';
-  const url=`https://wa.me/${phone}?text=${encodeURIComponent(message + extra)}`;
+  const url=`https://wa.me/${phone}`;
   window.open(url,'_blank','noopener');
-  toast('Se descargó la imagen. Adjúntala en WhatsApp; el texto ya está corto.');
+  toast('Se descargó la imagen del recibo. Adjúntala manualmente en WhatsApp sin texto adicional.');
 }
 async function printCashReceipt(){
   const data=window.currentCashReceiptData;
@@ -3187,7 +3197,8 @@ async function saveCashReceiptForm(e){
     const signature_url=await uploadCashSignature(folio);
     const use_stamp=!!document.getElementById('cashReceiptUseStamp')?.checked;
     const stamp_url=use_stamp ? officialReceiptStampUrl() : '';
-    const meta={concept,observations,received_by,signature_url,stamp_url,use_stamp,validation:'Validado desde sesión administrativa',generated_at};
+    const stamp_angle=use_stamp ? generateCashReceiptStampAngle() : 0;
+    const meta={concept,observations,received_by,signature_url,stamp_url,stamp_angle,use_stamp,validation:'Validado desde sesión administrativa',generated_at};
     const note=`[CASH_RECEIPT:${folio}] ${receiptMetaTag(meta)} Pago en efectivo registrado desde administración.`;
     const row={player_id,student_name:player.name||'',payment_date:payDate,period:period(payDate),amount,method:'Efectivo',notes:note,confirmation_status:'Confirmado',evidence_url:'',evidence_name:'',submitted_by:received_by,confirmed_at:new Date().toISOString()};
     const {data,error}=await sb.from('payments').insert(row).select().single();
