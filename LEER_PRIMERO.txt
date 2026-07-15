@@ -1,9 +1,11 @@
-DUCKS CRM PROFESIONAL v2.97
+DUCKS CRM PROFESIONAL v2.98
 
 Cambios:
-- Se agregó tipo de pago: Mensualidad, Inscripción, Uniforme, Torneo y Otro.
-- Solo los pagos de tipo Mensualidad afectan el adeudo mensual.
-- Inscripción, Uniforme, Torneo y Otro quedan en historial, recibo y pagos, pero no modifican el cálculo de mensualidad.
-- El portal de papás muestra el tipo de pago en historial.
-- Los recibos de efectivo guardan el tipo de pago y concepto.
+- Rediseño de página principal con formato app premium de fondo blanco.
+- Se conserva el logo de Ducks Basketball Academy como elemento principal.
+- El video actual se reubicó en una tarjeta destacada tipo portada.
+- Se agregaron tarjetas visuales modernas con iconos estilo 3D para las funciones existentes.
+- Se conserva cada función del portal: Nuevo ingreso, Academia, Contacto, Mi Cuenta, Pagos, Calendario, Categorías y Valores.
+- Menú inferior tipo app con Inicio, Buscar, logo Ducks central, Mi Cuenta y Más.
+- Se eliminó Calendario del menú inferior y se movió a Más / tarjeta principal.
 - No requiere SQL adicional.
