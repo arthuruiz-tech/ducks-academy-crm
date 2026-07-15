@@ -1,9 +1,10 @@
-DUCKS CRM PROFESIONAL v2.116
+DUCKS CRM PROFESIONAL v2.117
 
 Cambios:
-- Administrador con menú desplegable para seleccionar opciones más rápido.
-- Ajuste global de ventanas y modales para que se adapten mejor a la pantalla en celular y PC.
-- Campana de la portada con círculo blanco en lugar de naranja para cubrir el número 3.
-- Portal de papás ahora muestra el día de pago resaltado por cada hijo.
-
-No requiere SQL adicional.
+- Recibo de efectivo: se agregó búsqueda rápida de jugador por nombre, ID, tutor, WhatsApp o número de uniforme.
+- Al enviar recibo por WhatsApp se valida que el recibo, jugador y WhatsApp del papá/tutor coincidan; si no coincide, se bloquea el envío con mensaje de error.
+- Se agregó confirmación antes de abrir WhatsApp para enviar el recibo.
+- Se reforzó el ajuste de ventanas/modales para que quepan mejor en pantalla, especialmente recibos.
+- Menú administrador con título visible y selector desplegable.
+- Menú inferior fijo del administrador con solo el logo Ducks al centro para volver a la ventana principal.
+- No requiere SQL adicional.

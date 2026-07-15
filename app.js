@@ -1866,7 +1866,7 @@ function renderShell(){
     ['settings','⚙️ Configuración'],
     ['public','🌐 Página pública']
   ];
-  app.innerHTML=`<div class="admin-compact-shell">
+  app.innerHTML=`<div class="admin-compact-shell admin-dropdown-shell">
     <header class="admin-compact-header admin-dropdown-header">
       <div class="admin-compact-brand">
         <img src="assets/logo.png" alt="Ducks">
@@ -1874,7 +1874,7 @@ function renderShell(){
       </div>
       <div class="admin-dropdown-center">
         <label class="admin-menu-select-wrap">
-          <span>Menú administrador</span>
+          <span class="admin-menu-title">Menú administrador</span>
           <select id="adminPageSelect" class="select admin-page-select">${adminOptions.map(([value,label])=>`<option value="${value}" ${page===value?'selected':''}>${label}</option>`).join('')}</select>
         </label>
       </div>
@@ -1890,6 +1890,9 @@ function renderShell(){
       </div>
       <div id="content"></div>
     </main>
+    <nav class="admin-bottom-logo-nav" aria-label="Volver a portada">
+      <button type="button" onclick="renderPublicHome()" title="Volver a la ventana principal"><img src="assets/logo.png" alt="Ducks"></button>
+    </nav>
   </div>`;
   const pageSelect=document.getElementById('adminPageSelect');
   if(pageSelect) pageSelect.onchange=e=>{ page=e.target.value; if(page==='public'){renderPublicHome(); return;} renderPage(); };
@@ -2739,7 +2742,7 @@ function defaultCashReceiver(){
 }
 function cashReceiptPlayerSummary(player){
   if(!player) return '<span class="sub">Selecciona un jugador para continuar.</span>';
-  return `<div class="cash-receipt-player-summary"><b>${esc(player.name)}</b><small>${esc(player.id)} · Tutor: ${esc(player.tutor||'Sin dato')}</small><small>Mensualidad sugerida: ${money(player.monthly_fee||0)}</small></div>`;
+  return `<div class="cash-receipt-player-summary"><b>${esc(player.name)}</b><small>${esc(player.id)} · Tutor: ${esc(player.tutor||'Sin dato')}</small><small>WhatsApp papá/tutor: ${esc(player.phone||'Sin registrar')}</small><small>Mensualidad sugerida: ${money(player.monthly_fee||0)}</small></div>`;
 }
 function updateCashReceiptPlayer(){
   const playerId=document.getElementById('cashReceiptPlayer')?.value||'';
@@ -3154,9 +3157,17 @@ function cashReceiptWhatsappMessage(data){
 async function sendCashReceiptWhatsApp(){
   const data=window.currentCashReceiptData;
   if(!data){toast('No se encontró la información del recibo.');return;}
-  const player=players.find(p=>String(p.id)===String(data.player_id));
-  const phone=String(player?.phone||player?.tutor_phone||'').replace(/\D/g,'');
-  if(!phone){toast('El jugador no tiene un WhatsApp registrado.');return;}
+  const validation=validateCashReceiptWhatsAppTarget(data);
+  if(!validation.ok){
+    alert(validation.message);
+    toast('No se envió el recibo: la información no coincide.');
+    return;
+  }
+  const player=validation.player;
+  const phone=validation.phone;
+  const visiblePhone=phone.length>=10 ? phone.slice(-10).replace(/(\d{3})(\d{3})(\d{4})/,'$1 $2 $3') : phone;
+  const ok=confirm(`Confirma antes de enviar:\n\nJugador: ${player.name}\nTutor: ${player.tutor||'Sin dato'}\nWhatsApp papá/tutor: ${visiblePhone}\n\n¿La información corresponde correctamente?`);
+  if(!ok) return;
 
   let file=window.currentCashReceiptImageFile;
   let blob=window.currentCashReceiptImageBlob;
@@ -3226,12 +3237,88 @@ function openCashReceiptPreviewFromPayment(paymentId){
   const player=players.find(p=>p.id===payment.player_id);
   openCashReceiptPreview(cashReceiptDataFromPayment(player,payment));
 }
+
+function cashReceiptPlayerSearchHaystack(player){
+  return [player?.id,player?.name,player?.tutor,player?.phone,player?.category,player?.uniform_number]
+    .join(' ')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase();
+}
+function selectCashReceiptPlayer(playerId){
+  const select=document.getElementById('cashReceiptPlayer');
+  if(select) select.value=playerId;
+  updateCashReceiptPlayer();
+  const results=document.getElementById('cashReceiptPlayerSearchResults');
+  if(results) results.innerHTML='';
+}
+function renderCashReceiptPlayerResults(matches=[]){
+  const host=document.getElementById('cashReceiptPlayerSearchResults');
+  if(!host) return;
+  host.innerHTML=matches.length?matches.map(p=>`<button type="button" class="cash-receipt-search-result" onclick="selectCashReceiptPlayer('${esc(p.id)}')">
+    <span class="cash-receipt-search-avatar">${esc(p.uniform_number||'🏀')}</span>
+    <span><b>${esc(p.name)}</b><small>${esc(p.id)} · Tutor: ${esc(p.tutor||'Sin dato')} · WhatsApp: ${esc(p.phone||'-')}</small></span>
+  </button>`).join(''):`<div class="notice warning cash-search-empty">No encontré jugadores con ese dato. Busca por nombre, ID, tutor, WhatsApp o número de uniforme.</div>`;
+}
+function searchCashReceiptPlayer(){
+  const input=document.getElementById('cashReceiptPlayerSearch');
+  const q=String(input?.value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+  if(!q){toast('Escribe nombre, ID, tutor, WhatsApp o número de uniforme.');input?.focus();return;}
+  const matches=players.filter(p=>cashReceiptPlayerSearchHaystack(p).includes(q)).slice(0,10);
+  if(matches.length===1){selectCashReceiptPlayer(matches[0].id);toast('Jugador seleccionado: '+matches[0].name);return;}
+  renderCashReceiptPlayerResults(matches);
+}
+function receiptDigits(value=''){
+  return String(value||'').replace(/\D/g,'');
+}
+function receiptPhoneSame(a,b){
+  const da=receiptDigits(a), db=receiptDigits(b);
+  if(!da||!db) return false;
+  if(da.length>=10 && db.length>=10) return da.slice(-10)===db.slice(-10);
+  return da===db;
+}
+function cashReceiptLinkedParentPhones(playerId){
+  const linkedAccountIds=parentLinks
+    .filter(l=>String(l.player_id)===String(playerId) && l.active!==false)
+    .map(l=>String(l.parent_account_id));
+  const phones=[];
+  parentAccounts.filter(a=>linkedAccountIds.includes(String(a.id)) && a.active!==false).forEach(a=>{
+    [a.phone,a.login,a.whatsapp].forEach(v=>{
+      const d=receiptDigits(v);
+      if(d.length>=10) phones.push(d);
+    });
+  });
+  return [...new Set(phones)];
+}
+function validateCashReceiptWhatsAppTarget(data){
+  const player=players.find(p=>String(p.id)===String(data?.player_id));
+  if(!player){
+    return {ok:false,message:'No se envió el recibo. El jugador del recibo no existe o ya no está disponible en la base de datos.'};
+  }
+  const receiptName=String(data?.student_name||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
+  const playerName=String(player.name||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
+  if(receiptName && playerName && receiptName!==playerName){
+    return {ok:false,message:`No se envió el recibo. La información no coincide: el recibo es de "${data.student_name}" pero el ID ${data.player_id} pertenece a "${player.name}". Revisa el jugador antes de enviar.`};
+  }
+  const phone=receiptDigits(player.phone||player.tutor_phone||'');
+  if(!phone){
+    return {ok:false,message:`No se envió el recibo. ${player.name} no tiene WhatsApp del papá/tutor registrado en su ficha.`};
+  }
+  const linkedPhones=cashReceiptLinkedParentPhones(player.id);
+  if(linkedPhones.length && !linkedPhones.some(p=>receiptPhoneSame(p,phone))){
+    return {ok:false,message:`No se envió el recibo. El WhatsApp registrado en la ficha de ${player.name} no coincide con el WhatsApp de la cuenta de papá/tutor ligada en el portal. Revisa la cuenta de papás y la ficha del jugador antes de enviar.`};
+  }
+  return {ok:true,player,phone};
+}
+
 function openCashReceiptForm(playerId=''){
   const selected=players.find(x=>x.id===playerId) || players[0] || null;
   const defaultPeriod=period(todayISO());
   const receiver=defaultCashReceiver();
   const modal=document.createElement('div'); modal.className='modalbg open'; modal.id='cashReceiptFormModal';
-  modal.innerHTML=`<div class="modal"><div class="modal-head"><h3>Generar recibo formal de efectivo</h3><button class="btn secondary" onclick="closeModal('cashReceiptFormModal')">Cerrar</button></div><div class="modal-body"><div class="notice success"><b>Registro completo:</b> captura los datos del cobro. El CRM guardará el pago como confirmado y emitirá un recibo con folio único, validación administrativa y sello opcional.</div><form id="cashReceiptForm" class="form-grid"><label class="label full">Jugador<select id="cashReceiptPlayer" class="select" required onchange="updateCashReceiptPlayer()"><option value="">Selecciona...</option>${players.map(p=>`<option value="${p.id}" ${selected&&p.id===selected.id?'selected':''}>${p.id} · ${esc(p.name)}</option>`).join('')}</select></label><div id="cashReceiptPlayerInfo" class="full">${cashReceiptPlayerSummary(selected)}</div><label class="label">Fecha<input id="cashReceiptDate" class="input" type="date" value="${todayISO()}" max="${todayISO()}" required onchange="const t=document.getElementById('cashReceiptType')?.value||'Mensualidad';document.getElementById('cashReceiptConcept').value=paymentConceptFromType(t,this.value)"></label><label class="label">Tipo de pago<select id="cashReceiptType" class="select" onchange="const d=document.getElementById('cashReceiptDate').value||todayISO();document.getElementById('cashReceiptConcept').value=paymentConceptFromType(this.value,d);"><option>Mensualidad</option><option>Inscripción</option><option>Uniforme</option><option>Torneo</option><option>Otro</option></select><small>Solo Mensualidad afecta adeudo mensual.</small></label><label class="label">Monto<input id="cashReceiptAmount" class="input" type="number" min="0.01" step="0.01" value="${esc(selected?.monthly_fee||300)}" required></label><label class="label full">Concepto<input id="cashReceiptConcept" class="input" value="Mensualidad ${esc(defaultPeriod)}" oninput="this.dataset.edited='1'" required></label><label class="label full">Recibido por<input id="cashReceiptReceiver" class="input" value="${esc(receiver)}" required><small>Este nombre aparecerá en la línea de validación del recibo.</small></label><label class="label full">Observaciones<textarea id="cashReceiptObservations" class="input" placeholder="Opcional: torneo, inscripción, abono, meses cubiertos, etc."></textarea></label><label class="consent-check full stamp-consent-check"><input id="cashReceiptUseStamp" type="checkbox" checked><span>Insertar sello oficial <b>Pago recibido</b> / <b>Recibido por Coach Arturo</b>.</span></label><div class="cash-stamp-preview full"><img src="${officialReceiptStampUrl()}" alt="Sello oficial Ducks"><div><b>Sello oficial Ducks Basketball Academy</b><small>Se integrará automáticamente dentro del área de firma del recibo.</small></div></div><div class="label full cash-signature-field"><span>Firma digital de quien recibe <small>(opcional, recomendada)</small></span><canvas id="cashReceiptSignature" width="700" height="170"></canvas><div class="actions"><button type="button" class="btn secondary small" onclick="clearCashSignature()">Limpiar firma</button></div></div><label class="consent-check full"><input id="cashReceiptValidation" type="checkbox" required><span>Confirmo que recibí físicamente el efectivo y autorizo registrar este pago como confirmado.</span></label><div class="full actions"><button class="btn green">Registrar pago y generar recibo</button></div></form></div></div>`;
+  modal.innerHTML=`<div class="modal"><div class="modal-head"><h3>Generar recibo formal de efectivo</h3><button class="btn secondary" onclick="closeModal('cashReceiptFormModal')">Cerrar</button></div><div class="modal-body"><div class="notice success"><b>Registro completo:</b> captura los datos del cobro. El CRM guardará el pago como confirmado y emitirá un recibo con folio único, validación administrativa y sello opcional.</div><form id="cashReceiptForm" class="form-grid cash-receipt-form-grid"><div class="cash-receipt-player-picker full">
+      <label class="label">Buscar jugador<input id="cashReceiptPlayerSearch" class="input" placeholder="Nombre, ID, tutor, WhatsApp o uniforme" onkeydown="if(event.key==='Enter'){event.preventDefault();searchCashReceiptPlayer();}"></label>
+      <button type="button" class="btn green cash-search-btn" onclick="searchCashReceiptPlayer()">Buscar</button>
+    </div><div id="cashReceiptPlayerSearchResults" class="cash-receipt-search-results full"></div><label class="label full">Jugador<select id="cashReceiptPlayer" class="select" required onchange="updateCashReceiptPlayer()"><option value="">Selecciona...</option>${players.map(p=>`<option value="${p.id}" ${selected&&p.id===selected.id?'selected':''}>${p.id} · ${esc(p.name)}</option>`).join('')}</select></label><div id="cashReceiptPlayerInfo" class="full">${cashReceiptPlayerSummary(selected)}</div><label class="label">Fecha<input id="cashReceiptDate" class="input" type="date" value="${todayISO()}" max="${todayISO()}" required onchange="const t=document.getElementById('cashReceiptType')?.value||'Mensualidad';document.getElementById('cashReceiptConcept').value=paymentConceptFromType(t,this.value)"></label><label class="label">Tipo de pago<select id="cashReceiptType" class="select" onchange="const d=document.getElementById('cashReceiptDate').value||todayISO();document.getElementById('cashReceiptConcept').value=paymentConceptFromType(this.value,d);"><option>Mensualidad</option><option>Inscripción</option><option>Uniforme</option><option>Torneo</option><option>Otro</option></select><small>Solo Mensualidad afecta adeudo mensual.</small></label><label class="label">Monto<input id="cashReceiptAmount" class="input" type="number" min="0.01" step="0.01" value="${esc(selected?.monthly_fee||300)}" required></label><label class="label full">Concepto<input id="cashReceiptConcept" class="input" value="Mensualidad ${esc(defaultPeriod)}" oninput="this.dataset.edited='1'" required></label><label class="label full">Recibido por<input id="cashReceiptReceiver" class="input" value="${esc(receiver)}" required><small>Este nombre aparecerá en la línea de validación del recibo.</small></label><label class="label full">Observaciones<textarea id="cashReceiptObservations" class="input" placeholder="Opcional: torneo, inscripción, abono, meses cubiertos, etc."></textarea></label><label class="consent-check full stamp-consent-check"><input id="cashReceiptUseStamp" type="checkbox" checked><span>Insertar sello oficial <b>Pago recibido</b> / <b>Recibido por Coach Arturo</b>.</span></label><div class="cash-stamp-preview full"><img src="${officialReceiptStampUrl()}" alt="Sello oficial Ducks"><div><b>Sello oficial Ducks Basketball Academy</b><small>Se integrará automáticamente dentro del área de firma del recibo.</small></div></div><div class="label full cash-signature-field"><span>Firma digital de quien recibe <small>(opcional, recomendada)</small></span><canvas id="cashReceiptSignature" width="700" height="170"></canvas><div class="actions"><button type="button" class="btn secondary small" onclick="clearCashSignature()">Limpiar firma</button></div></div><label class="consent-check full"><input id="cashReceiptValidation" type="checkbox" required><span>Confirmo que recibí físicamente el efectivo y autorizo registrar este pago como confirmado.</span></label><div class="full actions"><button class="btn green">Registrar pago y generar recibo</button></div></form></div></div>`;
   document.body.appendChild(modal);
   document.getElementById('cashReceiptForm').onsubmit=saveCashReceiptForm;
   initCashSignaturePad();
@@ -3331,4 +3418,4 @@ window.copyDefaultPaymentData=copyDefaultPaymentData;
 
 window.requestAdminNotificationPermission=requestAdminNotificationPermission; window.openRegistrationDetail=openRegistrationDetail; window.openRegistrationConvert=openRegistrationConvert; window.updateRegistrationStatus=updateRegistrationStatus; window.markNotificationRead=markNotificationRead; window.markAllNotificationsRead=markAllNotificationsRead; window.openNotificationTarget=openNotificationTarget;
 
-window.openPlayerHistory=openPlayerHistory; window.openHistoryDetail=openHistoryDetail; window.exportPlayerHistoryCSV=exportPlayerHistoryCSV;
+window.openPlayerHistory=openPlayerHistory; window.openHistoryDetail=openHistoryDetail; window.exportPlayerHistoryCSV=exportPlayerHistoryCSV; window.searchCashReceiptPlayer=searchCashReceiptPlayer; window.selectCashReceiptPlayer=selectCashReceiptPlayer; window.renderCashReceiptPlayerResults=renderCashReceiptPlayerResults;

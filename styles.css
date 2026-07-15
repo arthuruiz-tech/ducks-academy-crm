@@ -4817,3 +4817,259 @@ body.ducks-premium-skin{
   .payment-day-highlight{width:100%;justify-content:space-between;}
   .admin-page-select{min-height:44px;}
 }
+
+
+/* v2.117 - menú administrador desplegable, recibos con búsqueda y modales mejor ajustados */
+.ducks-premium-skin .admin-dropdown-header{
+  grid-template-columns:auto minmax(260px,420px) minmax(300px,1fr);
+  padding:10px 14px 12px;
+}
+.admin-menu-title{
+  display:block;
+  color:#073f34!important;
+  font-size:13px!important;
+  font-weight:950!important;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+  margin-bottom:2px;
+}
+.admin-page-select{
+  width:100%;
+  min-height:48px;
+  border-radius:18px!important;
+  font-size:15px;
+  font-weight:900;
+  color:#073f34;
+  background:linear-gradient(180deg,#ffffff,#f8fbfa)!important;
+  border:1px solid rgba(6,81,63,.14)!important;
+  box-shadow:0 12px 24px rgba(8,24,52,.06)!important;
+}
+.admin-dropdown-tools{justify-content:flex-end}
+.admin-bottom-logo-nav{
+  position:fixed;
+  left:50%;
+  bottom:calc(10px + env(safe-area-inset-bottom));
+  transform:translateX(-50%);
+  z-index:80;
+  pointer-events:none;
+}
+.admin-bottom-logo-nav button{
+  pointer-events:auto;
+  width:64px;
+  height:64px;
+  border-radius:50%;
+  border:1px solid rgba(6,81,63,.12);
+  background:linear-gradient(180deg,#ffffff,#f8fbfa);
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+  box-shadow:0 18px 42px rgba(8,24,52,.18);
+}
+.admin-bottom-logo-nav img{
+  width:54px;
+  height:54px;
+  object-fit:contain;
+  filter:drop-shadow(0 6px 10px rgba(0,0,0,.12));
+}
+.ducks-premium-skin .admin-compact-main{padding-bottom:96px!important}
+
+/* Ajuste general para que las ventanas quepan en pantalla */
+.modalbg{
+  inset:0!important;
+  padding:10px!important;
+  align-items:center!important;
+  justify-content:center!important;
+  overflow:auto!important;
+  overscroll-behavior:contain;
+}
+.modalbg .modal,
+.modalbg .wide-modal,
+.modalbg .categories-detail-modal,
+.modalbg .portal-search-modal,
+.modalbg .regulation-viewer-modal,
+.modalbg .public-more-modal,
+.modalbg .notification-modal,
+.modalbg .pay-now-modal,
+.modalbg .family-pay-modal{
+  width:min(100%,1040px)!important;
+  max-width:calc(100vw - 20px)!important;
+  max-height:calc(100dvh - 20px)!important;
+  margin:auto!important;
+  display:flex!important;
+  flex-direction:column!important;
+  overflow:hidden!important;
+}
+.modalbg .modal-head{
+  flex:0 0 auto!important;
+  position:sticky;
+  top:0;
+  z-index:5;
+}
+.modalbg .modal-body,
+.regulation-viewer-body,
+.categories-detail-body{
+  flex:1 1 auto!important;
+  min-height:0!important;
+  overflow:auto!important;
+  -webkit-overflow-scrolling:touch;
+}
+
+/* Recibo: búsqueda rápida y ventana compacta */
+#cashReceiptFormModal .modal{
+  width:min(100%,820px)!important;
+}
+#cashReceiptFormModal .modal-body{
+  padding:12px!important;
+}
+.cash-receipt-form-grid{
+  gap:10px!important;
+}
+.cash-receipt-player-picker{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:10px;
+  align-items:end;
+  background:linear-gradient(180deg,#ffffff,#f8fbfa);
+  border:1px solid rgba(6,81,63,.10);
+  border-radius:20px;
+  padding:12px;
+  box-shadow:0 10px 22px rgba(8,24,52,.05);
+}
+.cash-search-btn{
+  min-height:48px;
+  padding-inline:18px!important;
+}
+.cash-receipt-search-results{
+  display:grid;
+  gap:8px;
+}
+.cash-receipt-search-result{
+  width:100%;
+  display:grid;
+  grid-template-columns:46px minmax(0,1fr);
+  gap:10px;
+  align-items:center;
+  text-align:left;
+  border:1px solid rgba(6,81,63,.10);
+  border-radius:18px;
+  padding:10px;
+  background:#fff;
+  cursor:pointer;
+  box-shadow:0 10px 22px rgba(8,24,52,.05);
+}
+.cash-receipt-search-result:hover{
+  border-color:#f59e0b;
+  background:#fffaf0;
+}
+.cash-receipt-search-avatar{
+  width:46px;
+  height:46px;
+  border-radius:16px;
+  display:grid;
+  place-items:center;
+  background:#edf8f3;
+  color:#073f34;
+  font-weight:950;
+}
+.cash-receipt-search-result b,
+.cash-receipt-search-result small{
+  display:block;
+}
+.cash-receipt-search-result b{color:#073f34}
+.cash-receipt-search-result small{color:#657385;line-height:1.3}
+.cash-search-empty{margin:0!important}
+#cashReceiptFormModal .cash-stamp-preview{
+  padding:10px 12px!important;
+}
+#cashReceiptFormModal .cash-stamp-preview img{
+  width:64px!important;
+  height:64px!important;
+}
+#cashReceiptFormModal .cash-signature-field canvas{
+  width:100%!important;
+  height:112px!important;
+  max-height:112px!important;
+}
+#cashReceiptFormModal textarea{
+  min-height:72px!important;
+}
+#cashReceiptFormModal .consent-check{
+  padding:10px 12px!important;
+}
+#cashReceiptPreviewModal .modal{
+  width:min(100%,900px)!important;
+}
+#cashReceiptPreviewModal .modal-body{
+  padding:10px!important;
+}
+#cashReceiptPreviewModal .cash-receipt-print{
+  width:100%;
+  max-width:760px;
+}
+#cashReceiptPreviewModal .cash-receipt-actions{
+  position:sticky;
+  bottom:0;
+  background:rgba(255,255,255,.95);
+  backdrop-filter:blur(8px);
+  padding:10px 0 0;
+  z-index:4;
+}
+
+@media(max-width:1020px){
+  .ducks-premium-skin .admin-dropdown-header{
+    grid-template-columns:1fr;
+    gap:8px;
+  }
+  .admin-dropdown-center,.admin-menu-select-wrap{width:100%}
+  .admin-dropdown-tools{width:100%;justify-content:stretch}
+  .admin-compact-search{flex:1;min-width:0;width:auto}
+}
+@media(max-width:760px){
+  .modalbg{
+    padding:6px!important;
+    align-items:center!important;
+  }
+  .modalbg .modal,
+  .modalbg .wide-modal,
+  .modalbg .categories-detail-modal,
+  .modalbg .portal-search-modal,
+  .modalbg .regulation-viewer-modal,
+  .modalbg .public-more-modal,
+  .modalbg .notification-modal,
+  .modalbg .pay-now-modal,
+  .modalbg .family-pay-modal{
+    max-width:calc(100vw - 12px)!important;
+    max-height:calc(100dvh - 12px)!important;
+    border-radius:18px!important;
+  }
+  .modalbg .modal-head{
+    padding:10px 12px!important;
+  }
+  .modalbg .modal-head h3{
+    font-size:18px!important;
+  }
+  .modalbg .modal-body{
+    padding:10px!important;
+  }
+  .cash-receipt-player-picker{
+    grid-template-columns:1fr;
+  }
+  .cash-search-btn{
+    width:100%;
+  }
+  #cashReceiptFormModal .form-grid,
+  #cashReceiptFormModal .cash-receipt-form-grid{
+    grid-template-columns:1fr!important;
+  }
+  #cashReceiptFormModal .full{
+    grid-column:auto!important;
+  }
+  .admin-bottom-logo-nav button{
+    width:58px;
+    height:58px;
+  }
+  .admin-bottom-logo-nav img{
+    width:49px;
+    height:49px;
+  }
+}
