@@ -1,8 +1,9 @@
-DUCKS CRM PROFESIONAL v2.103
+DUCKS CRM PROFESIONAL v2.109
 
 Cambios:
-- Ajuste fullscreen por altura real del celular.
-- Elimina espacios vacíos superior e inferior en iPhone y celulares similares.
-- Mantiene la portada como una sola imagen tipo app.
-- Conserva hotspots funcionales de todos los botones.
+- Se retoma la base con laterales ya corregidos.
+- Campana corregida como Centro de avisos: pagos, cumpleaños, nuevos ingresos y avisos generales.
+- Se agregó Instalar app en la opción Más.
+- Se agregaron espacios visuales entre secciones de la portada.
+- Menú inferior visualmente más grande y con mejor área táctil.
 - No requiere SQL adicional.

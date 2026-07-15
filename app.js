@@ -889,21 +889,54 @@ function publicQuickMenu(){
   </nav>`;
 }
 
+function publicNotificationCard(icon,title,body,action=''){
+  return `<article class="public-alert-card"><div class="public-alert-icon">${icon}</div><div><b>${esc(title)}</b><span>${body}</span>${action}</div></article>`;
+}
+function publicNotificationRows(){
+  const rows=[];
+  const todayBirthdays = typeof birthdayPlayersToday==='function' ? birthdayPlayersToday() : [];
+  const birthdayNotes = (adminNotifications||[]).filter(n=>n.type==='birthday'&&!n.read_at).slice(0,3);
+  const paymentNotes = (adminNotifications||[]).filter(n=>['payment','evidence'].includes(n.type)&&!n.read_at).slice(0,3);
+  const registrationNotes = (adminNotifications||[]).filter(n=>n.type==='registration'&&!n.read_at).slice(0,2);
+
+  if(paymentNotes.length){
+    paymentNotes.forEach(n=>rows.push(publicNotificationCard('💳',n.title||'Pago recibido',esc(n.body||n.message||'Hay un pago o comprobante pendiente de revisar.'))));
+  }else{
+    rows.push(publicNotificationCard('💳','Pagos y comprobantes','No hay pagos nuevos pendientes en este momento.'));
+  }
+
+  if(todayBirthdays.length){
+    rows.push(publicNotificationCard('🎂','Cumpleaños de hoy',todayBirthdays.map(p=>esc(p.name||p.student_name||'Jugador')).join(', ')));
+  }else if(birthdayNotes.length){
+    birthdayNotes.forEach(n=>rows.push(publicNotificationCard('🎂',n.title||'Cumpleaños Ducks',esc(n.body||n.message||'Hay un cumpleaños registrado.'))));
+  }else{
+    rows.push(publicNotificationCard('🎂','Cumpleaños','No hay cumpleaños registrados para hoy.'));
+  }
+
+  if(registrationNotes.length){
+    registrationNotes.forEach(n=>rows.push(publicNotificationCard('📝',n.title||'Nueva solicitud',esc(n.body||n.message||'Hay una solicitud de ingreso pendiente.'))));
+  }else{
+    rows.push(publicNotificationCard('📝','Nuevo ingreso','El registro digital está disponible para nuevos jugadores.'));
+  }
+
+  rows.push(publicNotificationCard('📣','Aviso general','Revisa calendario, categorías y pagos desde el portal Ducks.'));
+  return rows.join('');
+}
 function openPublicNotifications(){
   const previous=document.getElementById('publicNoticeModal');
   if(previous) previous.remove();
+  const unread=(adminNotifications||[]).filter(n=>!n.read_at).length;
   const modal=document.createElement('div');
   modal.className='modalbg open';
   modal.id='publicNoticeModal';
-  modal.innerHTML=`<div class="modal notification-modal"><div class="modal-head"><div><h3>Avisos Ducks</h3><small>Notificaciones y accesos rápidos</small></div><button class="btn secondary" onclick="closeModal('publicNoticeModal')">Cerrar</button></div><div class="modal-body"><div class="ducks-notice-list">
-    <article><b>Pago y comprobantes</b><span>Ingresa al Portal de Papás para consultar pagos, evidencias y comprobantes.</span></article>
-    <article><b>Nuevo ingreso</b><span>El cuestionario de registro está disponible en la sección Nuevo ingreso.</span></article>
-    <article><b>Categorías y calendario</b><span>Consulta horarios, categorías y próximos eventos desde la portada principal.</span></article>
-  </div><div class="public-notice-actions">
-    <button class="btn green" onclick="closeModal('publicNoticeModal');openParentSectionAction('pay')">Portal de papás</button>
-    <button class="btn secondary" onclick="closeModal('publicNoticeModal');showCalendarNotice()">Calendario</button>
-    <button class="btn secondary" onclick="closeModal('publicNoticeModal');installDucksApp()">Instalar app</button>
-  </div></div></div>`;
+  modal.innerHTML=`<div class="modal notification-modal public-notification-center"><div class="modal-head"><div><h3>Centro de avisos Ducks</h3><small>${unread?`${unread} aviso(s) pendiente(s)`:'Avisos, pagos, cumpleaños y recordatorios'}</small></div><button class="btn secondary" onclick="closeModal('publicNoticeModal')">Cerrar</button></div><div class="modal-body">
+    <div class="public-alert-list">${publicNotificationRows()}</div>
+    <div class="public-notice-actions">
+      <button class="btn green" onclick="closeModal('publicNoticeModal');openParentSectionAction('pay')">Ver pagos</button>
+      <button class="btn secondary" onclick="closeModal('publicNoticeModal');showCalendarNotice()">Calendario</button>
+      <button class="btn secondary" onclick="closeModal('publicNoticeModal');installDucksApp()">Instalar app</button>
+    </div>
+  </div></div>`;
   document.body.appendChild(modal);
 }
 
@@ -1160,6 +1193,16 @@ function renderPublicHome(){
     <main class="ducks-mockup-wrap">
       <section id="inicio" class="ducks-mockup-screen" aria-label="Portada principal Ducks Basketball Academy">
         <img src="assets/home-premium-v306.webp" alt="Portada principal Ducks Basketball Academy" class="ducks-mockup-image" fetchpriority="high">
+        <div class="mockup-section-gap gap-video"></div>
+        <div class="mockup-section-gap gap-cards"></div>
+        <div class="mockup-section-gap gap-banner"></div>
+        <nav class="mockup-visible-bottom-nav" aria-label="Menú inferior Ducks">
+          <button type="button" onclick="renderPublicHome()"><span>⌂</span><b>Inicio</b></button>
+          <button type="button" onclick="openPublicNewsHub()"><span>▦</span><b>Noticias</b></button>
+          <button type="button" class="visible-bottom-logo" onclick="renderPublicHome()"><img src="assets/logo.png" alt="Ducks"></button>
+          <button type="button" onclick="openDucksWhatsApp('Hola, quiero información de Ducks Basketball Academy.')"><span>☏</span><b>Mensajes</b></button>
+          <button type="button" onclick="openPublicMoreMenu()"><span>•••</span><b>Más</b></button>
+        </nav>
 
         <button class="mockup-hotspot hs-bell" type="button" aria-label="Avisos" onclick="openPublicNotifications()"></button>
         <button class="mockup-hotspot hs-video" type="button" aria-label="Video destacado" onclick="openAcademyStory()"></button>
