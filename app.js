@@ -48,6 +48,8 @@ const ACADEMY_WHATSAPP = window.DUCKS_ACADEMY_WHATSAPP || '+5214495498220';
 const ACADEMY_WHATSAPP_DIGITS = String(ACADEMY_WHATSAPP).replace(/\D/g,'');
 const OFFICIAL_RECEIPT_STAMP_ASSET = 'assets/sello-pago-recibido-coach-arturo.png';
 function officialReceiptStampUrl(){ return new URL(OFFICIAL_RECEIPT_STAMP_ASSET, window.location.href).href; }
+const OFFICIAL_LOGO_ASSET = 'assets/logo.png';
+function officialLogoUrl(){ return new URL(OFFICIAL_LOGO_ASSET, window.location.href).href; }
 const ACADEMY_ADDRESS = 'Parque Boulevares 1: Jesús Sotelo Inclán, Bulevares 1ra Secc, 20288 Aguascalientes, Ags.';
 const ACADEMY_HOURS = 'Lun a Vie · 5:00 p.m. a 8:00 p.m.';
 const ACADEMY_MAP_URL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ACADEMY_ADDRESS)}`;
@@ -1835,7 +1837,7 @@ async function loadAdminData(){
 }
 async function refresh(){ if(mode==='admin'){await loadAdminData(); renderShell(); renderPage();} }
 function renderShell(){
-  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="notifications">🔔 Avisos <span class="notification-badge hidden" data-notification-badge>0</span></button><button data-page="registrations">📝 Solicitudes de ingreso</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="history">🕘 Historial</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.91: recibos de efectivo con sello opcional, WhatsApp y cierre de impresión.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><button class="btn secondary notification-bell" onclick="page='notifications';renderPage()">🔔 <span class="notification-badge hidden" data-notification-badge>0</span></button><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
+  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="notifications">🔔 Avisos <span class="notification-badge hidden" data-notification-badge>0</span></button><button data-page="registrations">📝 Solicitudes de ingreso</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="history">🕘 Historial</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.93: recibos de efectivo con imagen para WhatsApp, sello/firma y una sola página.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><button class="btn secondary notification-bell" onclick="page='notifications';renderPage()">🔔 <span class="notification-badge hidden" data-notification-badge>0</span></button><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
   document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page=b.dataset.page; if(page==='public'){renderPublicHome(); return;} renderPage();});
   document.getElementById('search').oninput=e=>{q=e.target.value; renderPage();};
   document.getElementById('authBtn').onclick=logout;
@@ -2832,6 +2834,238 @@ function cashReceiptPrintStyles(){
     @media print{html,body{width:100%;height:auto}.cash-receipt-print{margin:0 auto;border-radius:12px;transform:none!important;page-break-inside:avoid;break-inside:avoid}.cash-receipt-head,.cash-receipt-body,.cash-receipt-foot,.cash-receipt-identity{page-break-inside:avoid;break-inside:avoid}}
   `;
 }
+
+async function loadImageForCanvas(src){
+  return await new Promise((resolve,reject)=>{
+    const img=new Image();
+    img.crossOrigin='anonymous';
+    img.onload=()=>resolve(img);
+    img.onerror=()=>reject(new Error('No se pudo cargar imagen: '+src));
+    img.src=src;
+  });
+}
+function roundedRectPath(ctx,x,y,w,h,r){
+  const rr=Math.min(r,w/2,h/2);
+  ctx.beginPath();
+  ctx.moveTo(x+rr,y);
+  ctx.arcTo(x+w,y,x+w,y+h,rr);
+  ctx.arcTo(x+w,y+h,x,y+h,rr);
+  ctx.arcTo(x,y+h,x,y,rr);
+  ctx.arcTo(x,y,x+w,y,rr);
+  ctx.closePath();
+}
+function wrapCanvasText(ctx,text,x,y,maxWidth,lineHeight,maxLines=999){
+  const words=String(text||'').split(/\s+/).filter(Boolean);
+  if(!words.length) return y;
+  let line='';
+  let lines=0;
+  for(const word of words){
+    const test=line ? `${line} ${word}` : word;
+    if(ctx.measureText(test).width>maxWidth && line){
+      ctx.fillText(line,x,y);
+      y+=lineHeight;
+      lines++;
+      if(lines>=maxLines) return y;
+      line=word;
+    } else line=test;
+  }
+  if(line && lines<maxLines){ ctx.fillText(line,x,y); y+=lineHeight; }
+  return y;
+}
+async function buildCashReceiptImageBlob(data){
+  const canvas=document.createElement('canvas');
+  canvas.width=1200; canvas.height=1700;
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#eef4f7'; ctx.fillRect(0,0,1200,1700);
+
+  ctx.save();
+  roundedRectPath(ctx,60,50,1080,1600,28);
+  ctx.fillStyle='#ffffff';
+  ctx.shadowColor='rgba(7,40,61,0.14)';
+  ctx.shadowBlur=24;
+  ctx.shadowOffsetY=8;
+  ctx.fill();
+  ctx.restore();
+
+  ctx.fillStyle='#0f3a4e';
+  ctx.fillRect(88,82,1024,124);
+  ctx.fillStyle='#0d8d53';
+  ctx.fillRect(88,206,1024,16);
+
+  try{
+    const logo=await loadImageForCanvas(officialLogoUrl());
+    ctx.drawImage(logo,116,95,92,92);
+  }catch(e){}
+
+  ctx.fillStyle='#ffffff';
+  ctx.font='bold 40px Arial';
+  ctx.fillText('Ducks Basketball Academy',232,142);
+  ctx.font='24px Arial';
+  ctx.fillText('Recibo oficial de pago',232,178);
+
+  roundedRectPath(ctx,850,104,230,74,16);
+  ctx.fillStyle='#f2fbf6';
+  ctx.fill();
+  ctx.strokeStyle='#c6e8d2';
+  ctx.lineWidth=2;
+  ctx.stroke();
+  ctx.fillStyle='#266447';
+  ctx.font='bold 21px Arial';
+  ctx.fillText('Folio',870,132);
+  ctx.font='bold 24px Arial';
+  ctx.fillText(String(data.folio||''),870,162);
+
+  const drawLabelValue=(label,value,x,y,width)=>{
+    ctx.fillStyle='#58707d';
+    ctx.font='bold 19px Arial';
+    ctx.fillText(label,x,y);
+    ctx.fillStyle='#102a38';
+    ctx.font='28px Arial';
+    return wrapCanvasText(ctx,String(value||''),x,y+34,width,32,3);
+  };
+
+  let y=276;
+  const y1=drawLabelValue('Jugador', data.student_name||'', 118, y, 430);
+  let y2=drawLabelValue('Fecha', formatDateDMY(data.payment_date)||data.payment_date||'', 650, y, 220);
+  y2=drawLabelValue('Periodo', data.period||'', 650, y2+10, 220);
+  y=Math.max(y1,y2)+14;
+  y=drawLabelValue('Concepto', data.concept||'Pago en efectivo', 118, y, 900)+10;
+
+  const drawInfoBox=(label,val,x,y,w,h,accent=false)=>{
+    roundedRectPath(ctx,x,y,w,h,18);
+    ctx.fillStyle=accent?'#edf8f3':'#f7fafc';
+    ctx.fill();
+    ctx.strokeStyle=accent?'#bbe3cd':'#dbe6ec';
+    ctx.lineWidth=2;
+    ctx.stroke();
+    ctx.fillStyle='#5d7580';
+    ctx.font='bold 18px Arial';
+    ctx.fillText(label,x+22,y+28);
+    ctx.fillStyle=accent?'#087142':'#102a38';
+    ctx.font='bold 30px Arial';
+    wrapCanvasText(ctx,String(val||''),x+22,y+66,w-44,34,2);
+  };
+
+  drawInfoBox('Monto', money(data.amount||0), 118, y, 430, 108, true);
+  drawInfoBox('Método', data.method||'Efectivo', 572, y, 242, 108, false);
+  drawInfoBox('Estatus', 'PAGADO', 832, y, 248, 108, true);
+  y += 134;
+
+  drawInfoBox('Recibido por', data.received_by||'Coach Arturo', 118, y, 430, 112, false);
+  drawInfoBox('Generado', data.generated_at||formatAcademyDateTime(new Date().toISOString()), 572, y, 508, 112, false);
+  y += 146;
+
+  roundedRectPath(ctx,118,y,962,132,18);
+  ctx.fillStyle='#fbfdfe';
+  ctx.fill();
+  ctx.strokeStyle='#dbe6ec';
+  ctx.lineWidth=2;
+  ctx.stroke();
+  ctx.fillStyle='#5d7580';
+  ctx.font='bold 19px Arial';
+  ctx.fillText('Observaciones',142,y+28);
+  ctx.fillStyle='#102a38';
+  ctx.font='24px Arial';
+  wrapCanvasText(ctx, data.observations||'Sin observaciones adicionales.',142,y+64,918,30,3);
+  y += 164;
+
+  roundedRectPath(ctx,118,y,470,228,18);
+  ctx.fillStyle='#ffffff';
+  ctx.fill();
+  ctx.strokeStyle='#dbe6ec';
+  ctx.lineWidth=2;
+  ctx.stroke();
+  ctx.fillStyle='#5d7580';
+  ctx.font='bold 19px Arial';
+  ctx.fillText('Firma / sello de recibido',142,y+28);
+
+  if(data.stamp_url || data.use_stamp){
+    try{
+      const stamp=await loadImageForCanvas(data.stamp_url || officialReceiptStampUrl());
+      ctx.drawImage(stamp,156,y+42,168,168);
+    }catch(e){}
+  }
+  if(data.signature_url){
+    try{
+      const sign=await loadImageForCanvas(data.signature_url);
+      ctx.drawImage(sign,300,y+120,220,58);
+    }catch(e){}
+  }
+
+  ctx.strokeStyle='#183c4d';
+  ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.moveTo(148,y+190);
+  ctx.lineTo(548,y+190);
+  ctx.stroke();
+  ctx.fillStyle='#102a38';
+  ctx.font='bold 20px Arial';
+  ctx.fillText(String(data.received_by||'Coach Arturo'),196,y+214);
+  ctx.fillStyle='#5d7580';
+  ctx.font='16px Arial';
+  ctx.fillText('Nombre, firma o sello de quien recibió',175,y+235);
+
+  roundedRectPath(ctx,610,y,470,228,18);
+  ctx.fillStyle='#edf8f3';
+  ctx.fill();
+  ctx.strokeStyle='#c6e8d2';
+  ctx.lineWidth=2;
+  ctx.stroke();
+  ctx.fillStyle='#216245';
+  ctx.font='bold 20px Arial';
+  ctx.fillText('Validación administrativa',636,y+30);
+  ctx.fillStyle='#087142';
+  ctx.font='bold 32px Arial';
+  ctx.fillText('✓ Pago confirmado',636,y+76);
+  ctx.fillStyle='#27424f';
+  ctx.font='22px Arial';
+  wrapCanvasText(ctx, `Periodo cubierto: ${data.period||''}`,636,y+116,400,28,2);
+  wrapCanvasText(ctx, 'Recibo interno de Ducks Basketball Academy.',636,y+154,400,28,2);
+  y += 264;
+
+  roundedRectPath(ctx,118,y,962,120,18);
+  ctx.fillStyle='#fff9ef';
+  ctx.fill();
+  ctx.strokeStyle='#f0d7a8';
+  ctx.lineWidth=2;
+  ctx.stroke();
+  ctx.fillStyle='#7a5622';
+  ctx.font='bold 18px Arial';
+  ctx.fillText('Importante',142,y+28);
+  ctx.fillStyle='#5c4a2d';
+  ctx.font='22px Arial';
+  wrapCanvasText(ctx, 'Este comprobante corresponde al pago recibido y validado en el CRM de Ducks Basketball Academy.',142,y+66,918,28,3);
+
+  return await new Promise(resolve=>canvas.toBlob(resolve,'image/png',0.95));
+}
+function downloadBlobFile(blob,filename){
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+}
+async function prepareCashReceiptShareImage(data){
+  try{
+    const btn=document.getElementById('cashReceiptWhatsappBtn');
+    if(btn){ btn.disabled=true; btn.textContent='Preparando imagen...'; }
+    const blob=await buildCashReceiptImageBlob(data);
+    const filename=`recibo-${(data.folio||'ducks').replace(/[^a-z0-9_-]/gi,'_')}.png`;
+    const file=new File([blob], filename, {type:'image/png'});
+    window.currentCashReceiptImageBlob=blob;
+    window.currentCashReceiptImageFile=file;
+    if(btn){ btn.disabled=false; btn.textContent='Enviar imagen por WhatsApp'; }
+  }catch(err){
+    console.error(err);
+    const btn=document.getElementById('cashReceiptWhatsappBtn');
+    if(btn){ btn.disabled=false; btn.textContent='Generar imagen para WhatsApp'; }
+    toast('No se pudo preparar la imagen del recibo.');
+  }
+}
+
 function cashReceiptWhatsappMessage(data){
   return `Hola, compartimos tu recibo de pago de Ducks Basketball Academy.
 
@@ -2855,23 +3089,69 @@ function cashReceiptWhatsappMessage(data){
 `+
     `Gracias. Este mensaje corresponde al recibo interno registrado en el CRM de Ducks Basketball Academy.`;
 }
-function sendCashReceiptWhatsApp(){
+async function sendCashReceiptWhatsApp(){
   const data=window.currentCashReceiptData;
   if(!data){toast('No se encontró la información del recibo.');return;}
   const player=players.find(p=>String(p.id)===String(data.player_id));
   const phone=String(player?.phone||player?.tutor_phone||'').replace(/\D/g,'');
   if(!phone){toast('El jugador no tiene un WhatsApp registrado.');return;}
-  const url=`https://wa.me/${phone}?text=${encodeURIComponent(cashReceiptWhatsappMessage(data))}`;
+
+  let file=window.currentCashReceiptImageFile;
+  let blob=window.currentCashReceiptImageBlob;
+  if(!file || !blob){
+    blob=await buildCashReceiptImageBlob(data);
+    const filename=`recibo-${(data.folio||'ducks').replace(/[^a-z0-9_-]/gi,'_')}.png`;
+    file=new File([blob], filename, {type:'image/png'});
+    window.currentCashReceiptImageBlob=blob;
+    window.currentCashReceiptImageFile=file;
+  }
+
+  const message=cashReceiptWhatsappMessage(data);
+  if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
+    try{
+      await navigator.share({
+        title:'Recibo Ducks Basketball Academy',
+        text:message,
+        files:[file]
+      });
+      toast('Selecciona WhatsApp para enviar la imagen del recibo.');
+      return;
+    }catch(err){
+      if(String(err?.name||'')==='AbortError') return;
+      console.warn('No se pudo compartir directo',err);
+    }
+  }
+
+  downloadBlobFile(blob, file.name);
+  const extra='\\n\\nAdjunta la imagen del recibo descargada automáticamente.';
+  const url=`https://wa.me/${phone}?text=${encodeURIComponent(message + extra)}`;
   window.open(url,'_blank','noopener');
+  toast('Se descargó la imagen del recibo. Adjunta esa imagen en WhatsApp.');
 }
-function printCashReceipt(){
-  const node=document.getElementById('cashReceiptPrintable');
-  if(!node){toast('No se encontró el recibo para imprimir.');return;}
+async function printCashReceipt(){
+  const data=window.currentCashReceiptData;
+  if(!data){toast('No se encontró la información del recibo.');return;}
+  let blob=window.currentCashReceiptImageBlob;
+  if(!blob){
+    blob=await buildCashReceiptImageBlob(data);
+    window.currentCashReceiptImageBlob=blob;
+  }
+  const imgUrl=URL.createObjectURL(blob);
   const win=window.open('', '_blank', 'width=900,height=1000');
   if(!win){toast('Permite ventanas emergentes para imprimir el recibo.');return;}
-  const folio=esc(node.querySelector('.cash-receipt-folio strong')?.textContent||'Ducks');
-  win.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Recibo ${folio}</title><style>${cashReceiptPrintStyles()}
-.print-toolbar{position:sticky;top:0;z-index:20;display:flex;justify-content:center;gap:12px;padding:12px;background:#eef4f7;border-bottom:1px solid #cbd9df}.print-toolbar button{appearance:none;border:0;border-radius:8px;padding:11px 18px;font:700 14px Arial;cursor:pointer}.print-toolbar .print-btn{background:#0d6748;color:#fff}.print-toolbar .close-btn{background:#dfe8ec;color:#123247}.print-page{padding:16px}@media print{.print-toolbar{display:none!important}.print-page{padding:0}}</style></head><body><div class="print-toolbar"><button class="print-btn" onclick="window.print()">Imprimir / Guardar PDF</button><button class="close-btn" onclick="window.close()">Cerrar</button></div><div class="print-page">${node.outerHTML}</div><script>setTimeout(()=>window.print(),300)<\/script></body></html>`);
+  const folio=String(data.folio||'Ducks').replace(/</g,'');
+  win.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Recibo ${folio}</title><style>
+@page{size:letter portrait;margin:8mm}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:#eef4f7;font-family:Arial,Helvetica,sans-serif}
+.print-toolbar{position:sticky;top:0;z-index:20;display:flex;justify-content:center;gap:12px;padding:12px;background:#eef4f7;border-bottom:1px solid #cbd9df}
+.print-toolbar button{appearance:none;border:0;border-radius:8px;padding:11px 18px;font:700 14px Arial;cursor:pointer}
+.print-toolbar .print-btn{background:#0d6748;color:#fff}
+.print-toolbar .close-btn{background:#dfe8ec;color:#123247}
+.print-page{min-height:calc(100vh - 58px);display:flex;align-items:flex-start;justify-content:center;padding:12px}
+.receipt-image{display:block;width:auto;max-width:100%;max-height:calc(100vh - 88px);object-fit:contain;background:#fff;box-shadow:0 8px 28px rgba(0,0,0,.14)}
+@media print{html,body{background:#fff}.print-toolbar{display:none!important}.print-page{padding:0;min-height:0}.receipt-image{width:100%;height:auto;max-width:100%;max-height:100%;box-shadow:none;page-break-inside:avoid;break-inside:avoid}}
+</style></head><body><div class="print-toolbar"><button class="print-btn" onclick="window.print()">Imprimir / Guardar PDF</button><button class="close-btn" onclick="window.close()">Cerrar</button></div><div class="print-page"><img class="receipt-image" src="${imgUrl}" alt="Recibo Ducks"></div><script>setTimeout(()=>window.print(),450);window.addEventListener('beforeunload',()=>URL.revokeObjectURL('${imgUrl}'));<\/script></body></html>`);
   win.document.close();
   win.focus();
 }
@@ -2880,8 +3160,9 @@ function openCashReceiptPreview(data){
   const modal=document.createElement('div');
   modal.className='modalbg open';
   modal.id='cashReceiptPreviewModal';
-  modal.innerHTML=`<div class="modal wide-modal"><div class="modal-head"><h3>Recibo formal generado</h3><button class="btn secondary" onclick="closeModal('cashReceiptPreviewModal')">Cerrar</button></div><div class="modal-body">${cashReceiptHtml(data)}<div class="actions cash-receipt-actions"><button class="btn green" onclick="sendCashReceiptWhatsApp()">Enviar recibo por WhatsApp</button><button class="btn secondary" onclick="printCashReceipt()">Imprimir / Guardar PDF</button><button class="btn secondary" onclick="closeModal('cashReceiptPreviewModal')">Cerrar</button></div></div></div>`;
+  modal.innerHTML=`<div class="modal wide-modal"><div class="modal-head"><h3>Recibo formal generado</h3><button class="btn secondary" onclick="closeModal('cashReceiptPreviewModal')">Cerrar</button></div><div class="modal-body">${cashReceiptHtml(data)}<div class="actions cash-receipt-actions"><button id="cashReceiptWhatsappBtn" class="btn green" onclick="sendCashReceiptWhatsApp()" disabled>Preparando imagen...</button><button class="btn secondary" onclick="printCashReceipt()">Imprimir / Guardar PDF</button><button class="btn secondary" onclick="closeModal('cashReceiptPreviewModal')">Cerrar</button></div></div></div>`;
   document.body.appendChild(modal);
+  prepareCashReceiptShareImage(data);
 }
 function openCashReceiptPreviewFromPayment(paymentId){
   const payment=payments.find(p=>String(p.id)===String(paymentId));

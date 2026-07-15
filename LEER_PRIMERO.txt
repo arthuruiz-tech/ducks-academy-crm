@@ -1,14 +1,7 @@
-VERSIÓN v2.86 - VIDEO DE APERTURA TIPO ICONO
+DUCKS CRM PROFESIONAL v2.93
 
 Cambios:
-- El video de apertura ahora se muestra en un recuadro compacto centrado, como icono animado.
-- Mejor calidad percibida al reducir el área de reproducción sin aumentar el peso.
-- Fondo institucional, borde verde, sombra ligera y animación sutil.
-- Mantiene salida automática cuando el portal termina de cargar.
-- No requiere SQL adicional.
-
-PUBLICACIÓN EN VERCEL
-1. Descomprime este ZIP.
-2. Sube todo el contenido al proyecto.
-3. Espera a que el despliegue indique Ready.
-4. Realiza una recarga completa del navegador.
+- El recibo se prepara como imagen PNG desde la vista previa.
+- En celular compatible, el botón abre el menú de compartir con la imagen lista para WhatsApp.
+- La impresión usa la misma imagen del recibo para mantenerse en una sola página.
+- Se conserva el sello y/o firma dentro del área de validación.
