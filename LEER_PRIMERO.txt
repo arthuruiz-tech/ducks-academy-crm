@@ -1,8 +1,10 @@
-DUCKS CRM PROFESIONAL v2.103
+DUCKS CRM PROFESIONAL v2.104
 
 Cambios:
-- Ajuste fullscreen por altura real del celular.
-- Elimina espacios vacíos superior e inferior en iPhone y celulares similares.
-- Mantiene la portada como una sola imagen tipo app.
-- Conserva hotspots funcionales de todos los botones.
-- No requiere SQL adicional.
+- Ajuste fino para evitar recorte lateral en celular.
+- Portada sigue mostrándose en una sola pantalla.
+- Se integró el video real de la academia en la zona de video principal.
+- Se eliminaron visualmente el botón play, el tiempo y el texto "Ver video".
+- Se mantienen los hotspots y funciones del portal.
+
+No requiere SQL adicional.
