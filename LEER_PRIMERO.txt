@@ -1,8 +1,9 @@
-DUCKS CRM PROFESIONAL v2.96
+DUCKS CRM PROFESIONAL v2.97
 
-Corrección:
-- Se corrigió el error que impedía generar el recibo cuando el sello estaba activo.
-- El sello mantiene tamaño grande y rotación tipo tinta real.
-- WhatsApp comparte únicamente la imagen del recibo, sin texto.
-- La impresión sigue ajustada a una sola página.
+Cambios:
+- Se agregó tipo de pago: Mensualidad, Inscripción, Uniforme, Torneo y Otro.
+- Solo los pagos de tipo Mensualidad afectan el adeudo mensual.
+- Inscripción, Uniforme, Torneo y Otro quedan en historial, recibo y pagos, pero no modifican el cálculo de mensualidad.
+- El portal de papás muestra el tipo de pago en historial.
+- Los recibos de efectivo guardan el tipo de pago y concepto.
 - No requiere SQL adicional.

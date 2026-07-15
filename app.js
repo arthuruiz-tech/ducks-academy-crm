@@ -323,6 +323,39 @@ function paymentConfirmedAmount(payment){
   const m=String(payment?.notes||'').match(/\[CONFIRMED_AMOUNT:([-+]?\d+(?:\.\d+)?)\]/);
   return m ? Number(m[1]) : null;
 }
+function paymentTypeTagValue(payment){
+  const m=String(payment?.notes||'').match(/\[PAYMENT_TYPE:([^\]]+)\]/);
+  return m ? m[1].trim().toLowerCase() : '';
+}
+function isMonthlyPayment(payment){
+  const t=paymentTypeTagValue(payment);
+  return !t || t==='mensualidad' || t==='monthly';
+}
+function paymentTypeLabelFromNotes(notes){
+  const m=String(notes||'').match(/\[PAYMENT_TYPE:([^\]]+)\]/);
+  const raw=m ? m[1].trim() : '';
+  const map={mensualidad:'Mensualidad',inscripcion:'Inscripción',uniforme:'Uniforme',torneo:'Torneo',otro:'Otro',monthly:'Mensualidad'};
+  return map[raw.toLowerCase()] || raw || 'Mensualidad';
+}
+function paymentTypeNoteTag(type){
+  const key=String(type||'Mensualidad').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'') || 'mensualidad';
+  const allowed={mensualidad:1,inscripcion:1,uniforme:1,torneo:1,otro:1};
+  return `[PAYMENT_TYPE:${allowed[key]?key:'otro'}]`;
+}
+function paymentConceptFromType(type,dateISO=todayISO()){
+  const t=String(type||'Mensualidad');
+  if(t==='Mensualidad') return `Mensualidad ${period(dateISO)}`;
+  if(t==='Inscripción') return 'Inscripción';
+  if(t==='Uniforme') return 'Uniforme';
+  if(t==='Torneo') return 'Torneo';
+  return 'Otro concepto';
+}
+function adminPaymentTypeOptions(selected='Mensualidad'){
+  return ['Mensualidad','Inscripción','Uniforme','Torneo','Otro']
+    .map(t=>`<option value="${t}" ${t===selected?'selected':''}>${t}</option>`).join('');
+}
 function cleanPaymentBalanceTags(notes){
   return String(notes||'')
     .replace(/\s*\[DUCKS_BALANCE_AFTER:[^\]]+\]/g,'')
@@ -331,6 +364,7 @@ function cleanPaymentBalanceTags(notes){
     .trim();
 }
 function paymentBalanceSummary(payment,player=null){
+  if(!isMonthlyPayment(payment)) return '<span class="payment-balance exact">No afecta mensualidad</span>';
   let balance=paymentBalanceAfter(payment);
   if(player&&usesRegistrationBilling(player)&&payment?.confirmation_status==='Confirmado'){
     const confirmed=confirmedPaymentsForPlayer(player,payments);
@@ -348,7 +382,7 @@ function paymentBalanceSummary(payment,player=null){
 function confirmedPaymentsForPlayer(player,payList=payments){
   // Nunca se filtran pagos por fecha de registro: el historial completo siempre cuenta.
   return payList
-    .filter(p=>p.player_id===player.id && p.confirmation_status==='Confirmado')
+    .filter(p=>p.player_id===player.id && p.confirmation_status==='Confirmado' && isMonthlyPayment(p))
     .sort((a,b)=>{
       const ka=`${a.payment_date||''}|${a.confirmed_at||''}|${a.id||''}`;
       const kb=`${b.payment_date||''}|${b.confirmed_at||''}|${b.id||''}`;
@@ -1539,7 +1573,7 @@ async function submitFamilyPayment(e){
     for(let i=0;i<items.length;i++){
       const item=items[i];
       const player=parentPlayers.find(p=>p.id===item.player_id);
-      const notes=`[FAMILY_PAYMENT:${batchId}] Pago familiar ${i+1}/${items.length}.${comment?' '+comment:''}`;
+      const notes=`${paymentTypeNoteTag('Mensualidad')} [FAMILY_PAYMENT:${batchId}] Pago familiar ${i+1}/${items.length}.${comment?' '+comment:''}`;
       const row={p_token:parentToken,p_player_id:item.player_id,p_payment_date:payDate,p_period:period(payDate),p_amount:item.amount,p_method:method,p_notes:notes,p_evidence_url:evidence_url,p_evidence_name:file.name};
       const {data,error}=await sb.rpc('ducks_parent_submit_payment_v213',row);
       if(error || !data?.ok) failures.push(player?.name||item.player_id);
@@ -1786,7 +1820,8 @@ async function submitParentPayment(e){
     const evidence_url=await uploadFile(file,'evidencias');
     const payDate=document.getElementById('parentPayDate').value;
     if(payDate>todayISO()) throw new Error('La fecha de pago no puede ser posterior a la fecha actual de Aguascalientes.');
-    const row={p_token:parentToken,p_player_id:player_id,p_payment_date:payDate,p_period:period(payDate),p_amount:Number(document.getElementById('parentPayAmount').value||0),p_method:document.getElementById('parentPayMethod').value,p_notes:document.getElementById('parentPayNotes').value,p_evidence_url:evidence_url,p_evidence_name:file.name};
+    const parentNotes=document.getElementById('parentPayNotes').value.trim();
+    const row={p_token:parentToken,p_player_id:player_id,p_payment_date:payDate,p_period:period(payDate),p_amount:Number(document.getElementById('parentPayAmount').value||0),p_method:document.getElementById('parentPayMethod').value,p_notes:`${paymentTypeNoteTag('Mensualidad')}${parentNotes?' '+parentNotes:''}`,p_evidence_url:evidence_url,p_evidence_name:file.name};
     const {data,error}=await sb.rpc('ducks_parent_submit_payment_v213',row);
     if(error) throw error;
     if(!data?.ok) throw new Error(data?.message||'No se pudo enviar');
@@ -1837,7 +1872,7 @@ async function loadAdminData(){
 }
 async function refresh(){ if(mode==='admin'){await loadAdminData(); renderShell(); renderPage();} }
 function renderShell(){
-  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="notifications">🔔 Avisos <span class="notification-badge hidden" data-notification-badge>0</span></button><button data-page="registrations">📝 Solicitudes de ingreso</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="history">🕘 Historial</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.96: corrección para generar recibo, WhatsApp sin texto, sello real y una sola página.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><button class="btn secondary notification-bell" onclick="page='notifications';renderPage()">🔔 <span class="notification-badge hidden" data-notification-badge>0</span></button><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
+  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="notifications">🔔 Avisos <span class="notification-badge hidden" data-notification-badge>0</span></button><button data-page="registrations">📝 Solicitudes de ingreso</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="history">🕘 Historial</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.97: tipo de pago separado; solo mensualidad afecta adeudo.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><button class="btn secondary notification-bell" onclick="page='notifications';renderPage()">🔔 <span class="notification-badge hidden" data-notification-badge>0</span></button><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
   document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page=b.dataset.page; if(page==='public'){renderPublicHome(); return;} renderPage();});
   document.getElementById('search').oninput=e=>{q=e.target.value; renderPage();};
   document.getElementById('authBtn').onclick=logout;
@@ -2243,9 +2278,10 @@ function updatePaymentReviewDifference(){
   let totalReported=0,totalConfirmed=0,totalDifference=0;
   rows.forEach(row=>{
     const debt=Number(row.dataset.debt||0);
+    const monthly=row.dataset.monthly!=='0';
     const input=row.querySelector('.payment-review-amount');
     const amount=Number(input?.value||0);
-    const result=paymentDifferenceText(debt,amount);
+    const result=monthly?paymentDifferenceText(debt,amount):{cls:'exact',text:'No afecta mensualidad'};
     const resultEl=row.querySelector('.payment-review-difference');
     if(resultEl){
       resultEl.className=`payment-review-difference ${result.cls}`;
@@ -2253,7 +2289,7 @@ function updatePaymentReviewDifference(){
     }
     totalReported+=Number(row.dataset.reported||0);
     totalConfirmed+=amount;
-    totalDifference+=(debt-amount);
+    if(monthly) totalDifference+=(debt-amount);
   });
   const reportedEl=document.getElementById('reviewReportedTotal');
   const confirmedEl=document.getElementById('reviewConfirmedTotal');
@@ -2280,13 +2316,14 @@ function openPaymentReview(paymentId){
   const first=rows[0];
   const rowHtml=rows.map(p=>{
     const player=players.find(x=>x.id===p.player_id);
-    const debt=player?calc(player).amount:0;
+    const monthly=isMonthlyPayment(p);
+    const debt=(player&&monthly)?calc(player).amount:0;
     const initial=Number(p.amount||0);
-    const result=paymentDifferenceText(debt,initial);
-    return `<div class="payment-review-row" data-payment-id="${p.id}" data-debt="${debt}" data-reported="${initial}">
+    const result=monthly?paymentDifferenceText(debt,initial):{cls:'exact',text:'No afecta mensualidad'};
+    return `<div class="payment-review-row" data-payment-id="${p.id}" data-debt="${debt}" data-reported="${initial}" data-monthly="${monthly?'1':'0'}">
       <div class="payment-review-player">
         <b>${esc(p.student_name||player?.name||p.player_id)}</b>
-        <small>Adeudo actual: <strong>${money(debt)}</strong> · Reportado: ${money(initial)}</small>
+        <small>Tipo: <strong>${esc(paymentTypeLabelFromNotes(p.notes))}</strong> · ${monthly?`Adeudo actual: <strong>${money(debt)}</strong>`:'No afecta adeudo mensual'} · Reportado: ${money(initial)}</small>
       </div>
       <label>Monto a confirmar
         <input class="input payment-review-amount" type="number" min="0.01" step="0.01" value="${initial}" oninput="updatePaymentReviewDifference()">
@@ -2342,7 +2379,7 @@ async function confirmReviewedPayment(e){
 
   const total=updates.reduce((s,x)=>s+x.amount,0);
   const detail=updates.map(x=>{
-    const result=paymentDifferenceText(x.debt,x.amount);
+    const result=isMonthlyPayment(x.payment)?paymentDifferenceText(x.debt,x.amount):{text:'No afecta mensualidad'};
     return `• ${x.payment.student_name}: ${money(x.amount)} — ${result.text}`;
   }).join('\n');
   if(!confirm(`¿Confirmar ${updates.length>1?'estos pagos':'este pago'} por un total de ${money(total)}?\n\n${detail}`)) return;
@@ -2352,8 +2389,9 @@ async function confirmReviewedPayment(e){
   const failures=[];
   for(const item of updates){
     const baseNotes=cleanPaymentBalanceTags(item.payment.notes);
-    const tags=`[DUCKS_BALANCE_AFTER:${item.balance.toFixed(2)}] [DEBT_BEFORE:${item.debt.toFixed(2)}] [CONFIRMED_AMOUNT:${item.amount.toFixed(2)}]`;
-    const notes=`${baseNotes}${baseNotes?' ':''}${tags}`;
+    const typeTag=paymentTypeTagValue(item.payment)?'':paymentTypeNoteTag('Mensualidad');
+    const tags=isMonthlyPayment(item.payment)?`[DUCKS_BALANCE_AFTER:${item.balance.toFixed(2)}] [DEBT_BEFORE:${item.debt.toFixed(2)}] [CONFIRMED_AMOUNT:${item.amount.toFixed(2)}]`:''; 
+    const notes=[typeTag,baseNotes,tags].filter(Boolean).join(' ');
     const {error}=await sb.from('payments').update({
       amount:item.amount,
       notes,
@@ -2377,12 +2415,12 @@ async function confirmReviewedPayment(e){
 
 function renderPayments(){
   setTitle('Pagos');
-  document.getElementById('content').innerHTML=`<div class="notice success"><b>Revisión y saldo por jugador:</b> los pagos pendientes ahora se revisan y confirman directamente desde esta ventana. Cuando el monto confirmado es menor o mayor al adeudo, el CRM conserva la diferencia como adeudo restante o crédito para el siguiente periodo.</div><div class="panel"><div class="panel-head"><h3>Historial de pagos</h3><div class="actions"><button class="btn secondary" onclick="openCashReceiptForm()">🧾 Recibo efectivo</button><button class="btn green" onclick="openPaymentForm()">+ Registrar pago</button></div></div><div class="tablewrap"><table><thead><tr><th>ID</th><th>Alumno</th><th>Fecha</th><th>Periodo</th><th>Monto reportado / confirmado</th><th>Saldo después</th><th>Método</th><th>Estatus</th><th>Evidencia</th><th>Acción</th></tr></thead><tbody>${payments.map(p=>{const pending=p.confirmation_status==='Pendiente de confirmación';const batch=familyPaymentBatchId(p);const pendingGroup=batch?familyPaymentRows(batch,payments).filter(x=>x.confirmation_status==='Pendiente de confirmación'):[];const firstInGroup=!batch||String(pendingGroup[0]?.id)===String(p.id);let action='';if(pending){action=firstInGroup?`<div class="family-admin-actions"><button class="btn green" onclick="openPaymentReview('${p.id}')">${batch?'Revisar familia y confirmar':'Revisar monto y confirmar'}</button></div>`:'<span class="sub">Incluido en revisión familiar</span>';}else{const receiptBtn=String(p.method||'').toLowerCase()==='efectivo'?`<button class="btn secondary" onclick="openCashReceiptPreviewFromPayment('${p.id}')">Recibo</button>`:'';action=`<div class="family-admin-actions">${receiptBtn}<button class="btn red" onclick="deletePayment('${p.id}')">Eliminar</button></div>`;}return `<tr><td>${String(p.id).slice(0,8)}</td><td><b>${esc(p.student_name||'')}</b><br><small>${esc(p.player_id)}</small>${batch?`<br><span class="family-payment-chip">Pago familiar · ${pendingGroup.length||familyPaymentRows(batch,payments).length} hijos</span>`:''}</td><td>${esc(p.payment_date)}</td><td>${esc(p.period||'')}</td><td class="amount">${money(p.amount)}</td><td>${paymentBalanceSummary(p,players.find(x=>x.id===p.player_id))}</td><td>${esc(p.method||'')}</td><td><span class="status ${statusClass(p.confirmation_status)}">${esc(p.confirmation_status)}</span></td><td>${p.evidence_url?`<button class="btn secondary" onclick="openEvidencePreview('${p.id}')">Ver evidencia</button>`:'-'}</td><td>${action}</td></tr>`}).join('')||'<tr><td colspan="10">Sin pagos</td></tr>'}</tbody></table></div></div>`;
+  document.getElementById('content').innerHTML=`<div class="notice success"><b>Revisión y saldo por jugador:</b> los pagos pendientes ahora se revisan y confirman directamente desde esta ventana. Cuando el monto confirmado es menor o mayor al adeudo, el CRM conserva la diferencia como adeudo restante o crédito para el siguiente periodo.</div><div class="panel"><div class="panel-head"><h3>Historial de pagos</h3><div class="actions"><button class="btn secondary" onclick="openCashReceiptForm()">🧾 Recibo efectivo</button><button class="btn green" onclick="openPaymentForm()">+ Registrar pago</button></div></div><div class="tablewrap"><table><thead><tr><th>ID</th><th>Alumno</th><th>Fecha</th><th>Tipo</th><th>Periodo</th><th>Monto reportado / confirmado</th><th>Saldo después</th><th>Método</th><th>Estatus</th><th>Evidencia</th><th>Acción</th></tr></thead><tbody>${payments.map(p=>{const pending=p.confirmation_status==='Pendiente de confirmación';const batch=familyPaymentBatchId(p);const pendingGroup=batch?familyPaymentRows(batch,payments).filter(x=>x.confirmation_status==='Pendiente de confirmación'):[];const firstInGroup=!batch||String(pendingGroup[0]?.id)===String(p.id);let action='';if(pending){action=firstInGroup?`<div class="family-admin-actions"><button class="btn green" onclick="openPaymentReview('${p.id}')">${batch?'Revisar familia y confirmar':'Revisar monto y confirmar'}</button></div>`:'<span class="sub">Incluido en revisión familiar</span>';}else{const receiptBtn=String(p.method||'').toLowerCase()==='efectivo'?`<button class="btn secondary" onclick="openCashReceiptPreviewFromPayment('${p.id}')">Recibo</button>`:'';action=`<div class="family-admin-actions">${receiptBtn}<button class="btn red" onclick="deletePayment('${p.id}')">Eliminar</button></div>`;}return `<tr><td>${String(p.id).slice(0,8)}</td><td><b>${esc(p.student_name||'')}</b><br><small>${esc(p.player_id)}</small>${batch?`<br><span class="family-payment-chip">Pago familiar · ${pendingGroup.length||familyPaymentRows(batch,payments).length} hijos</span>`:''}</td><td>${esc(p.payment_date)}</td><td>${esc(paymentTypeLabelFromNotes(p.notes))}</td><td>${esc(p.period||'')}</td><td class="amount">${money(p.amount)}</td><td>${paymentBalanceSummary(p,players.find(x=>x.id===p.player_id))}</td><td>${esc(p.method||'')}</td><td><span class="status ${statusClass(p.confirmation_status)}">${esc(p.confirmation_status)}</span></td><td>${p.evidence_url?`<button class="btn secondary" onclick="openEvidencePreview('${p.id}')">Ver evidencia</button>`:'-'}</td><td>${action}</td></tr>`}).join('')||'<tr><td colspan="11">Sin pagos</td></tr>'}</tbody></table></div></div>`;
 }
 function renderEvidence(){
   setTitle('Evidencias por confirmar');
   const pend=payments.filter(p=>p.confirmation_status==='Pendiente de confirmación');
-  document.getElementById('content').innerHTML=`<div class="notice warning"><b>Consulta de comprobantes:</b> aquí puedes abrir la evidencia enviada y rechazarla cuando no sea válida. La revisión del monto y la confirmación del pago se realizan ahora desde la ventana <b>Pagos</b>.</div><div class="panel"><div class="panel-head"><h3>Pendientes</h3></div><div class="tablewrap"><table><thead><tr><th>Alumno</th><th>Fecha</th><th>Periodo</th><th>Monto reportado</th><th>Adeudo actual</th><th>Enviado por</th><th>Evidencia</th><th>Acción</th></tr></thead><tbody>${pend.map(p=>{const batch=familyPaymentBatchId(p);const group=batch?familyPaymentRows(batch,pend):[];const firstInGroup=!batch||String(group[0]?.id)===String(p.id);const player=players.find(x=>x.id===p.player_id);const debt=player?calc(player).amount:0;return `<tr><td><b>${esc(p.student_name)}</b><br><small>${esc(p.player_id)}</small>${batch?`<br><span class="family-payment-chip">Pago familiar · ${group.length} hijos</span>`:''}</td><td>${esc(p.payment_date)}</td><td>${esc(p.period||'')}</td><td class="amount">${money(p.amount)}</td><td class="amount">${money(debt)}</td><td>${esc(p.submitted_by||'')}</td><td>${p.evidence_url?`<button class="btn secondary" onclick="openEvidencePreview('${p.id}')">Ver evidencia</button>`:'-'}</td><td>${firstInGroup?`<button class="btn red" onclick="${batch?`rejectFamilyPayment('${batch}')`:`rejectPayment('${p.id}')`}">${batch?'Rechazar pago familiar':'Rechazar'}</button>`:'<span class="sub">Incluido en evidencia familiar</span>'}</td></tr>`}).join('')||'<tr><td colspan="8">No hay evidencias pendientes.</td></tr>'}</tbody></table></div></div>`;
+  document.getElementById('content').innerHTML=`<div class="notice warning"><b>Consulta de comprobantes:</b> aquí puedes abrir la evidencia enviada y rechazarla cuando no sea válida. La revisión del monto y la confirmación del pago se realizan ahora desde la ventana <b>Pagos</b>.</div><div class="panel"><div class="panel-head"><h3>Pendientes</h3></div><div class="tablewrap"><table><thead><tr><th>Alumno</th><th>Fecha</th><th>Tipo</th><th>Periodo</th><th>Monto reportado</th><th>Adeudo actual</th><th>Enviado por</th><th>Evidencia</th><th>Acción</th></tr></thead><tbody>${pend.map(p=>{const batch=familyPaymentBatchId(p);const group=batch?familyPaymentRows(batch,pend):[];const firstInGroup=!batch||String(group[0]?.id)===String(p.id);const player=players.find(x=>x.id===p.player_id);const debt=(player&&isMonthlyPayment(p))?calc(player).amount:0;return `<tr><td><b>${esc(p.student_name)}</b><br><small>${esc(p.player_id)}</small>${batch?`<br><span class="family-payment-chip">Pago familiar · ${group.length} hijos</span>`:''}</td><td>${esc(p.payment_date)}</td><td>${esc(paymentTypeLabelFromNotes(p.notes))}</td><td>${esc(p.period||'')}</td><td class="amount">${money(p.amount)}</td><td class="amount">${isMonthlyPayment(p)?money(debt):'No afecta'}</td><td>${esc(p.submitted_by||'')}</td><td>${p.evidence_url?`<button class="btn secondary" onclick="openEvidencePreview('${p.id}')">Ver evidencia</button>`:'-'}</td><td>${firstInGroup?`<button class="btn red" onclick="${batch?`rejectFamilyPayment('${batch}')`:`rejectPayment('${p.id}')`}">${batch?'Rechazar pago familiar':'Rechazar'}</button>`:'<span class="sub">Incluido en evidencia familiar</span>'}</td></tr>`}).join('')||'<tr><td colspan="9">No hay evidencias pendientes.</td></tr>'}</tbody></table></div></div>`;
 }
 function renderWhatsApp(){
   setTitle('WhatsApp vencidos');
@@ -2655,7 +2693,7 @@ async function deletePlayer(id){const p=players.find(x=>x.id===id); if(!p)return
 function openPaymentForm(playerId=''){
   const selected=playerId?players.find(p=>p.id===playerId):null;
   const modal=document.createElement('div'); modal.className='modalbg open'; modal.id='paymentModal';
-  modal.innerHTML=`<div class="modal"><div class="modal-head"><h3>Registrar pago confirmado</h3><button class="btn secondary" onclick="closeModal('paymentModal')">Cerrar</button></div><div class="modal-body"><form id="paymentForm" class="form-grid"><label class="label full">Jugador<select id="payPlayer" class="select" required><option value="">Selecciona...</option>${players.map(p=>`<option value="${p.id}" ${p.id===playerId?'selected':''}>${p.id} · ${esc(p.name)}</option>`).join('')}</select></label><label class="label">Fecha<input id="payDate" class="input" type="date" value="${todayISO()}" max="${todayISO()}" required></label><label class="label">Periodo<input id="payPeriod" class="input" value="${period(todayISO())}"></label><label class="label">Monto<input id="payAmount" class="input" type="number" min="0" step="50" value="${esc(selected?.monthly_fee||300)}" required></label><label class="label">Método<select id="payMethod" class="select"><option></option><option>Transferencia</option><option>Depósito</option><option>Efectivo</option><option>Tarjeta</option><option>Otro</option></select></label><label class="label">Evidencia opcional<input id="payEvidence" class="input" type="file" accept="image/*,application/pdf"></label><label class="label full">Notas<textarea id="payNotes" class="input"></textarea></label><div class="full actions"><button class="btn green">Guardar pago confirmado</button></div></form></div></div>`;
+  modal.innerHTML=`<div class="modal"><div class="modal-head"><h3>Registrar pago confirmado</h3><button class="btn secondary" onclick="closeModal('paymentModal')">Cerrar</button></div><div class="modal-body"><form id="paymentForm" class="form-grid"><label class="label full">Jugador<select id="payPlayer" class="select" required><option value="">Selecciona...</option>${players.map(p=>`<option value="${p.id}" ${p.id===playerId?'selected':''}>${p.id} · ${esc(p.name)}</option>`).join('')}</select></label><label class="label">Fecha<input id="payDate" class="input" type="date" value="${todayISO()}" max="${todayISO()}" required onchange="const t=document.getElementById('payType')?.value||'Mensualidad';document.getElementById('payPeriod').value=t==='Mensualidad'?period(this.value):t;document.getElementById('payNotes').placeholder=t==='Mensualidad'?'':'Detalle opcional del concepto';"></label><label class="label">Tipo de pago<select id="payType" class="select" onchange="const d=document.getElementById('payDate').value||todayISO();document.getElementById('payPeriod').value=this.value==='Mensualidad'?period(d):this.value;document.getElementById('payNotes').placeholder=this.value==='Otro'?'Especifica el concepto':'';">${adminPaymentTypeOptions('Mensualidad')}</select></label><label class="label">Periodo / Concepto<input id="payPeriod" class="input" value="${period(todayISO())}"></label><label class="label">Monto<input id="payAmount" class="input" type="number" min="0" step="50" value="${esc(selected?.monthly_fee||300)}" required></label><label class="label">Método<select id="payMethod" class="select"><option></option><option>Transferencia</option><option>Depósito</option><option>Efectivo</option><option>Tarjeta</option><option>Otro</option></select></label><label class="label">Evidencia opcional<input id="payEvidence" class="input" type="file" accept="image/*,application/pdf"></label><label class="label full">Notas<textarea id="payNotes" class="input"></textarea></label><div class="full actions"><button class="btn green">Guardar pago confirmado</button></div></form></div></div>`;
   document.body.appendChild(modal);
   document.getElementById('payPlayer').onchange=()=>{const p=players.find(x=>x.id===document.getElementById('payPlayer').value); if(p) document.getElementById('payAmount').value=p.monthly_fee||0;};
   document.getElementById('paymentForm').onsubmit=savePaymentForm;
@@ -2778,6 +2816,7 @@ function cashReceiptDataFromPayment(player,payment,folio=''){
     period: payment?.period || period(payDate),
     amount: Number(payment?.amount||0),
     method: 'Efectivo',
+    payment_type: meta.payment_type || paymentTypeLabelFromNotes(payment?.notes),
     concept: meta.concept || 'Pago en efectivo de mensualidad',
     observations: meta.observations || '',
     received_by: meta.received_by || payment?.submitted_by || 'Administración Ducks',
@@ -2807,6 +2846,7 @@ function cashReceiptHtml(data){
         <div><small>Jugador</small><strong>${esc(data.student_name)}</strong></div>
         <div><small>ID jugador</small><strong>${esc(data.player_id)}</strong></div>
         <div><small>Periodo</small><strong>${esc(data.period||'')}</strong></div>
+        <div><small>Tipo de pago</small><strong>${esc(data.payment_type||'Mensualidad')}</strong></div>
         <div><small>Método</small><strong>${esc(data.method||'Efectivo')}</strong></div>
         <div class="wide"><small>Concepto</small><strong>${esc(data.concept||'Pago en efectivo')}</strong></div>
       </div>
@@ -2963,7 +3003,7 @@ async function buildCashReceiptImageBlob(data){
   };
 
   drawInfoBox('Monto', money(data.amount||0), 118, y, 430, 108, true);
-  drawInfoBox('Método', data.method||'Efectivo', 572, y, 242, 108, false);
+  drawInfoBox('Tipo', data.payment_type||'Mensualidad', 572, y, 242, 108, false);
   drawInfoBox('Estatus', 'PAGADO', 832, y, 248, 108, true);
   y += 134;
 
@@ -3170,7 +3210,7 @@ function openCashReceiptForm(playerId=''){
   const defaultPeriod=period(todayISO());
   const receiver=defaultCashReceiver();
   const modal=document.createElement('div'); modal.className='modalbg open'; modal.id='cashReceiptFormModal';
-  modal.innerHTML=`<div class="modal"><div class="modal-head"><h3>Generar recibo formal de efectivo</h3><button class="btn secondary" onclick="closeModal('cashReceiptFormModal')">Cerrar</button></div><div class="modal-body"><div class="notice success"><b>Registro completo:</b> captura los datos del cobro. El CRM guardará el pago como confirmado y emitirá un recibo con folio único, validación administrativa y sello opcional.</div><form id="cashReceiptForm" class="form-grid"><label class="label full">Jugador<select id="cashReceiptPlayer" class="select" required onchange="updateCashReceiptPlayer()"><option value="">Selecciona...</option>${players.map(p=>`<option value="${p.id}" ${selected&&p.id===selected.id?'selected':''}>${p.id} · ${esc(p.name)}</option>`).join('')}</select></label><div id="cashReceiptPlayerInfo" class="full">${cashReceiptPlayerSummary(selected)}</div><label class="label">Fecha<input id="cashReceiptDate" class="input" type="date" value="${todayISO()}" max="${todayISO()}" required onchange="document.getElementById('cashReceiptConcept').value='Mensualidad '+period(this.value)"></label><label class="label">Monto<input id="cashReceiptAmount" class="input" type="number" min="0.01" step="0.01" value="${esc(selected?.monthly_fee||300)}" required></label><label class="label full">Concepto<input id="cashReceiptConcept" class="input" value="Mensualidad ${esc(defaultPeriod)}" oninput="this.dataset.edited='1'" required></label><label class="label full">Recibido por<input id="cashReceiptReceiver" class="input" value="${esc(receiver)}" required><small>Este nombre aparecerá en la línea de validación del recibo.</small></label><label class="label full">Observaciones<textarea id="cashReceiptObservations" class="input" placeholder="Opcional: torneo, inscripción, abono, meses cubiertos, etc."></textarea></label><label class="consent-check full stamp-consent-check"><input id="cashReceiptUseStamp" type="checkbox" checked><span>Insertar sello oficial <b>Pago recibido</b> / <b>Recibido por Coach Arturo</b>.</span></label><div class="cash-stamp-preview full"><img src="${officialReceiptStampUrl()}" alt="Sello oficial Ducks"><div><b>Sello oficial Ducks Basketball Academy</b><small>Se integrará automáticamente dentro del área de firma del recibo.</small></div></div><div class="label full cash-signature-field"><span>Firma digital de quien recibe <small>(opcional, recomendada)</small></span><canvas id="cashReceiptSignature" width="700" height="170"></canvas><div class="actions"><button type="button" class="btn secondary small" onclick="clearCashSignature()">Limpiar firma</button></div></div><label class="consent-check full"><input id="cashReceiptValidation" type="checkbox" required><span>Confirmo que recibí físicamente el efectivo y autorizo registrar este pago como confirmado.</span></label><div class="full actions"><button class="btn green">Registrar pago y generar recibo</button></div></form></div></div>`;
+  modal.innerHTML=`<div class="modal"><div class="modal-head"><h3>Generar recibo formal de efectivo</h3><button class="btn secondary" onclick="closeModal('cashReceiptFormModal')">Cerrar</button></div><div class="modal-body"><div class="notice success"><b>Registro completo:</b> captura los datos del cobro. El CRM guardará el pago como confirmado y emitirá un recibo con folio único, validación administrativa y sello opcional.</div><form id="cashReceiptForm" class="form-grid"><label class="label full">Jugador<select id="cashReceiptPlayer" class="select" required onchange="updateCashReceiptPlayer()"><option value="">Selecciona...</option>${players.map(p=>`<option value="${p.id}" ${selected&&p.id===selected.id?'selected':''}>${p.id} · ${esc(p.name)}</option>`).join('')}</select></label><div id="cashReceiptPlayerInfo" class="full">${cashReceiptPlayerSummary(selected)}</div><label class="label">Fecha<input id="cashReceiptDate" class="input" type="date" value="${todayISO()}" max="${todayISO()}" required onchange="const t=document.getElementById('cashReceiptType')?.value||'Mensualidad';document.getElementById('cashReceiptConcept').value=paymentConceptFromType(t,this.value)"></label><label class="label">Tipo de pago<select id="cashReceiptType" class="select" onchange="const d=document.getElementById('cashReceiptDate').value||todayISO();document.getElementById('cashReceiptConcept').value=paymentConceptFromType(this.value,d);"><option>Mensualidad</option><option>Inscripción</option><option>Uniforme</option><option>Torneo</option><option>Otro</option></select><small>Solo Mensualidad afecta adeudo mensual.</small></label><label class="label">Monto<input id="cashReceiptAmount" class="input" type="number" min="0.01" step="0.01" value="${esc(selected?.monthly_fee||300)}" required></label><label class="label full">Concepto<input id="cashReceiptConcept" class="input" value="Mensualidad ${esc(defaultPeriod)}" oninput="this.dataset.edited='1'" required></label><label class="label full">Recibido por<input id="cashReceiptReceiver" class="input" value="${esc(receiver)}" required><small>Este nombre aparecerá en la línea de validación del recibo.</small></label><label class="label full">Observaciones<textarea id="cashReceiptObservations" class="input" placeholder="Opcional: torneo, inscripción, abono, meses cubiertos, etc."></textarea></label><label class="consent-check full stamp-consent-check"><input id="cashReceiptUseStamp" type="checkbox" checked><span>Insertar sello oficial <b>Pago recibido</b> / <b>Recibido por Coach Arturo</b>.</span></label><div class="cash-stamp-preview full"><img src="${officialReceiptStampUrl()}" alt="Sello oficial Ducks"><div><b>Sello oficial Ducks Basketball Academy</b><small>Se integrará automáticamente dentro del área de firma del recibo.</small></div></div><div class="label full cash-signature-field"><span>Firma digital de quien recibe <small>(opcional, recomendada)</small></span><canvas id="cashReceiptSignature" width="700" height="170"></canvas><div class="actions"><button type="button" class="btn secondary small" onclick="clearCashSignature()">Limpiar firma</button></div></div><label class="consent-check full"><input id="cashReceiptValidation" type="checkbox" required><span>Confirmo que recibí físicamente el efectivo y autorizo registrar este pago como confirmado.</span></label><div class="full actions"><button class="btn green">Registrar pago y generar recibo</button></div></form></div></div>`;
   document.body.appendChild(modal);
   document.getElementById('cashReceiptForm').onsubmit=saveCashReceiptForm;
   initCashSignaturePad();
@@ -3182,6 +3222,7 @@ async function saveCashReceiptForm(e){
     const player_id=document.getElementById('cashReceiptPlayer').value;
     const payDate=document.getElementById('cashReceiptDate').value || todayISO();
     const amount=Number(document.getElementById('cashReceiptAmount').value||0);
+    const payment_type=document.getElementById('cashReceiptType')?.value||'Mensualidad';
     const concept=document.getElementById('cashReceiptConcept').value.trim();
     const received_by=document.getElementById('cashReceiptReceiver').value.trim();
     const observations=document.getElementById('cashReceiptObservations').value.trim();
@@ -3199,9 +3240,9 @@ async function saveCashReceiptForm(e){
     const use_stamp=!!document.getElementById('cashReceiptUseStamp')?.checked;
     const stamp_url=use_stamp ? officialReceiptStampUrl() : '';
     const stamp_angle=use_stamp ? generateCashReceiptStampAngle() : 0;
-    const meta={concept,observations,received_by,signature_url,stamp_url,stamp_angle,use_stamp,validation:'Validado desde sesión administrativa',generated_at};
-    const note=`[CASH_RECEIPT:${folio}] ${receiptMetaTag(meta)} Pago en efectivo registrado desde administración.`;
-    const row={player_id,student_name:player.name||'',payment_date:payDate,period:period(payDate),amount,method:'Efectivo',notes:note,confirmation_status:'Confirmado',evidence_url:'',evidence_name:'',submitted_by:received_by,confirmed_at:new Date().toISOString()};
+    const meta={payment_type,concept,observations,received_by,signature_url,stamp_url,stamp_angle,use_stamp,validation:'Validado desde sesión administrativa',generated_at};
+    const note=`${paymentTypeNoteTag(payment_type)} [CASH_RECEIPT:${folio}] ${receiptMetaTag(meta)} Pago en efectivo registrado desde administración.`;
+    const row={player_id,student_name:player.name||'',payment_date:payDate,period:payment_type==='Mensualidad'?period(payDate):payment_type,amount,method:'Efectivo',notes:note,confirmation_status:'Confirmado',evidence_url:'',evidence_name:'',submitted_by:received_by,confirmed_at:new Date().toISOString()};
     const {data,error}=await sb.from('payments').insert(row).select().single();
     if(error){toast(error.message);if(submitBtn){submitBtn.disabled=false;submitBtn.textContent='Registrar pago y generar recibo';}return;}
     closeModal('cashReceiptFormModal');
@@ -3225,7 +3266,10 @@ async function savePaymentForm(e){
     const payDate=document.getElementById('payDate').value;
     if(payDate>todayISO()) throw new Error('La fecha de pago no puede ser posterior a la fecha actual de Aguascalientes.');
     const evidence_url=file?await uploadFile(file,'evidencias'):'';
-    const row={player_id,student_name:player?.name||'',payment_date:payDate,period:document.getElementById('payPeriod').value||period(payDate),amount:Number(document.getElementById('payAmount').value||0),method:document.getElementById('payMethod').value,notes:document.getElementById('payNotes').value,confirmation_status:'Confirmado',evidence_url,evidence_name:file?.name||'',submitted_by:'Admin',confirmed_at:new Date().toISOString()};
+    const payType=document.getElementById('payType')?.value||'Mensualidad';
+    const baseNotes=document.getElementById('payNotes').value.trim();
+    const notes=`${paymentTypeNoteTag(payType)}${baseNotes?' '+baseNotes:''}`;
+    const row={player_id,student_name:player?.name||'',payment_date:payDate,period:document.getElementById('payPeriod').value||(payType==='Mensualidad'?period(payDate):payType),amount:Number(document.getElementById('payAmount').value||0),method:document.getElementById('payMethod').value,notes,confirmation_status:'Confirmado',evidence_url,evidence_name:file?.name||'',submitted_by:'Admin',confirmed_at:new Date().toISOString()};
     const {error}=await sb.from('payments').insert(row);
     if(error) throw error;
     toast('Pago guardado y confirmado');
