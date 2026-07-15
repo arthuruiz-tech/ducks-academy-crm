@@ -1,7 +1,8 @@
-DUCKS CRM PROFESIONAL v2.93
+DUCKS CRM PROFESIONAL v2.94
 
 Cambios:
-- El recibo se prepara como imagen PNG desde la vista previa.
-- En celular compatible, el botón abre el menú de compartir con la imagen lista para WhatsApp.
-- La impresión usa la misma imagen del recibo para mantenerse en una sola página.
-- Se conserva el sello y/o firma dentro del área de validación.
+- Ajuste basado en v2.93, no depende de v2.92.
+- Después de generar recibo, el botón Enviar imagen por WhatsApp queda disponible en la vista previa.
+- El recibo se comparte como imagen PNG con sello o firma.
+- El texto de WhatsApp se redujo al mínimo para no duplicar toda la información.
+- La impresión mantiene el recibo ajustado a una sola página.

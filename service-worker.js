@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ducks-academy-v2-93';
+const CACHE_NAME = 'ducks-academy-v2-94';
 
 self.addEventListener('install', event => {
   self.skipWaiting();

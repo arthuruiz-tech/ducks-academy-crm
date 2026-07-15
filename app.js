@@ -1837,7 +1837,7 @@ async function loadAdminData(){
 }
 async function refresh(){ if(mode==='admin'){await loadAdminData(); renderShell(); renderPage();} }
 function renderShell(){
-  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="notifications">🔔 Avisos <span class="notification-badge hidden" data-notification-badge>0</span></button><button data-page="registrations">📝 Solicitudes de ingreso</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="history">🕘 Historial</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.93: recibos de efectivo con imagen para WhatsApp, sello/firma y una sola página.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><button class="btn secondary notification-bell" onclick="page='notifications';renderPage()">🔔 <span class="notification-badge hidden" data-notification-badge>0</span></button><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
+  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="notifications">🔔 Avisos <span class="notification-badge hidden" data-notification-badge>0</span></button><button data-page="registrations">📝 Solicitudes de ingreso</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="history">🕘 Historial</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.94: recibos con imagen WhatsApp, mensaje corto, sello/firma y una sola página.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><button class="btn secondary notification-bell" onclick="page='notifications';renderPage()">🔔 <span class="notification-badge hidden" data-notification-badge>0</span></button><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
   document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page=b.dataset.page; if(page==='public'){renderPublicHome(); return;} renderPage();});
   document.getElementById('search').oninput=e=>{q=e.target.value; renderPage();};
   document.getElementById('authBtn').onclick=logout;
@@ -3051,13 +3051,13 @@ function downloadBlobFile(blob,filename){
 async function prepareCashReceiptShareImage(data){
   try{
     const btn=document.getElementById('cashReceiptWhatsappBtn');
-    if(btn){ btn.disabled=true; btn.textContent='Preparando imagen...'; }
+    if(btn){ btn.disabled=false; btn.textContent='Preparando imagen...'; }
     const blob=await buildCashReceiptImageBlob(data);
     const filename=`recibo-${(data.folio||'ducks').replace(/[^a-z0-9_-]/gi,'_')}.png`;
     const file=new File([blob], filename, {type:'image/png'});
     window.currentCashReceiptImageBlob=blob;
     window.currentCashReceiptImageFile=file;
-    if(btn){ btn.disabled=false; btn.textContent='Enviar imagen por WhatsApp'; }
+    if(btn){ btn.disabled=false; btn.textContent='Enviar imagen por WhatsApp'; btn.classList.add('ready'); }
   }catch(err){
     console.error(err);
     const btn=document.getElementById('cashReceiptWhatsappBtn');
@@ -3067,27 +3067,11 @@ async function prepareCashReceiptShareImage(data){
 }
 
 function cashReceiptWhatsappMessage(data){
-  return `Hola, compartimos tu recibo de pago de Ducks Basketball Academy.
-
-`+
-    `Folio: ${data.folio||''}
-`+
-    `Jugador: ${data.student_name||''}
-`+
-    `Fecha: ${formatDateDMY(data.payment_date)||data.payment_date||''}
-`+
-    `Periodo: ${data.period||''}
-`+
-    `Concepto: ${data.concept||'Pago en efectivo'}
-`+
-    `Monto: ${money(data.amount||0)}
-`+
-    `Método: ${data.method||'Efectivo'}
-`+
-    `Estatus: PAGADO
-
-`+
-    `Gracias. Este mensaje corresponde al recibo interno registrado en el CRM de Ducks Basketball Academy.`;
+  return `Recibo Ducks Basketball Academy
+Folio: ${data.folio||''}
+Jugador: ${data.student_name||''}
+Monto: ${money(data.amount||0)}
+Estatus: PAGADO`;
 }
 async function sendCashReceiptWhatsApp(){
   const data=window.currentCashReceiptData;
@@ -3114,7 +3098,7 @@ async function sendCashReceiptWhatsApp(){
         text:message,
         files:[file]
       });
-      toast('Selecciona WhatsApp para enviar la imagen del recibo.');
+      toast('Selecciona WhatsApp. Se compartirá la imagen del recibo con mensaje corto.');
       return;
     }catch(err){
       if(String(err?.name||'')==='AbortError') return;
@@ -3123,10 +3107,10 @@ async function sendCashReceiptWhatsApp(){
   }
 
   downloadBlobFile(blob, file.name);
-  const extra='\\n\\nAdjunta la imagen del recibo descargada automáticamente.';
+  const extra='\\n\\nAdjunto recibo en imagen.';
   const url=`https://wa.me/${phone}?text=${encodeURIComponent(message + extra)}`;
   window.open(url,'_blank','noopener');
-  toast('Se descargó la imagen del recibo. Adjunta esa imagen en WhatsApp.');
+  toast('Se descargó la imagen. Adjúntala en WhatsApp; el texto ya está corto.');
 }
 async function printCashReceipt(){
   const data=window.currentCashReceiptData;
@@ -3160,7 +3144,7 @@ function openCashReceiptPreview(data){
   const modal=document.createElement('div');
   modal.className='modalbg open';
   modal.id='cashReceiptPreviewModal';
-  modal.innerHTML=`<div class="modal wide-modal"><div class="modal-head"><h3>Recibo formal generado</h3><button class="btn secondary" onclick="closeModal('cashReceiptPreviewModal')">Cerrar</button></div><div class="modal-body">${cashReceiptHtml(data)}<div class="actions cash-receipt-actions"><button id="cashReceiptWhatsappBtn" class="btn green" onclick="sendCashReceiptWhatsApp()" disabled>Preparando imagen...</button><button class="btn secondary" onclick="printCashReceipt()">Imprimir / Guardar PDF</button><button class="btn secondary" onclick="closeModal('cashReceiptPreviewModal')">Cerrar</button></div></div></div>`;
+  modal.innerHTML=`<div class="modal wide-modal"><div class="modal-head"><h3>Recibo formal generado</h3><button class="btn secondary" onclick="closeModal('cashReceiptPreviewModal')">Cerrar</button></div><div class="modal-body"><div class="notice success"><b>Recibo generado.</b> Presiona <b>Enviar imagen por WhatsApp</b>; el mensaje será corto y el recibo va como imagen con sello/firma.</div>${cashReceiptHtml(data)}<div class="actions cash-receipt-actions"><button id="cashReceiptWhatsappBtn" class="btn green" onclick="sendCashReceiptWhatsApp()">Enviar imagen por WhatsApp</button><button class="btn secondary" onclick="printCashReceipt()">Imprimir / Guardar PDF</button><button class="btn secondary" onclick="closeModal('cashReceiptPreviewModal')">Cerrar</button></div></div></div>`;
   document.body.appendChild(modal);
   prepareCashReceiptShareImage(data);
 }
