@@ -1,8 +1,8 @@
-DUCKS CRM PROFESIONAL v2.102
+DUCKS CRM PROFESIONAL v2.103
 
 Cambios:
-- Se corrigió la portada para que en celular se vea completa en una sola pantalla.
-- Se mejoró la calidad de la imagen principal y de los iconos 3D usando versión WebP de mayor calidad.
-- Se conservaron los hotspots funcionales sobre cada botón.
-- Se aplicó estilo premium a ventanas internas, modales, tarjetas y formularios.
+- Ajuste fullscreen por altura real del celular.
+- Elimina espacios vacíos superior e inferior en iPhone y celulares similares.
+- Mantiene la portada como una sola imagen tipo app.
+- Conserva hotspots funcionales de todos los botones.
 - No requiere SQL adicional.

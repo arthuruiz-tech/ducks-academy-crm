@@ -3857,3 +3857,68 @@ button[onclick="installDucksApp()"]{
   border-radius:20px;
   background:linear-gradient(180deg,#ffffff,#f8fbfa);
 }
+
+
+
+/* v2.103 - portada fullscreen por altura real del celular */
+.ducks-mockup-home{
+  height:100svh;
+  height:100dvh;
+  min-height:100svh;
+  min-height:100dvh;
+  padding:0 !important;
+  overflow:hidden;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:linear-gradient(180deg,#f4f4f4 0%,#ececec 100%);
+}
+.ducks-mockup-wrap{
+  height:100svh;
+  height:100dvh;
+  width:calc(100svh * .563);
+  width:calc(100dvh * .563);
+  max-width:none;
+  min-width:0;
+  padding:0 !important;
+  margin:0 auto;
+  position:relative;
+  overflow:visible;
+  flex:0 0 auto;
+}
+.ducks-mockup-screen{
+  height:100%;
+  width:100%;
+  border-radius:0;
+  overflow:visible;
+}
+.ducks-mockup-image{
+  height:100%;
+  width:100%;
+  max-width:none;
+  object-fit:fill;
+  border-radius:0;
+  box-shadow:none;
+  display:block;
+}
+@media (max-aspect-ratio: 9/16){
+  .ducks-mockup-home{
+    justify-content:center;
+  }
+  .ducks-mockup-wrap{
+    transform:scale(1.015);
+    transform-origin:center center;
+  }
+}
+@media (min-aspect-ratio: 10/16){
+  .ducks-mockup-wrap{
+    height:100svh;
+    height:100dvh;
+    width:calc(100svh * .563);
+    width:calc(100dvh * .563);
+  }
+}
+@supports not (height:100dvh){
+  .ducks-mockup-home{height:100vh;min-height:100vh}
+  .ducks-mockup-wrap{height:100vh;width:calc(100vh * .563)}
+}
