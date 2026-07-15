@@ -1,10 +1,9 @@
-DUCKS CRM PROFESIONAL v2.117
+DUCKS CRM PROFESIONAL v2.119
 
-Cambios:
-- Recibo de efectivo: se agregó búsqueda rápida de jugador por nombre, ID, tutor, WhatsApp o número de uniforme.
-- Al enviar recibo por WhatsApp se valida que el recibo, jugador y WhatsApp del papá/tutor coincidan; si no coincide, se bloquea el envío con mensaje de error.
-- Se agregó confirmación antes de abrir WhatsApp para enviar el recibo.
-- Se reforzó el ajuste de ventanas/modales para que quepan mejor en pantalla, especialmente recibos.
-- Menú administrador con título visible y selector desplegable.
-- Menú inferior fijo del administrador con solo el logo Ducks al centro para volver a la ventana principal.
-- No requiere SQL adicional.
+Cambio aplicado:
+- Portal administrador: el menú ahora es un botón desplegable real.
+- El botón muestra el título Menú administrador y el nombre de la sección actual.
+- Al dar clic se despliegan todas las opciones disponibles.
+- Se mantiene el logo Ducks inferior para regresar a la ventana principal.
+
+Importante: si después de subirlo no se ve el cambio, borra caché del navegador o cambia el nombre del deployment en Vercel. No requiere SQL adicional.

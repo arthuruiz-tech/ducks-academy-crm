@@ -5073,3 +5073,158 @@ body.ducks-premium-skin{
     height:49px;
   }
 }
+
+
+/* v2.119 - Administrador: botón desplegable real con nombre de menú */
+.ducks-premium-skin .admin-button-menu-header{
+  grid-template-columns:auto minmax(260px,390px) minmax(320px,1fr);
+  align-items:center;
+  gap:12px;
+}
+.admin-menu-dropdown{
+  position:relative;
+  width:min(100%,390px);
+  z-index:90;
+}
+.admin-menu-dropdown summary{
+  list-style:none;
+  cursor:pointer;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:4px 10px;
+  align-items:center;
+  background:linear-gradient(180deg,#ffffff,#f8fbfa);
+  border:1px solid rgba(6,81,63,.14);
+  border-radius:18px;
+  min-height:54px;
+  padding:9px 14px;
+  color:#073f34;
+  box-shadow:0 12px 26px rgba(8,24,52,.08);
+}
+.admin-menu-dropdown summary::-webkit-details-marker{display:none}
+.admin-menu-dropdown[open] summary{
+  border-color:#f59e0b;
+  box-shadow:0 16px 32px rgba(245,158,11,.18);
+}
+.admin-menu-summary-title{
+  grid-column:1 / -1;
+  display:block;
+  color:#5f7180;
+  font-size:11px;
+  font-weight:950;
+  text-transform:uppercase;
+  letter-spacing:.05em;
+  line-height:1;
+}
+.admin-menu-dropdown summary b{
+  display:block;
+  color:#073f34;
+  font-size:16px;
+  font-weight:950;
+  line-height:1.15;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.admin-menu-dropdown summary i{
+  font-style:normal;
+  color:#f59e0b;
+  font-weight:950;
+  font-size:18px;
+  transition:transform .14s ease;
+}
+.admin-menu-dropdown[open] summary i{transform:rotate(180deg)}
+.admin-menu-dropdown-list{
+  position:absolute;
+  top:calc(100% + 8px);
+  left:0;
+  right:0;
+  display:grid;
+  gap:6px;
+  max-height:min(68vh,520px);
+  overflow:auto;
+  background:#fff;
+  border:1px solid rgba(6,81,63,.12);
+  border-radius:20px;
+  padding:8px;
+  box-shadow:0 24px 60px rgba(8,24,52,.20);
+}
+.admin-menu-dropdown-list button{
+  width:100%;
+  border:0;
+  background:#fff;
+  color:#123444;
+  text-align:left;
+  padding:12px 14px;
+  border-radius:15px;
+  font-weight:900;
+  cursor:pointer;
+}
+.admin-menu-dropdown-list button:hover,
+.admin-menu-dropdown-list button.active{
+  background:linear-gradient(135deg,#0a6147,#0f7c59);
+  color:#fff;
+}
+.admin-bottom-logo-nav{
+  position:fixed;
+  left:50%;
+  bottom:calc(10px + env(safe-area-inset-bottom));
+  transform:translateX(-50%);
+  z-index:80;
+  pointer-events:none;
+}
+.admin-bottom-logo-nav button{
+  pointer-events:auto;
+  width:64px;
+  height:64px;
+  border-radius:50%;
+  border:1px solid rgba(6,81,63,.12);
+  background:linear-gradient(180deg,#ffffff,#f8fbfa);
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+  box-shadow:0 18px 42px rgba(8,24,52,.18);
+}
+.admin-bottom-logo-nav img{
+  width:54px;
+  height:54px;
+  object-fit:contain;
+  filter:drop-shadow(0 6px 10px rgba(0,0,0,.12));
+}
+.ducks-premium-skin .admin-compact-main{
+  padding-bottom:96px!important;
+}
+@media(max-width:1020px){
+  .ducks-premium-skin .admin-button-menu-header{
+    grid-template-columns:1fr;
+  }
+  .admin-menu-dropdown{
+    width:100%;
+  }
+  .admin-dropdown-tools{
+    width:100%;
+    justify-content:stretch;
+  }
+  .admin-compact-search{
+    flex:1;
+    min-width:0;
+    width:auto;
+  }
+}
+@media(max-width:760px){
+  .admin-menu-dropdown summary{
+    min-height:50px;
+    border-radius:16px;
+  }
+  .admin-menu-dropdown-list{
+    max-height:58vh;
+  }
+  .admin-bottom-logo-nav button{
+    width:58px;
+    height:58px;
+  }
+  .admin-bottom-logo-nav img{
+    width:49px;
+    height:49px;
+  }
+}

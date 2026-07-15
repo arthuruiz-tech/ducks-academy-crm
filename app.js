@@ -1850,6 +1850,24 @@ async function loadAdminData(){
   setupNotificationRealtime();
 }
 async function refresh(){ if(mode==='admin'){await loadAdminData(); renderShell(); renderPage();} }
+function adminMenuLabel(value){
+  const labels={
+    dashboard:'Dashboard',
+    notifications:'Avisos',
+    registrations:'Solicitudes',
+    players:'Jugadores',
+    parents:'Papás',
+    payments:'Pagos',
+    evidence:'Evidencias',
+    whatsapp:'WhatsApp',
+    documents:'Documentos',
+    history:'Historial',
+    backups:'Respaldos',
+    settings:'Configuración',
+    public:'Página pública'
+  };
+  return labels[value] || 'Dashboard';
+}
 function renderShell(){
   const adminOptions = [
     ['dashboard','📊 Dashboard'],
@@ -1867,42 +1885,64 @@ function renderShell(){
     ['public','🌐 Página pública']
   ];
   app.innerHTML=`<div class="admin-compact-shell admin-dropdown-shell">
-    <header class="admin-compact-header admin-dropdown-header">
+    <header class="admin-compact-header admin-dropdown-header admin-button-menu-header">
       <div class="admin-compact-brand">
         <img src="assets/logo.png" alt="Ducks">
         <div><b>Ducks CRM</b><span>Administración interna</span></div>
       </div>
-      <div class="admin-dropdown-center">
-        <label class="admin-menu-select-wrap">
-          <span class="admin-menu-title">Menú administrador</span>
-          <select id="adminPageSelect" class="select admin-page-select">${adminOptions.map(([value,label])=>`<option value="${value}" ${page===value?'selected':''}>${label}</option>`).join('')}</select>
-        </label>
-      </div>
+
+      <details class="admin-menu-dropdown" id="adminMenuDropdown">
+        <summary id="adminMenuSummary">
+          <span class="admin-menu-summary-title">Menú administrador</span>
+          <b id="adminMenuCurrent">${adminMenuLabel(page)}</b>
+          <i>▾</i>
+        </summary>
+        <div class="admin-menu-dropdown-list">
+          ${adminOptions.map(([value,label])=>`<button type="button" data-page="${value}" class="${page===value?'active':''}">${label}</button>`).join('')}
+        </div>
+      </details>
+
       <div class="admin-compact-tools admin-dropdown-tools">
         <button class="btn secondary admin-compact-bell" id="adminBellBtn">🔔 <span class="notification-badge hidden" data-notification-badge>0</span></button>
         <input id="search" class="input admin-compact-search" placeholder="Buscar..." value="${esc(q)}">
         <button class="btn secondary admin-logout-btn" id="authBtn">Salir</button>
       </div>
     </header>
+
     <main class="main admin-compact-main">
       <div class="top admin-compact-title">
         <div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div>
       </div>
       <div id="content"></div>
     </main>
+
     <nav class="admin-bottom-logo-nav" aria-label="Volver a portada">
       <button type="button" onclick="renderPublicHome()" title="Volver a la ventana principal"><img src="assets/logo.png" alt="Ducks"></button>
     </nav>
   </div>`;
-  const pageSelect=document.getElementById('adminPageSelect');
-  if(pageSelect) pageSelect.onchange=e=>{ page=e.target.value; if(page==='public'){renderPublicHome(); return;} renderPage(); };
+
+  document.querySelectorAll('.admin-menu-dropdown-list [data-page]').forEach(b=>b.onclick=()=>{
+    page=b.dataset.page;
+    const menu=document.getElementById('adminMenuDropdown');
+    if(menu) menu.open=false;
+    if(page==='public'){renderPublicHome(); return;}
+    renderPage();
+  });
+
   const bellBtn=document.getElementById('adminBellBtn');
-  if(bellBtn) bellBtn.onclick=()=>{ page='notifications'; renderPage(); const sel=document.getElementById('adminPageSelect'); if(sel) sel.value='notifications'; };
+  if(bellBtn) bellBtn.onclick=()=>{ page='notifications'; renderPage(); };
+
   document.getElementById('search').oninput=e=>{q=e.target.value; renderPage();};
   document.getElementById('authBtn').onclick=logout;
   updateNotificationBadges();
 }
-function setTitle(t){ const el=document.getElementById('title'); if(el) el.textContent=t; document.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===page)); const sel=document.getElementById('adminPageSelect'); if(sel && page && sel.value!==page) sel.value=page; }
+function setTitle(t){
+  const el=document.getElementById('title');
+  if(el) el.textContent=t;
+  const current=document.getElementById('adminMenuCurrent');
+  if(current) current.textContent=adminMenuLabel(page);
+  document.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===page));
+}
 function renderPage(){ if(mode==='admin') rememberScreen('admin:'+page); if(page==='dashboard') renderDashboard(); if(page==='notifications') renderNotifications(); if(page==='registrations') renderRegistrations(); if(page==='players') renderPlayers(); if(page==='parents') renderParents(); if(page==='payments') renderPayments(); if(page==='evidence') renderEvidence(); if(page==='whatsapp') renderWhatsApp(); if(page==='documents') renderDocuments(); if(page==='history') renderPlayerHistory(); if(page==='backups') renderBackups(); if(page==='settings') renderSettings(); }
 function filteredPlayers(){ const s=q.toLowerCase().trim(); return players.filter(p=>!s || [p.id,p.name,p.tutor,p.phone,p.category,p.birth_date,p.registration_date,p.payment_day,p.uniform_number].join(' ').toLowerCase().includes(s)); }
 
