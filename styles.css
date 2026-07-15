@@ -5228,3 +5228,184 @@ body.ducks-premium-skin{
     height:49px;
   }
 }
+
+
+/* v2.120 - Portal papás compacto, contacto y recibo sin firma */
+.private-ribbon{
+  min-height:130px!important;
+  border-radius:24px!important;
+  margin-bottom:14px!important;
+}
+.private-ribbon .ribbon-content{
+  padding:18px 22px!important;
+  gap:16px!important;
+  justify-content:flex-start!important;
+}
+.private-ribbon .ribbon-logo.small{
+  width:76px!important;
+  height:76px!important;
+  border-radius:20px!important;
+  padding:6px!important;
+  box-shadow:0 12px 28px rgba(0,0,0,.18)!important;
+}
+.private-ribbon .ribbon-text h1{
+  font-size:24px!important;
+  line-height:1.08!important;
+}
+.private-ribbon .ribbon-text p{
+  font-size:14px!important;
+  margin:5px 0 0!important;
+}
+.private-ribbon .ribbon-kicker{
+  padding:5px 10px!important;
+  font-size:11px!important;
+  margin-bottom:6px!important;
+}
+.parent-title img{
+  width:46px!important;
+  height:46px!important;
+}
+.parent-title h1{
+  font-size:22px!important;
+}
+.parent-account-actions{
+  padding:14px 16px!important;
+  margin-bottom:14px!important;
+}
+
+/* Recibo: sin firma, solo sello */
+#cashReceiptFormModal .modal{
+  width:min(100%,760px)!important;
+  max-height:calc(100dvh - 16px)!important;
+}
+#cashReceiptFormModal .modal-body{
+  padding:10px 12px!important;
+}
+#cashReceiptFormModal .cash-signature-field{
+  display:none!important;
+}
+#cashReceiptFormModal .cash-stamp-preview{
+  margin-top:2px!important;
+  padding:10px 12px!important;
+}
+#cashReceiptFormModal .cash-stamp-preview img{
+  width:72px!important;
+  height:72px!important;
+  object-fit:contain;
+}
+#cashReceiptFormModal textarea{
+  min-height:64px!important;
+}
+#cashReceiptFormModal .consent-check{
+  margin-top:2px!important;
+  padding:10px 12px!important;
+}
+.cash-receipt-stamp-only-block{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+  align-items:center;
+  margin:16px 0 12px;
+}
+.cash-receipt-stamp-only{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  border:1px solid #c9e8d8;
+  background:#effaf4;
+  border-radius:14px;
+  padding:12px;
+}
+.cash-receipt-stamp-only img{
+  width:110px;
+  max-height:84px;
+  object-fit:contain;
+}
+.cash-receipt-stamp-only strong,
+.cash-receipt-stamp-only span{
+  display:block;
+}
+.cash-receipt-stamp-only strong{
+  color:#087142;
+}
+.cash-receipt-stamp-only span{
+  font-size:12px;
+  color:#4e6760;
+  margin-top:4px;
+}
+
+/* Contacto */
+.contact-info-modal .modal-body{
+  padding:20px!important;
+}
+.contact-info-grid{
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  margin-bottom:18px;
+}
+.contact-info-grid article{
+  min-height:150px;
+}
+.contact-info-grid p{
+  font-size:15px!important;
+}
+.contact-info-actions{
+  justify-content:flex-end;
+}
+
+@media(max-width:760px){
+  .private-ribbon{
+    min-height:98px!important;
+    border-radius:20px!important;
+  }
+  .private-ribbon .ribbon-content{
+    padding:14px 16px!important;
+    gap:12px!important;
+    flex-direction:row!important;
+    text-align:left!important;
+  }
+  .private-ribbon .ribbon-logo.small{
+    width:54px!important;
+    height:54px!important;
+    border-radius:16px!important;
+    padding:5px!important;
+  }
+  .private-ribbon .ribbon-text h1{
+    font-size:18px!important;
+  }
+  .private-ribbon .ribbon-text p{
+    font-size:12px!important;
+  }
+  .private-ribbon .ribbon-kicker{
+    font-size:10px!important;
+    padding:4px 8px!important;
+  }
+  .parent-title img{
+    width:38px!important;
+    height:38px!important;
+  }
+  .parent-title h1{
+    font-size:19px!important;
+  }
+  #cashReceiptFormModal .modal{
+    max-height:calc(100dvh - 10px)!important;
+  }
+  #cashReceiptFormModal .form-grid,
+  #cashReceiptFormModal .cash-receipt-form-grid{
+    grid-template-columns:1fr!important;
+  }
+  #cashReceiptFormModal .full{
+    grid-column:auto!important;
+  }
+  .cash-receipt-stamp-only-block{
+    grid-template-columns:1fr;
+  }
+  .contact-info-grid{
+    grid-template-columns:1fr;
+  }
+  .contact-info-actions{
+    flex-direction:column;
+  }
+  .contact-info-actions .btn{
+    width:100%;
+  }
+}

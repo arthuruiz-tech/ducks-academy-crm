@@ -1,9 +1,9 @@
-DUCKS CRM PROFESIONAL v2.119
+DUCKS CRM PROFESIONAL v2.120
 
-Cambio aplicado:
-- Portal administrador: el menú ahora es un botón desplegable real.
-- El botón muestra el título Menú administrador y el nombre de la sección actual.
-- Al dar clic se despliegan todas las opciones disponibles.
-- Se mantiene el logo Ducks inferior para regresar a la ventana principal.
+Cambios aplicados:
+1. Portal de papás: franja superior de bienvenida reducida y logo más pequeño.
+2. Recibo de pago: eliminado el espacio de firma; se deja solo el sello oficial.
+3. Contacto en página principal: abre ventana con WhatsApp, horario, ubicación y botón Pedir más información.
+4. Ventana de recibo: ajuste visual reforzado para adaptarse mejor a pantalla.
 
-Importante: si después de subirlo no se ve el cambio, borra caché del navegador o cambia el nombre del deployment en Vercel. No requiere SQL adicional.
+No requiere SQL adicional.
