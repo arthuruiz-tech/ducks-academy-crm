@@ -4090,7 +4090,7 @@ button[onclick="installDucksApp()"]{
   content:'';
   position:fixed;
   inset:0;
-  background:url('assets/home-premium-v306.webp') center center / cover no-repeat;
+  background:url('assets/home-premium-v313.webp') center center / cover no-repeat;
   filter:blur(28px) saturate(.9);
   opacity:.18;
   transform:scale(1.08);
@@ -4211,7 +4211,7 @@ button[onclick="installDucksApp()"]{
   inset:0;
   background:
     linear-gradient(180deg, rgba(244,244,244,.95), rgba(236,236,236,.92)),
-    url('assets/home-premium-v306.webp') center center / cover no-repeat;
+    url('assets/home-premium-v313.webp') center center / cover no-repeat;
   filter:blur(22px) saturate(1.02);
   opacity:.78;
   transform:scale(1.08);

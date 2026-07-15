@@ -1,6 +1,8 @@
-DUCKS CRM PROFESIONAL v2.112
+DUCKS CRM PROFESIONAL v2.113
 
 Cambios:
-- Se vuelve a usar la campana original del arte, sin campana sobrepuesta.
-- Se mejoró el ajuste visual superior e inferior para reducir los espacios vacíos.
-- Se conservó la funcionalidad del clic en la campana y el menú inferior.
+- Se quitó específicamente el número 3 incrustado en la campana de la portada.
+- Se conserva la campana original del diseño.
+- Se mantiene la funcionalidad actual del botón de campana.
+
+Recomendación: al publicar en Vercel, hacer recarga completa en el celular o cerrar y volver a abrir la app para refrescar caché.

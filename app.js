@@ -1186,7 +1186,7 @@ function renderPublicHome(){
   app.innerHTML=`<div class="public-site ducks-mockup-home">
     <main class="ducks-mockup-wrap">
       <section id="inicio" class="ducks-mockup-screen" aria-label="Portada principal Ducks Basketball Academy">
-        <img src="assets/home-premium-v306.webp" alt="Portada principal Ducks Basketball Academy" class="ducks-mockup-image" fetchpriority="high">
+        <img src="assets/home-premium-v313.webp" alt="Portada principal Ducks Basketball Academy" class="ducks-mockup-image" fetchpriority="high">
         <div class="mockup-screen-bg-fill" aria-hidden="true"></div>
         <div class="mockup-section-gap gap-video"></div>
         <div class="mockup-section-gap gap-cards"></div>
