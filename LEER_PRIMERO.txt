@@ -1,11 +1,11 @@
-DUCKS CRM PROFESIONAL v2.98
+DUCKS CRM PROFESIONAL v2.99
 
-Cambios:
-- Rediseño de página principal con formato app premium de fondo blanco.
-- Se conserva el logo de Ducks Basketball Academy como elemento principal.
-- El video actual se reubicó en una tarjeta destacada tipo portada.
-- Se agregaron tarjetas visuales modernas con iconos estilo 3D para las funciones existentes.
-- Se conserva cada función del portal: Nuevo ingreso, Academia, Contacto, Mi Cuenta, Pagos, Calendario, Categorías y Valores.
-- Menú inferior tipo app con Inicio, Buscar, logo Ducks central, Mi Cuenta y Más.
-- Se eliminó Calendario del menú inferior y se movió a Más / tarjeta principal.
+Cambios principales:
+- Página principal adaptada al formato visual de referencia.
+- Menú superior eliminado para que la portada quede limpia.
+- Íconos principales estilo 3D y distribución igual a la referencia.
+- Menú inferior con Inicio, Noticias, logo central, Mensajes y Más.
+- Administrador movido a la opción Más.
+- Se conserva la funcionalidad de todas las secciones existentes.
+- El video actual se integró en la tarjeta principal de video destacado.
 - No requiere SQL adicional.
