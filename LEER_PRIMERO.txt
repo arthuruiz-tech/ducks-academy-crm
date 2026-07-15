@@ -1,9 +1,8 @@
-DUCKS CRM PROFESIONAL v2.109
+DUCKS CRM PROFESIONAL v2.110
 
 Cambios:
-- Se retoma la base con laterales ya corregidos.
-- Campana corregida como Centro de avisos: pagos, cumpleaños, nuevos ingresos y avisos generales.
-- Se agregó Instalar app en la opción Más.
-- Se agregaron espacios visuales entre secciones de la portada.
-- Menú inferior visualmente más grande y con mejor área táctil.
-- No requiere SQL adicional.
+- Campana pública: solo muestra avisos generales y cumpleaños.
+- Número oculto por defecto; solo aparece si hay avisos nuevos sin leer.
+- Se reducen visualmente los espacios en blanco superior e inferior con fondo integrado.
+- Se elimina el empalme del menú inferior usando solo los hotspots alineados al diseño base.
+- Se mantienen laterales y funcionalidad del portal.

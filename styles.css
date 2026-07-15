@@ -4077,3 +4077,121 @@ button[onclick="installDucksApp()"]{
   .mockup-visible-bottom-nav .visible-bottom-logo img{width:6.8vh;height:6.8vh}
   .public-notice-actions{grid-template-columns:1fr}
 }
+
+
+/* v2.110 - solo avisos/cumpleaños en campana, sin espacios blancos y sin empalme inferior */
+.ducks-mockup-home{
+  position:relative;
+  background:
+    radial-gradient(circle at 18% 12%, rgba(255,255,255,.95), rgba(255,255,255,.72) 24%, rgba(240,240,240,.55) 43%, rgba(232,232,232,.92) 74%),
+    linear-gradient(180deg,#f1f1f1 0%, #ededed 100%) !important;
+}
+.ducks-mockup-home::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  background:url('assets/home-premium-v306.webp') center center / cover no-repeat;
+  filter:blur(28px) saturate(.9);
+  opacity:.18;
+  transform:scale(1.08);
+  pointer-events:none;
+}
+.ducks-mockup-wrap{
+  position:relative;
+  z-index:1;
+  width:min(100vw, calc(100dvh * .5628));
+  max-height:100dvh;
+  transform:none !important;
+}
+.ducks-mockup-screen{
+  overflow:visible;
+}
+.ducks-mockup-image{
+  position:relative;
+  z-index:1;
+}
+.mockup-screen-bg-fill{
+  display:none;
+}
+.mockup-section-gap{
+  height:.9%;
+  background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.98),rgba(255,255,255,0));
+  box-shadow:none;
+  z-index:2;
+}
+.gap-video{top:45.5%}
+.gap-cards{top:62.65%}
+.gap-banner{top:80.2%}
+.mockup-bell-visual{
+  position:absolute;
+  left:84.65%;
+  top:5.55%;
+  width:9.1%;
+  height:5.8%;
+  z-index:11;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:22px;
+  background:linear-gradient(180deg,#ffffff,#f6f7f8);
+  box-shadow:0 10px 22px rgba(10,18,35,.12), inset 0 0 0 1px rgba(255,255,255,.9);
+}
+.mockup-bell-icon{
+  font-size:2.25vh;
+  line-height:1;
+  filter:drop-shadow(0 1px 0 rgba(255,255,255,.6));
+}
+.mockup-bell-badge{
+  position:absolute;
+  top:-7%;
+  right:-8%;
+  min-width:1.9vh;
+  height:1.9vh;
+  padding:0 .34vh;
+  border-radius:999px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#ff8c1c;
+  color:#fff;
+  font-weight:900;
+  font-size:.92vh;
+  box-shadow:0 5px 12px rgba(255,140,28,.34);
+}
+.hs-bell{
+  left:84.0% !important;
+  top:5.15% !important;
+  width:10.6% !important;
+  height:6.9% !important;
+  border-radius:24px !important;
+  z-index:20 !important;
+}
+.mockup-visible-bottom-nav{display:none !important;}
+.hs-nav-home,.hs-nav-news,.hs-nav-messages,.hs-nav-more{
+  top:91.55% !important;
+  height:6.25% !important;
+}
+.hs-nav-logo{
+  top:90.55% !important;
+  height:7.4% !important;
+}
+.hs-nav-home{left:5.2% !important;width:15.4% !important}
+.hs-nav-news{left:23.4% !important;width:15.8% !important}
+.hs-nav-logo{left:42.0% !important;width:16.2% !important}
+.hs-nav-messages{left:66.4% !important;width:15.8% !important}
+.hs-nav-more{left:84.2% !important;width:10.2% !important}
+.public-notice-actions{
+  grid-template-columns:repeat(3,minmax(0,1fr));
+}
+@media (max-width:760px){
+  .ducks-mockup-home{
+    min-height:100dvh;
+    height:100dvh;
+  }
+  .ducks-mockup-wrap{
+    width:min(100vw, calc(100dvh * .5655));
+    max-height:100dvh;
+  }
+  .mockup-bell-icon{font-size:2.05vh}
+  .mockup-bell-badge{min-width:1.8vh;height:1.8vh;font-size:.88vh}
+}
