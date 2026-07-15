@@ -3700,7 +3700,7 @@ button[onclick="installDucksApp()"]{
   outline-offset:1px;
 }
 .mockup-hotspot:hover{background:rgba(255,255,255,.04)}
-.hs-bell{left:85.8%;top:6.6%;width:10.8%;height:7.4%;border-radius:24px}
+.hs-bell{left:84.9%;top:6.1%;width:12.3%;height:8.5%;border-radius:24px}
 .hs-video{left:5.2%;top:28.4%;width:89.4%;height:16.0%;border-radius:28px}
 .hs-card{width:21.2%;height:16.0%;border-radius:24px}
 .hs-card-1{left:4.6%;top:47.0%}
@@ -3712,12 +3712,12 @@ button[onclick="installDucksApp()"]{
 .hs-card-7{left:51.1%;top:63.1%}
 .hs-card-8{left:74.4%;top:63.1%}
 .hs-banner{left:70.2%;top:84.7%;width:23.6%;height:5.6%;border-radius:20px}
-.hs-nav-home,.hs-nav-news,.hs-nav-logo,.hs-nav-messages,.hs-nav-more{top:92.4%;height:6.8%;border-radius:20px}
-.hs-nav-home{left:5.8%;width:13.8%}
-.hs-nav-news{left:24.6%;width:14.6%}
-.hs-nav-logo{left:43.0%;width:14.4%;border-radius:50%}
-.hs-nav-messages{left:67.0%;width:14.8%}
-.hs-nav-more{left:84.0%;width:10.8%}
+.hs-nav-home,.hs-nav-news,.hs-nav-logo,.hs-nav-messages,.hs-nav-more{top:92.1%;height:7.1%;border-radius:20px}
+.hs-nav-home{left:5.3%;width:14.6%}
+.hs-nav-news{left:23.8%;width:15.4%}
+.hs-nav-logo{left:42.5%;width:15.2%;border-radius:50%}
+.hs-nav-messages{left:66.2%;width:15.7%}
+.hs-nav-more{left:83.0%;width:12.0%}
 @media (max-width:640px){
   .ducks-mockup-home{padding:6px 0 18px}
   .ducks-mockup-wrap{padding:0 4px 18px}
@@ -3857,6 +3857,9 @@ button[onclick="installDucksApp()"]{
   border-radius:20px;
   background:linear-gradient(180deg,#ffffff,#f8fbfa);
 }
+.public-notice-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:16px}
+.public-notice-actions .btn{width:100%;justify-content:center}
+@media (max-width:640px){.public-notice-actions{grid-template-columns:1fr;gap:8px}}
 
 
 
@@ -3874,11 +3877,11 @@ button[onclick="installDucksApp()"]{
   background:linear-gradient(180deg,#f4f4f4 0%,#ececec 100%);
 }
 .ducks-mockup-wrap{
-  width:min(calc(100vw - 4px), calc((100svh - 4px) * .5628));
-  width:min(calc(100vw - 4px), calc((100dvh - 4px) * .5628));
+  width:min(calc(100vw - 8px), calc((100svh - 8px) * .5628));
+  width:min(calc(100vw - 8px), calc((100dvh - 8px) * .5628));
   aspect-ratio:941 / 1672;
-  max-height:calc(100svh - 4px);
-  max-height:calc(100dvh - 4px);
+  max-height:calc(100svh - 8px);
+  max-height:calc(100dvh - 8px);
   height:auto;
   max-width:none;
   min-width:0;
@@ -3887,7 +3890,7 @@ button[onclick="installDucksApp()"]{
   position:relative;
   overflow:visible;
   flex:0 0 auto;
-  transform:translateY(-10px);
+  transform:translateY(-8px);
 }
 .ducks-mockup-screen{
   width:100%;
@@ -3909,14 +3912,14 @@ button[onclick="installDucksApp()"]{
 @media (max-width:760px){
   .ducks-mockup-home{padding:0 !important}
   .ducks-mockup-wrap{
-    width:min(calc(100vw - 2px), calc((100svh - 2px) * .5628));
-    width:min(calc(100vw - 2px), calc((100dvh - 2px) * .5628));
-    max-height:calc(100svh - 2px);
-    max-height:calc(100dvh - 2px);
-    transform:translateY(-12px);
+    width:min(calc(100vw - 8px), calc((100svh - 8px) * .5628));
+    width:min(calc(100vw - 8px), calc((100dvh - 8px) * .5628));
+    max-height:calc(100svh - 8px);
+    max-height:calc(100dvh - 8px);
+    transform:translateY(-8px);
   }
 }
 @supports not (height:100dvh){
   .ducks-mockup-home{height:100vh;min-height:100vh}
-  .ducks-mockup-wrap{width:min(calc(100vw - 4px), calc((100vh - 4px) * .5628));max-height:calc(100vh - 4px);transform:translateY(-10px)}
+  .ducks-mockup-wrap{width:min(calc(100vw - 8px), calc((100vh - 8px) * .5628));max-height:calc(100vh - 8px);transform:translateY(-8px)}
 }

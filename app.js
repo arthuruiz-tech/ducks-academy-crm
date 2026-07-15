@@ -895,10 +895,14 @@ function openPublicNotifications(){
   const modal=document.createElement('div');
   modal.className='modalbg open';
   modal.id='publicNoticeModal';
-  modal.innerHTML=`<div class="modal notification-modal"><div class="modal-head"><div><h3>Avisos Ducks</h3><small>Notificaciones y recordatorios</small></div><button class="btn secondary" onclick="closeModal('publicNoticeModal')">Cerrar</button></div><div class="modal-body"><div class="ducks-notice-list">
+  modal.innerHTML=`<div class="modal notification-modal"><div class="modal-head"><div><h3>Avisos Ducks</h3><small>Notificaciones y accesos rápidos</small></div><button class="btn secondary" onclick="closeModal('publicNoticeModal')">Cerrar</button></div><div class="modal-body"><div class="ducks-notice-list">
     <article><b>Pago y comprobantes</b><span>Ingresa al Portal de Papás para consultar pagos, evidencias y comprobantes.</span></article>
     <article><b>Nuevo ingreso</b><span>El cuestionario de registro está disponible en la sección Nuevo ingreso.</span></article>
     <article><b>Categorías y calendario</b><span>Consulta horarios, categorías y próximos eventos desde la portada principal.</span></article>
+  </div><div class="public-notice-actions">
+    <button class="btn green" onclick="closeModal('publicNoticeModal');openParentSectionAction('pay')">Portal de papás</button>
+    <button class="btn secondary" onclick="closeModal('publicNoticeModal');showCalendarNotice()">Calendario</button>
+    <button class="btn secondary" onclick="closeModal('publicNoticeModal');installDucksApp()">Instalar app</button>
   </div></div></div>`;
   document.body.appendChild(modal);
 }
@@ -931,6 +935,7 @@ function openPublicMoreMenu(){
     <button onclick="closeModal('publicMoreModal');openValuesInfo()">⭐ Valores</button>
     <button onclick="closeModal('publicMoreModal');openDucksRegulation()">📘 Reglamento</button>
     <button onclick="closeModal('publicMoreModal');openDucksWhatsApp('Hola, quiero información de Ducks Basketball Academy.')">☎️ Contacto</button>
+    <button onclick="closeModal('publicMoreModal');installDucksApp()">📲 Instalar app</button>
     <button onclick="closeModal('publicMoreModal');renderAdminLogin()">🔐 Administrador</button>
   </div></div></div>`;
   document.body.appendChild(modal);
