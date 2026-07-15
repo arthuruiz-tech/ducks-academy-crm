@@ -1,9 +1,8 @@
-DUCKS CRM PROFESIONAL v2.100
+DUCKS CRM PROFESIONAL v2.102
 
 Cambios:
-- Portada principal más fiel a la referencia visual.
-- Menú superior eliminado por completo.
-- Menú inferior centrado y refinado.
-- Zona de video sin botón play, sin tiempo y sin texto "Ver video".
-- Portada más limpia en móvil y escritorio.
-- Se conservan funciones del portal.
+- Se corrigió la portada para que en celular se vea completa en una sola pantalla.
+- Se mejoró la calidad de la imagen principal y de los iconos 3D usando versión WebP de mayor calidad.
+- Se conservaron los hotspots funcionales sobre cada botón.
+- Se aplicó estilo premium a ventanas internas, modales, tarjetas y formularios.
+- No requiere SQL adicional.

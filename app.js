@@ -1149,92 +1149,33 @@ async function openParentSectionAction(action='portal'){
 }
 
 function renderPublicHome(){
+  document.body.classList.add('ducks-premium-skin');
   mode='public'; rememberScreen('public:');
-  app.innerHTML=`${publicQuickMenu()}<div class="public-site ducks-white-home">
-    <main class="ducks-home-wrap">
-      <section id="inicio" class="ducks-hero-card">
-        <div class="hero-pattern-left"></div>
-        <div class="hero-basket-side"></div>
-        <button class="hero-bell-btn" type="button" onclick="openPublicNotifications()" aria-label="Avisos"><span>🔔</span><b>3</b></button>
+  app.innerHTML=`<div class="public-site ducks-mockup-home">
+    <main class="ducks-mockup-wrap">
+      <section id="inicio" class="ducks-mockup-screen" aria-label="Portada principal Ducks Basketball Academy">
+        <img src="assets/home-premium-v302.webp" alt="Portada principal Ducks Basketball Academy" class="ducks-mockup-image" fetchpriority="high">
 
-        <div class="hero-motto">
-          <span>Disciplina</span>
-          <span>Pasión</span>
-          <span>Equipo</span>
-        </div>
+        <button class="mockup-hotspot hs-bell" type="button" aria-label="Avisos" onclick="openPublicNotifications()"></button>
+        <button class="mockup-hotspot hs-video" type="button" aria-label="Video destacado" onclick="openAcademyStory()"></button>
 
-        <div class="hero-logo-area">
-          <img src="assets/logo.png" alt="Ducks Basketball Academy" class="hero-logo-main">
-          <div class="hero-brand-ribbon">Basketball Academy</div>
-        </div>
+        <button class="mockup-hotspot hs-card hs-card-1" type="button" aria-label="Nuevo ingreso" onclick="renderRegistrationForm()"></button>
+        <button class="mockup-hotspot hs-card hs-card-2" type="button" aria-label="Academia" onclick="openAcademyStory()"></button>
+        <button class="mockup-hotspot hs-card hs-card-3" type="button" aria-label="Contacto" onclick="openDucksWhatsApp('Hola, quiero información de Ducks Basketball Academy.')"></button>
+        <button class="mockup-hotspot hs-card hs-card-4" type="button" aria-label="Mi cuenta" onclick="renderParentLogin()"></button>
 
-        <article class="ducks-video-feature" onclick="openAcademyStory()" role="button" aria-label="Abrir video destacado" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' '){openAcademyStory()}">
-          <div class="video-copy">
-            <small>Video destacado</small>
-            <h2>Entrena tu mente,<br>domina el juego</h2>
-          </div>
-          <div class="video-frame">
-            <video autoplay muted loop playsinline preload="metadata" poster="assets/share-card.png">
-              <source src="assets/hero-video.mp4" type="video/mp4">
-            </video>
-          </div>
-        </article>
+        <button class="mockup-hotspot hs-card hs-card-5" type="button" aria-label="Pagos y comprobantes" onclick="openParentSectionAction('pay')"></button>
+        <button class="mockup-hotspot hs-card hs-card-6" type="button" aria-label="Calendario" onclick="showCalendarNotice()"></button>
+        <button class="mockup-hotspot hs-card hs-card-7" type="button" aria-label="Categorías" onclick="openCategoriesInfo()"></button>
+        <button class="mockup-hotspot hs-card hs-card-8" type="button" aria-label="Valores" onclick="openValuesInfo()"></button>
 
-        <div class="hero-slider-dots"><span class="active"></span><span></span><span></span></div>
-      </section>
+        <button class="mockup-hotspot hs-banner" type="button" aria-label="Conoce más sobre Ducks" onclick="openAcademyStory()"></button>
 
-      <section class="ducks-icon-grid">
-        <button class="ducks-icon-tile" onclick="renderRegistrationForm()">
-          <span class="tile-3d-icon icon-paper">📝</span>
-          <strong>Nuevo ingreso</strong>
-          <i></i>
-        </button>
-        <button class="ducks-icon-tile" onclick="openAcademyStory()">
-          <span class="tile-3d-icon icon-house">🏠</span>
-          <strong>Academia</strong>
-          <i></i>
-        </button>
-        <button class="ducks-icon-tile" onclick="openDucksWhatsApp('Hola, quiero información de Ducks Basketball Academy.')">
-          <span class="tile-3d-icon icon-phone">📞</span>
-          <strong>Contacto</strong>
-          <i></i>
-        </button>
-        <button class="ducks-icon-tile" onclick="renderParentLogin()">
-          <span class="tile-3d-icon icon-user">👤</span>
-          <strong>Mi cuenta</strong>
-          <i></i>
-        </button>
-
-        <button class="ducks-icon-tile" onclick="openParentSectionAction('pay')">
-          <span class="tile-3d-icon icon-wallet">💵</span>
-          <strong>Pagos y<br>comprobantes</strong>
-          <i></i>
-        </button>
-        <button class="ducks-icon-tile" onclick="showCalendarNotice()">
-          <span class="tile-3d-icon icon-calendar">🗓️</span>
-          <strong>Calendario</strong>
-          <i></i>
-        </button>
-        <button class="ducks-icon-tile" onclick="openCategoriesInfo()">
-          <span class="tile-3d-icon icon-jersey">🎽</span>
-          <strong>Categorías</strong>
-          <i></i>
-        </button>
-        <button class="ducks-icon-tile" onclick="openValuesInfo()">
-          <span class="tile-3d-icon icon-medal">🏅</span>
-          <strong>Valores</strong>
-          <i></i>
-        </button>
-      </section>
-
-      <section class="ducks-bottom-banner">
-        <div class="banner-copy">
-          <small></small>
-          <h3>Formamos atletas,<br>creamos líderes</h3>
-          <p>Más que baloncesto,<br>un estilo de vida.</p>
-        </div>
-        <div class="banner-ball">🏀</div>
-        <button type="button" onclick="openAcademyStory()">Conoce más <span>→</span></button>
+        <button class="mockup-hotspot hs-nav-home" type="button" aria-label="Inicio" onclick="renderPublicHome()"></button>
+        <button class="mockup-hotspot hs-nav-news" type="button" aria-label="Noticias" onclick="openPublicNewsHub()"></button>
+        <button class="mockup-hotspot hs-nav-logo" type="button" aria-label="Ducks inicio" onclick="renderPublicHome()"></button>
+        <button class="mockup-hotspot hs-nav-messages" type="button" aria-label="Mensajes" onclick="openDucksWhatsApp('Hola, quiero información de Ducks Basketball Academy.')"></button>
+        <button class="mockup-hotspot hs-nav-more" type="button" aria-label="Más opciones" onclick="openPublicMoreMenu()"></button>
       </section>
     </main>
   </div>`;
