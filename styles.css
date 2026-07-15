@@ -4515,3 +4515,219 @@ body.ducks-premium-skin{
     padding:0 10px 10px;
   }
 }
+
+
+
+/* v2.115 - Administrador compacto premium */
+.ducks-premium-skin .admin-compact-shell{
+  min-height:100vh;
+  background:
+    radial-gradient(circle at 8% 4%,rgba(255,138,18,.08),transparent 26%),
+    radial-gradient(circle at 92% 0%,rgba(7,98,71,.10),transparent 30%),
+    linear-gradient(180deg,#f7f7f8 0%,#eef2f4 100%);
+}
+.ducks-premium-skin .admin-compact-header{
+  position:sticky;
+  top:0;
+  z-index:60;
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  gap:12px;
+  align-items:center;
+  padding:10px 14px;
+  background:rgba(255,255,255,.92);
+  backdrop-filter:blur(18px);
+  border-bottom:1px solid rgba(6,81,63,.10);
+  box-shadow:0 14px 34px rgba(15,23,42,.08);
+}
+.admin-compact-brand{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:185px;
+}
+.admin-compact-brand img{
+  width:48px;
+  height:48px;
+  object-fit:contain;
+  border-radius:16px;
+  background:#fff;
+  padding:4px;
+  box-shadow:0 10px 20px rgba(15,23,42,.10);
+}
+.admin-compact-brand b{
+  display:block;
+  color:#073f34;
+  font-size:18px;
+  line-height:1;
+}
+.admin-compact-brand span{
+  display:block;
+  color:#667788;
+  font-size:12px;
+  margin-top:3px;
+}
+.admin-compact-nav{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  overflow-x:auto;
+  padding:4px 2px;
+  scrollbar-width:thin;
+}
+.admin-compact-nav button{
+  position:relative;
+  flex:0 0 auto;
+  border:1px solid rgba(6,81,63,.10);
+  background:#fff;
+  color:#173648;
+  border-radius:16px;
+  padding:9px 12px;
+  font-weight:900;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  white-space:nowrap;
+  box-shadow:0 10px 22px rgba(8,24,52,.05);
+}
+.admin-compact-nav button:hover,
+.admin-compact-nav button.active{
+  background:linear-gradient(135deg,#0a6147,#0f7c59);
+  color:#fff;
+  border-color:rgba(255,255,255,.30);
+}
+.admin-compact-nav .notification-badge{
+  position:static;
+  min-width:18px;
+  height:18px;
+  font-size:11px;
+  line-height:18px;
+}
+.admin-compact-tools{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.admin-compact-search{
+  width:min(24vw,230px);
+  min-width:160px;
+  height:42px;
+  border-radius:16px!important;
+}
+.admin-compact-bell,
+.admin-logout-btn{
+  height:42px;
+  white-space:nowrap;
+}
+.admin-compact-bell{
+  position:relative;
+}
+.admin-compact-bell .notification-badge{
+  position:absolute;
+  top:-6px;
+  right:-6px;
+}
+.ducks-premium-skin .admin-compact-main{
+  max-width:1440px;
+  margin:0 auto;
+  padding:18px 18px 28px;
+}
+.admin-compact-title{
+  margin-bottom:14px;
+  background:linear-gradient(180deg,#ffffff,#f8fbfa);
+  border:1px solid rgba(6,81,63,.08);
+  border-radius:24px;
+  padding:14px 18px;
+  box-shadow:0 14px 30px rgba(8,24,52,.06);
+}
+.admin-compact-title h2{
+  color:#073f34!important;
+  font-size:26px!important;
+}
+.admin-compact-title p{
+  color:#667788!important;
+}
+/* ocultar estructura anterior si quedara en caché */
+.ducks-premium-skin .shell.with-admin-menu .side{
+  display:none;
+}
+.ducks-premium-skin .shell.with-admin-menu{
+  display:block;
+}
+@media(max-width:1020px){
+  .ducks-premium-skin .admin-compact-header{
+    grid-template-columns:1fr;
+    align-items:start;
+  }
+  .admin-compact-brand{
+    min-width:0;
+  }
+  .admin-compact-nav{
+    width:100%;
+    order:3;
+  }
+  .admin-compact-tools{
+    order:2;
+    width:100%;
+  }
+  .admin-compact-search{
+    flex:1;
+    width:auto;
+    min-width:0;
+  }
+}
+@media(max-width:640px){
+  .ducks-premium-skin .admin-compact-header{
+    padding:8px 8px 10px;
+    gap:8px;
+  }
+  .admin-compact-brand img{
+    width:42px;
+    height:42px;
+  }
+  .admin-compact-brand b{
+    font-size:16px;
+  }
+  .admin-compact-brand span{
+    font-size:11px;
+  }
+  .admin-compact-nav{
+    gap:6px;
+    padding-bottom:2px;
+  }
+  .admin-compact-nav button{
+    padding:8px 10px;
+    border-radius:14px;
+    font-size:13px;
+  }
+  .admin-compact-nav button span{
+    max-width:90px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .admin-compact-tools{
+    gap:6px;
+  }
+  .admin-compact-bell{
+    width:42px;
+    padding:0!important;
+  }
+  .admin-compact-bell .notification-badge{
+    top:-5px;
+    right:-5px;
+  }
+  .admin-logout-btn{
+    padding:0 12px!important;
+  }
+  .ducks-premium-skin .admin-compact-main{
+    padding:12px 8px 22px;
+  }
+  .admin-compact-title{
+    border-radius:20px;
+    padding:12px 14px;
+  }
+  .admin-compact-title h2{
+    font-size:22px!important;
+  }
+}

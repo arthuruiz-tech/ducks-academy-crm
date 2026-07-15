@@ -1850,7 +1850,40 @@ async function loadAdminData(){
 }
 async function refresh(){ if(mode==='admin'){await loadAdminData(); renderShell(); renderPage();} }
 function renderShell(){
-  app.innerHTML=`${adminQuickMenu()}<div class="shell with-admin-menu"><aside class="side"><div class="brand"><img class="brand-logo" src="assets/logo.png"><div><h1>Ducks Academy CRM</h1><p>Administración interna</p></div></div><div class="nav"><button data-page="dashboard">📊 Dashboard</button><button data-page="notifications">🔔 Avisos <span class="notification-badge hidden" data-notification-badge>0</span></button><button data-page="registrations">📝 Solicitudes de ingreso</button><button data-page="players">🏀 Jugadores</button><button data-page="parents">👨‍👩‍👧 Papás</button><button data-page="payments">💳 Pagos</button><button data-page="evidence">📎 Evidencias</button><button data-page="whatsapp">📲 WhatsApp vencidos</button><button data-page="public">🌐 Ver página pública</button><button data-page="documents">📁 Documentos</button><button data-page="history">🕘 Historial</button><button data-page="backups">💾 Respaldos</button><button data-page="settings">⚙️ Configuración</button></div><div class="help">v2.97: tipo de pago separado; solo mensualidad afecta adeudo.</div></aside><main class="main"><div class="top"><div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div><div class="tools"><button class="btn secondary notification-bell" onclick="page='notifications';renderPage()">🔔 <span class="notification-badge hidden" data-notification-badge>0</span></button><input id="search" class="input" placeholder="Buscar..." value="${esc(q)}"><button class="btn secondary" id="authBtn">Cerrar sesión</button></div></div><div id="content"></div></main></div>`;
+  app.innerHTML=`<div class="admin-compact-shell">
+    <header class="admin-compact-header">
+      <div class="admin-compact-brand">
+        <img src="assets/logo.png" alt="Ducks">
+        <div><b>Ducks CRM</b><span>Administración interna</span></div>
+      </div>
+      <nav class="admin-compact-nav" aria-label="Menú administrador">
+        <button data-page="dashboard">📊 <span>Dashboard</span></button>
+        <button data-page="notifications">🔔 <span>Avisos</span><span class="notification-badge hidden" data-notification-badge>0</span></button>
+        <button data-page="registrations">📝 <span>Solicitudes</span></button>
+        <button data-page="players">🏀 <span>Jugadores</span></button>
+        <button data-page="parents">👨‍👩‍👧 <span>Papás</span></button>
+        <button data-page="payments">💳 <span>Pagos</span></button>
+        <button data-page="evidence">📎 <span>Evidencias</span></button>
+        <button data-page="whatsapp">📲 <span>WhatsApp</span></button>
+        <button data-page="documents">📁 <span>Documentos</span></button>
+        <button data-page="history">🕘 <span>Historial</span></button>
+        <button data-page="backups">💾 <span>Respaldos</span></button>
+        <button data-page="settings">⚙️ <span>Config.</span></button>
+        <button data-page="public">🌐 <span>Página pública</span></button>
+      </nav>
+      <div class="admin-compact-tools">
+        <button class="btn secondary admin-compact-bell" data-page="notifications">🔔 <span class="notification-badge hidden" data-notification-badge>0</span></button>
+        <input id="search" class="input admin-compact-search" placeholder="Buscar..." value="${esc(q)}">
+        <button class="btn secondary admin-logout-btn" id="authBtn">Salir</button>
+      </div>
+    </header>
+    <main class="main admin-compact-main">
+      <div class="top admin-compact-title">
+        <div><h2 id="title"></h2><p id="subtitle">Ducks Basketball Academy</p></div>
+      </div>
+      <div id="content"></div>
+    </main>
+  </div>`;
   document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page=b.dataset.page; if(page==='public'){renderPublicHome(); return;} renderPage();});
   document.getElementById('search').oninput=e=>{q=e.target.value; renderPage();};
   document.getElementById('authBtn').onclick=logout;
