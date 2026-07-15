@@ -1168,18 +1168,15 @@ function renderPublicHome(){
           <div class="hero-brand-ribbon">Basketball Academy</div>
         </div>
 
-        <article class="ducks-video-feature">
+        <article class="ducks-video-feature" onclick="openAcademyStory()" role="button" aria-label="Abrir video destacado" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' '){openAcademyStory()}">
           <div class="video-copy">
             <small>Video destacado</small>
             <h2>Entrena tu mente,<br>domina el juego</h2>
-            <button type="button" onclick="openAcademyStory()"><span>▶</span> Ver video</button>
           </div>
           <div class="video-frame">
             <video autoplay muted loop playsinline preload="metadata" poster="assets/share-card.png">
               <source src="assets/hero-video.mp4" type="video/mp4">
             </video>
-            <button class="video-play-btn" type="button" onclick="openAcademyStory()" aria-label="Ver video">▶</button>
-            <span class="video-duration">01:24</span>
           </div>
         </article>
 
