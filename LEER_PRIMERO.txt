@@ -1,9 +1,9 @@
-DUCKS CRM PROFESIONAL v2.115
+DUCKS CRM PROFESIONAL v2.116
 
 Cambios:
-- Ventana de administrador rediseñada con menú superior compacto.
-- Se elimina visualmente el menú lateral grande para ganar espacio útil.
-- Menú horizontal con scroll, más funcional en celular y escritorio.
-- Buscador, avisos y salida integrados en la cabecera compacta.
-- Se conserva toda la funcionalidad del administrador, Supabase, pagos, jugadores, papás, recibos y reportes.
-- No requiere SQL adicional.
+- Administrador con menú desplegable para seleccionar opciones más rápido.
+- Ajuste global de ventanas y modales para que se adapten mejor a la pantalla en celular y PC.
+- Campana de la portada con círculo blanco en lugar de naranja para cubrir el número 3.
+- Portal de papás ahora muestra el día de pago resaltado por cada hijo.
+
+No requiere SQL adicional.

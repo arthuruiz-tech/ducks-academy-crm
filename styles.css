@@ -4090,7 +4090,7 @@ button[onclick="installDucksApp()"]{
   content:'';
   position:fixed;
   inset:0;
-  background:url('assets/home-premium-v313.webp') center center / cover no-repeat;
+  background:url('assets/home-premium-v316.webp') center center / cover no-repeat;
   filter:blur(28px) saturate(.9);
   opacity:.18;
   transform:scale(1.08);
@@ -4211,7 +4211,7 @@ button[onclick="installDucksApp()"]{
   inset:0;
   background:
     linear-gradient(180deg, rgba(244,244,244,.95), rgba(236,236,236,.92)),
-    url('assets/home-premium-v313.webp') center center / cover no-repeat;
+    url('assets/home-premium-v316.webp') center center / cover no-repeat;
   filter:blur(22px) saturate(1.02);
   opacity:.78;
   transform:scale(1.08);
@@ -4730,4 +4730,90 @@ body.ducks-premium-skin{
   .admin-compact-title h2{
     font-size:22px!important;
   }
+}
+
+
+/* v2.116 - admin dropdown, ventanas ajustadas y portal papás */
+.admin-dropdown-header{
+  grid-template-columns:auto minmax(240px,420px) minmax(320px,1fr);
+}
+.admin-dropdown-center{display:flex;align-items:center;justify-content:center;min-width:0;}
+.admin-menu-select-wrap{
+  display:flex;flex-direction:column;gap:6px;width:min(100%,360px);
+}
+.admin-menu-select-wrap span{font-size:12px;font-weight:800;color:#5b6c7c;padding-left:2px;}
+.admin-page-select{
+  width:100%;min-height:46px;border-radius:16px!important;font-weight:900;color:#073f34;
+  background:linear-gradient(180deg,#ffffff,#f8fbfa)!important;box-shadow:0 10px 22px rgba(8,24,52,.06)!important;
+}
+.admin-dropdown-tools{justify-content:flex-end;}
+/* mejorar ajuste de cualquier ventana */
+.modalbg{
+  inset:max(74px, env(safe-area-inset-top)) 0 max(82px, env(safe-area-inset-bottom)) !important;
+  padding:10px 12px !important;
+  align-items:flex-start !important;
+  justify-content:center !important;
+  overflow:auto !important;
+  overscroll-behavior:contain;
+}
+.modalbg .modal,
+.modalbg .wide-modal,
+.modalbg .categories-detail-modal,
+.modalbg .portal-search-modal,
+.modalbg .regulation-viewer-modal,
+.modalbg .public-more-modal,
+.modalbg .notification-modal{
+  width:min(100%, 1040px) !important;
+  max-height:100% !important;
+  margin:auto 0 !important;
+  display:flex !important;
+  flex-direction:column !important;
+  overflow:hidden !important;
+}
+.modalbg .modal-head,
+.modalbg .panel-head{position:sticky;top:0;z-index:20;}
+.modalbg .modal-body,
+.regulation-viewer-body,
+.categories-detail-body{overflow:auto !important;flex:1 1 auto;min-height:0;}
+.portal-search-overlay{align-items:flex-start !important;}
+.portal-search-modal{width:min(100%,720px) !important;}
+.notification-modal,.public-more-modal{width:min(100%,760px) !important;}
+.ducks-premium-skin .modalbg{
+  background:rgba(7,22,41,.46);
+  backdrop-filter:blur(7px);
+}
+/* portal de papás: día de pago visible */
+.payment-day-highlight{
+  margin-top:12px;
+  display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap;
+  background:linear-gradient(135deg,#fff5d6,#ffe4a3);
+  border:1px solid rgba(236,158,20,.34);
+  color:#7a4a00;
+  border-radius:18px;
+  padding:10px 14px;
+  box-shadow:0 10px 20px rgba(235,165,43,.12);
+}
+.payment-day-highlight small{font-weight:800;color:#9a6300;text-transform:uppercase;letter-spacing:.03em;}
+.payment-day-highlight b{font-size:16px;color:#7a4a00;}
+@media(max-width:1020px){
+  .admin-dropdown-header{grid-template-columns:1fr;}
+  .admin-dropdown-center,.admin-menu-select-wrap{width:100%;}
+  .admin-dropdown-tools{width:100%;justify-content:stretch;}
+}
+@media(max-width:760px){
+  .modalbg{inset:max(96px, env(safe-area-inset-top)) 0 max(74px, env(safe-area-inset-bottom)) !important;padding:8px !important;}
+  .modalbg .modal,
+  .modalbg .wide-modal,
+  .modalbg .categories-detail-modal,
+  .modalbg .portal-search-modal,
+  .modalbg .regulation-viewer-modal,
+  .modalbg .public-more-modal,
+  .modalbg .notification-modal{
+    width:100% !important;max-width:100% !important;border-radius:18px !important;
+  }
+  .modalbg .modal-head{padding:12px !important;align-items:flex-start !important;}
+  .modalbg .modal-body{padding:14px !important;}
+  .portal-search-modal{max-height:100% !important;}
+  .payment-day-highlight{width:100%;justify-content:space-between;}
+  .admin-page-select{min-height:44px;}
 }

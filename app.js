@@ -1187,7 +1187,7 @@ function renderPublicHome(){
   app.innerHTML=`<div class="public-site ducks-mockup-home">
     <main class="ducks-mockup-wrap">
       <section id="inicio" class="ducks-mockup-screen" aria-label="Portada principal Ducks Basketball Academy">
-        <img src="assets/home-premium-v313.webp" alt="Portada principal Ducks Basketball Academy" class="ducks-mockup-image" fetchpriority="high">
+        <img src="assets/home-premium-v316.webp" alt="Portada principal Ducks Basketball Academy" class="ducks-mockup-image" fetchpriority="high">
         <div class="mockup-screen-bg-fill" aria-hidden="true"></div>
         <div class="mockup-section-gap gap-video"></div>
         <div class="mockup-section-gap gap-cards"></div>
@@ -1588,6 +1588,7 @@ function renderParentPortal(){
         <div class="player-info-side">
           <div class="family-head"><div><h2>${esc(p.name)}</h2><p>${esc(p.category||'')} · Uniforme #${esc(p.uniform_number||'-')}</p><p class="sub">Nacimiento: ${esc(formatDateDMY(p.birth_date)||'Sin capturar')} · Registro: ${esc(formatDateDMY(effectiveRegistrationISO(p))||'-')}</p><span class="status ${c.status}">${c.status}</span></div></div>
           <div class="family-kpis"><div><small>Último pago</small><b>${esc(c.last||'Sin registro')}</b></div><div><small>Meses pendientes</small><b>${c.months}</b></div><div><small>Adeudo actual</small><b class="amount">${money(c.amount)}</b></div></div>
+          <div class="payment-day-highlight"><small>Día de pago</small><b>${esc(p.payment_day||1)} de cada mes</b></div>
         </div>
         <div class="player-photo-side"><img src="${playerPhotoUrl(p)}" alt="Foto de ${esc(p.name)}"></div>
       </div>
@@ -1850,29 +1851,35 @@ async function loadAdminData(){
 }
 async function refresh(){ if(mode==='admin'){await loadAdminData(); renderShell(); renderPage();} }
 function renderShell(){
+  const adminOptions = [
+    ['dashboard','📊 Dashboard'],
+    ['notifications','🔔 Avisos'],
+    ['registrations','📝 Solicitudes'],
+    ['players','🏀 Jugadores'],
+    ['parents','👨‍👩‍👧 Papás'],
+    ['payments','💳 Pagos'],
+    ['evidence','📎 Evidencias'],
+    ['whatsapp','📲 WhatsApp'],
+    ['documents','📁 Documentos'],
+    ['history','🕘 Historial'],
+    ['backups','💾 Respaldos'],
+    ['settings','⚙️ Configuración'],
+    ['public','🌐 Página pública']
+  ];
   app.innerHTML=`<div class="admin-compact-shell">
-    <header class="admin-compact-header">
+    <header class="admin-compact-header admin-dropdown-header">
       <div class="admin-compact-brand">
         <img src="assets/logo.png" alt="Ducks">
         <div><b>Ducks CRM</b><span>Administración interna</span></div>
       </div>
-      <nav class="admin-compact-nav" aria-label="Menú administrador">
-        <button data-page="dashboard">📊 <span>Dashboard</span></button>
-        <button data-page="notifications">🔔 <span>Avisos</span><span class="notification-badge hidden" data-notification-badge>0</span></button>
-        <button data-page="registrations">📝 <span>Solicitudes</span></button>
-        <button data-page="players">🏀 <span>Jugadores</span></button>
-        <button data-page="parents">👨‍👩‍👧 <span>Papás</span></button>
-        <button data-page="payments">💳 <span>Pagos</span></button>
-        <button data-page="evidence">📎 <span>Evidencias</span></button>
-        <button data-page="whatsapp">📲 <span>WhatsApp</span></button>
-        <button data-page="documents">📁 <span>Documentos</span></button>
-        <button data-page="history">🕘 <span>Historial</span></button>
-        <button data-page="backups">💾 <span>Respaldos</span></button>
-        <button data-page="settings">⚙️ <span>Config.</span></button>
-        <button data-page="public">🌐 <span>Página pública</span></button>
-      </nav>
-      <div class="admin-compact-tools">
-        <button class="btn secondary admin-compact-bell" data-page="notifications">🔔 <span class="notification-badge hidden" data-notification-badge>0</span></button>
+      <div class="admin-dropdown-center">
+        <label class="admin-menu-select-wrap">
+          <span>Menú administrador</span>
+          <select id="adminPageSelect" class="select admin-page-select">${adminOptions.map(([value,label])=>`<option value="${value}" ${page===value?'selected':''}>${label}</option>`).join('')}</select>
+        </label>
+      </div>
+      <div class="admin-compact-tools admin-dropdown-tools">
+        <button class="btn secondary admin-compact-bell" id="adminBellBtn">🔔 <span class="notification-badge hidden" data-notification-badge>0</span></button>
         <input id="search" class="input admin-compact-search" placeholder="Buscar..." value="${esc(q)}">
         <button class="btn secondary admin-logout-btn" id="authBtn">Salir</button>
       </div>
@@ -1884,12 +1891,15 @@ function renderShell(){
       <div id="content"></div>
     </main>
   </div>`;
-  document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page=b.dataset.page; if(page==='public'){renderPublicHome(); return;} renderPage();});
+  const pageSelect=document.getElementById('adminPageSelect');
+  if(pageSelect) pageSelect.onchange=e=>{ page=e.target.value; if(page==='public'){renderPublicHome(); return;} renderPage(); };
+  const bellBtn=document.getElementById('adminBellBtn');
+  if(bellBtn) bellBtn.onclick=()=>{ page='notifications'; renderPage(); const sel=document.getElementById('adminPageSelect'); if(sel) sel.value='notifications'; };
   document.getElementById('search').oninput=e=>{q=e.target.value; renderPage();};
   document.getElementById('authBtn').onclick=logout;
   updateNotificationBadges();
 }
-function setTitle(t){ const el=document.getElementById('title'); if(el) el.textContent=t; document.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===page)); }
+function setTitle(t){ const el=document.getElementById('title'); if(el) el.textContent=t; document.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===page)); const sel=document.getElementById('adminPageSelect'); if(sel && page && sel.value!==page) sel.value=page; }
 function renderPage(){ if(mode==='admin') rememberScreen('admin:'+page); if(page==='dashboard') renderDashboard(); if(page==='notifications') renderNotifications(); if(page==='registrations') renderRegistrations(); if(page==='players') renderPlayers(); if(page==='parents') renderParents(); if(page==='payments') renderPayments(); if(page==='evidence') renderEvidence(); if(page==='whatsapp') renderWhatsApp(); if(page==='documents') renderDocuments(); if(page==='history') renderPlayerHistory(); if(page==='backups') renderBackups(); if(page==='settings') renderSettings(); }
 function filteredPlayers(){ const s=q.toLowerCase().trim(); return players.filter(p=>!s || [p.id,p.name,p.tutor,p.phone,p.category,p.birth_date,p.registration_date,p.payment_day,p.uniform_number].join(' ').toLowerCase().includes(s)); }
 
