@@ -788,6 +788,7 @@ function parentLoginCandidates(value){
 
 
 async function init(){
+  document.body.classList.add('ducks-premium-skin');
   if(!isConfigured()){ renderSetup(); return; }
   sb = window.supabase.createClient(window.DUCKS_SUPABASE_URL, window.DUCKS_SUPABASE_ANON_KEY);
   const {data} = await sb.auth.getSession();

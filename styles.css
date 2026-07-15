@@ -4240,3 +4240,278 @@ button[onclick="installDucksApp()"]{
   .ducks-mockup-wrap{width:min(104vw, calc(100vh * .586));max-height:100vh;}
   @media (max-width:760px){.ducks-mockup-wrap{width:min(110vw, calc(100vh * .62));max-height:100vh;}}
 }
+
+
+/* v2.114 - estilo premium consistente para ventanas y secciones internas */
+body.ducks-premium-skin{
+  background:linear-gradient(180deg,#f5f6f8 0%,#eef1f4 100%);
+}
+.ducks-premium-skin .public-site.with-global-menu,
+.ducks-premium-skin .parent-page,
+.ducks-premium-skin .main{
+  background:
+    radial-gradient(circle at top right, rgba(11,122,89,.05), transparent 28%),
+    radial-gradient(circle at top left, rgba(245,158,11,.06), transparent 24%),
+    linear-gradient(180deg,#f7f7f8 0%,#edf1f4 100%);
+}
+.ducks-premium-skin .academy-main,
+.ducks-premium-skin .parent-wrap{
+  max-width:1180px;
+}
+.ducks-premium-skin .academy-menu{
+  background:rgba(255,255,255,.86);
+  backdrop-filter:blur(18px);
+  border-bottom:1px solid rgba(6,81,63,.08);
+  box-shadow:0 12px 35px rgba(15,23,42,.06);
+}
+.ducks-premium-skin .academy-brand,
+.ducks-premium-skin .academy-links button,
+.ducks-premium-skin .academy-admin,
+.ducks-premium-skin .academy-menu .sub{
+  color:#073f34;
+}
+.ducks-premium-skin .academy-links button{
+  background:#fff;
+  border:1px solid rgba(6,81,63,.10);
+  border-radius:16px;
+  padding:10px 14px;
+  box-shadow:0 10px 22px rgba(8,24,52,.05);
+}
+.ducks-premium-skin .academy-links button:hover,
+.ducks-premium-skin .academy-links .primary-menu-btn{
+  background:linear-gradient(135deg,#0a6147,#0f7c59);
+  color:#fff;
+}
+.ducks-premium-skin .panel,
+.ducks-premium-skin .parent-card,
+.ducks-premium-skin .bank-card,
+.ducks-premium-skin .quick-parent-card,
+.ducks-premium-skin .login-card,
+.ducks-premium-skin .registration-form-shell,
+.ducks-premium-skin .registration-success-card,
+.ducks-premium-skin .step,
+.ducks-premium-skin .family-player-card,
+.ducks-premium-skin .player-priority-card,
+.ducks-premium-skin .document-card,
+.ducks-premium-skin .card{
+  background:linear-gradient(180deg,#ffffff 0%,#fbfcfc 100%);
+  border:1px solid rgba(6,81,63,.08) !important;
+  border-radius:28px !important;
+  box-shadow:0 20px 46px rgba(15,23,42,.08), inset 0 1px 0 rgba(255,255,255,.9) !important;
+  overflow:hidden;
+}
+.ducks-premium-skin .bank-card{
+  background:linear-gradient(135deg,#0a3f31,#0d6a4b 58%,#0e8a63 100%) !important;
+  border:1px solid rgba(255,255,255,.12) !important;
+  box-shadow:0 24px 54px rgba(7,43,33,.24) !important;
+}
+.ducks-premium-skin .panel-head,
+.ducks-premium-skin .modal-head,
+.ducks-premium-skin .registration-form-header,
+.ducks-premium-skin .family-pay-head,
+.ducks-premium-skin .pay-now-head{
+  background:linear-gradient(180deg,#ffffff 0%,#f7faf8 100%);
+  border-bottom:1px solid rgba(6,81,63,.08);
+}
+.ducks-premium-skin .panel-head,
+.ducks-premium-skin .modal-head{
+  padding:18px 20px;
+}
+.ducks-premium-skin .panel-head h3,
+.ducks-premium-skin .modal-head h3,
+.ducks-premium-skin .parent-title h1,
+.ducks-premium-skin .top h2,
+.ducks-premium-skin .registration-form-header h1,
+.ducks-premium-skin .login-card h1{
+  color:#073f34;
+}
+.ducks-premium-skin .sub,
+.ducks-premium-skin .simple-help,
+.ducks-premium-skin .card p,
+.ducks-premium-skin .parent-card p,
+.ducks-premium-skin .registration-form-header p{
+  color:#667788;
+}
+.ducks-premium-skin .modalbg{
+  background:rgba(7,22,41,.44);
+  backdrop-filter:blur(6px);
+}
+.ducks-premium-skin .modal,
+.ducks-premium-skin .wide-modal,
+.ducks-premium-skin .categories-detail-modal,
+.ducks-premium-skin .portal-search-modal,
+.ducks-premium-skin .regulation-viewer-modal,
+.ducks-premium-skin .public-more-modal,
+.ducks-premium-skin .notification-modal{
+  background:linear-gradient(180deg,#ffffff 0%,#fbfcfc 100%);
+  border:1px solid rgba(6,81,63,.08);
+  border-radius:28px !important;
+  box-shadow:0 30px 80px rgba(15,23,42,.22);
+}
+.ducks-premium-skin .modal-body{
+  padding:18px;
+  background:linear-gradient(180deg,#ffffff 0%,#fbfcfc 100%);
+}
+.ducks-premium-skin .btn{
+  border-radius:16px;
+  box-shadow:0 12px 24px rgba(8,24,52,.08);
+}
+.ducks-premium-skin .btn.green{
+  background:linear-gradient(135deg,#076247,#0b8a62);
+}
+.ducks-premium-skin .btn.orange{
+  background:linear-gradient(135deg,#f18a06,#f5a623);
+}
+.ducks-premium-skin .btn.secondary{
+  background:#fff;
+  border:1px solid rgba(6,81,63,.12);
+  color:#073f34;
+}
+.ducks-premium-skin .input,
+.ducks-premium-skin .select,
+.ducks-premium-skin textarea,
+.ducks-premium-skin .player-option,
+.ducks-premium-skin .selected-player,
+.ducks-premium-skin .bank-item,
+.ducks-premium-skin .cash-receipt-player-summary,
+.ducks-premium-skin .application-summary>div,
+.ducks-premium-skin .section-info-grid article,
+.ducks-premium-skin .category-detail-card,
+.ducks-premium-skin .family-pay-player-row,
+.ducks-premium-skin .pay-method-card,
+.ducks-premium-skin .family-bank-compact,
+.ducks-premium-skin .parent-payment-empty,
+.ducks-premium-skin .mini-table,
+.ducks-premium-skin .parent-payment-history-wrap{
+  border-radius:20px !important;
+  border:1px solid rgba(6,81,63,.10) !important;
+  box-shadow:0 10px 24px rgba(8,24,52,.05);
+}
+.ducks-premium-skin .input,
+.ducks-premium-skin .select,
+.ducks-premium-skin textarea{
+  min-height:48px;
+  background:#fff;
+}
+.ducks-premium-skin textarea{min-height:108px}
+.ducks-premium-skin .notice{
+  border-radius:20px;
+  box-shadow:0 10px 20px rgba(8,24,52,.04);
+}
+.ducks-premium-skin .family-grid,
+.ducks-premium-skin .cards,
+.ducks-premium-skin .parent-steps,
+.ducks-premium-skin .section-info-grid,
+.ducks-premium-skin .categories-detail-grid{
+  gap:18px;
+}
+.ducks-premium-skin .tablewrap{
+  padding:0 14px 14px;
+}
+.ducks-premium-skin table{
+  border-collapse:separate;
+  border-spacing:0;
+  overflow:hidden;
+  border-radius:18px;
+}
+.ducks-premium-skin th{
+  background:linear-gradient(135deg,#0a4c39,#0e6d4f);
+  color:#fff;
+  top:0;
+}
+.ducks-premium-skin tbody tr:nth-child(even) td{
+  background:rgba(6,81,63,.015);
+}
+.ducks-premium-skin td{
+  background:#fff;
+}
+.ducks-premium-skin .notification-card,
+.ducks-premium-skin .ducks-news-list article,
+.ducks-premium-skin .ducks-notice-list article,
+.ducks-premium-skin .portal-search-result,
+.ducks-premium-skin .public-more-grid button{
+  background:linear-gradient(180deg,#ffffff,#f8fbfa);
+  border:1px solid rgba(6,81,63,.10);
+  border-radius:22px;
+  box-shadow:0 14px 30px rgba(8,24,52,.07);
+}
+.ducks-premium-skin .public-more-grid button{
+  padding:18px 16px;
+}
+.ducks-premium-skin .section-info-grid article,
+.ducks-premium-skin .category-detail-card{
+  background:linear-gradient(180deg,#ffffff 0%,#f6faf8 100%);
+}
+.ducks-premium-skin .section-info-grid h4,
+.ducks-premium-skin .category-detail-head h4,
+.ducks-premium-skin .player-option b,
+.ducks-premium-skin .player-info-side h2,
+.ducks-premium-skin .family-head h2{
+  color:#0a5b44;
+}
+.ducks-premium-skin .status{
+  border:1px solid rgba(0,0,0,.03);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.5);
+}
+.ducks-premium-skin .cash-stamp-preview,
+.ducks-premium-skin .cash-signature-field,
+.ducks-premium-skin .consent-check,
+.ducks-premium-skin .folio-box,
+.ducks-premium-skin .family-pay-summary,
+.ducks-premium-skin .pay-now-hero{
+  border-radius:22px;
+  border:1px solid rgba(6,81,63,.10);
+  box-shadow:0 12px 25px rgba(8,24,52,.06);
+}
+.ducks-premium-skin .pay-now-hero,
+.ducks-premium-skin .family-pay-summary{
+  background:linear-gradient(135deg,#0a4f3c,#0d7958);
+  color:#fff;
+}
+.ducks-premium-skin .pay-now-hero small,
+.ducks-premium-skin .pay-now-hero p,
+.ducks-premium-skin .family-pay-summary small,
+.ducks-premium-skin .family-pay-summary span{
+  color:rgba(255,255,255,.86);
+}
+.ducks-premium-skin .registration-section{
+  background:linear-gradient(180deg,#ffffff 0%,#f8fbfa 100%);
+  border:1px solid rgba(6,81,63,.08);
+  border-radius:24px;
+  padding:18px;
+  box-shadow:0 14px 32px rgba(8,24,52,.05);
+}
+.ducks-premium-skin .registration-question,
+.ducks-premium-skin .radio-cards label,
+.ducks-premium-skin .number-scale label{
+  border-radius:18px;
+}
+.ducks-premium-skin .parent-title img,
+.ducks-premium-skin .brand-logo,
+.ducks-premium-skin .bank-head img,
+.ducks-premium-skin .registration-form-header img{
+  filter:drop-shadow(0 10px 18px rgba(0,0,0,.12));
+}
+@media(max-width:760px){
+  .ducks-premium-skin .panel,
+  .ducks-premium-skin .parent-card,
+  .ducks-premium-skin .bank-card,
+  .ducks-premium-skin .quick-parent-card,
+  .ducks-premium-skin .login-card,
+  .ducks-premium-skin .registration-form-shell,
+  .ducks-premium-skin .registration-success-card,
+  .ducks-premium-skin .card,
+  .ducks-premium-skin .family-player-card{
+    border-radius:22px !important;
+  }
+  .ducks-premium-skin .modal,
+  .ducks-premium-skin .wide-modal,
+  .ducks-premium-skin .categories-detail-modal,
+  .ducks-premium-skin .portal-search-modal,
+  .ducks-premium-skin .regulation-viewer-modal{
+    border-radius:22px !important;
+  }
+  .ducks-premium-skin .tablewrap{
+    padding:0 10px 10px;
+  }
+}
