@@ -1205,8 +1205,7 @@ function runPendingParentEntryAction(){
   sessionStorage.removeItem('ducks_parent_entry_action');
   if(!action) return;
   setTimeout(()=>{
-    if(action==='pay') openParentPayNow();
-    if(action==='evidence') openParentPayment();
+    if(action==='pay' || action==='evidence') openParentPaymentsHub(action);
   },260);
 }
 function resetParentSessionForFreshLogin(){
@@ -1676,7 +1675,7 @@ function renderParentPortal(){
   app.innerHTML=`${publicQuickMenu()}<div class="public-site with-global-menu">
     <header class="academy-menu"><div class="academy-menu-inner">
       <a class="academy-brand" href="#" onclick="renderParentPortal()"><img src="assets/logo.png"><span>Portal de Papás</span></a>
-      <nav class="academy-links"><button onclick="renderParentPortal()">Mis hijos</button>${parentPlayers.length>=2?'<button class="primary-menu-btn" onclick="openFamilyPayment()">Pago familiar</button>':''}<button onclick="openParentPayment()">Subir comprobante</button></nav>
+      <nav class="academy-links"><button onclick="renderParentPortal()">Mis hijos</button>${parentPlayers.length>=2?'<button class="primary-menu-btn" onclick="openFamilyPayment()">Pago familiar</button>':''}<button onclick="openParentPaymentsHub('evidence')">Pagos y comprobantes</button></nav>
       <div class="header-actions"><button class="btn secondary academy-admin" onclick="parentLogout()">Cerrar sesión</button></div>
     </div></header>
     <main class="academy-main">
@@ -1770,6 +1769,49 @@ Beneficiario: ${BANK_BENEFICIARY}
 Monto: ${money(amount)}
 Concepto: ${concept}`;
   navigator.clipboard.writeText(text).then(()=>toast('Datos de pago copiados')).catch(()=>toast('No se pudieron copiar los datos'));
+}
+
+function openParentPaymentsHub(initialAction='pay'){
+  if(!parentPlayers.length){toast('No tienes jugadores asignados.'); return;}
+  const focusEvidence=initialAction==='evidence';
+  const cards=parentPlayers.map(player=>{
+    const c=calc(player,parentPayments);
+    const amount=c.amount>0 ? c.amount : Number(player.monthly_fee||0);
+    return `<article class="parent-pay-hub-card">
+      <div class="parent-pay-hub-player">
+        <img src="${playerPhotoUrl(player)}" alt="Foto de ${esc(player.name)}">
+        <div><small>Jugador ligado</small><h3>${esc(player.name)}</h3><p>${esc(player.category||'Sin categoría')} · Uniforme #${esc(player.uniform_number||'-')}</p></div>
+      </div>
+      <div class="parent-pay-hub-kpis">
+        <div><small>Estatus</small><b><span class="status ${c.status}">${esc(c.status)}</span></b></div>
+        <div><small>Meses pendientes</small><b>${c.months}</b></div>
+        <div><small>Monto sugerido</small><b>${money(amount)}</b></div>
+      </div>
+      <div class="parent-pay-hub-actions">
+        <button type="button" class="btn green" onclick="closeModal('parentPaymentsHubModal');openParentPayNow('${player.id}')">Pagar a ${esc(player.name)}</button>
+        <button type="button" class="btn secondary" onclick="closeModal('parentPaymentsHubModal');openParentPayment('${player.id}')">Subir comprobante</button>
+      </div>
+    </article>`;
+  }).join('');
+  const modal=document.createElement('div');
+  modal.className='modalbg open parent-pay-hub-overlay';
+  modal.id='parentPaymentsHubModal';
+  modal.innerHTML=`<div class="modal parent-pay-hub-modal">
+    <div class="modal-head parent-pay-hub-head">
+      <div><h3>Pagos y comprobantes</h3><small>${parentPlayers.length} jugador${parentPlayers.length===1?'':'es'} ligado${parentPlayers.length===1?'':'s'} a esta cuenta</small></div>
+      <button type="button" class="btn secondary" onclick="closeModal('parentPaymentsHubModal')">Cerrar</button>
+    </div>
+    <div class="modal-body">
+      <div class="notice success"><b>Todos tus hijos están disponibles:</b> selecciona el jugador correspondiente o usa el pago familiar para cubrir a varios con un solo comprobante.</div>
+      ${parentPlayers.length>=2?`<section class="parent-pay-hub-family">
+        <div><small>Pago familiar</small><h3>Un depósito para varios hijos</h3><p>Selecciona los jugadores y aplica un solo comprobante sin mezclar sus historiales.</p></div>
+        <button type="button" class="btn green" onclick="closeModal('parentPaymentsHubModal');openFamilyPayment()">Pagar varios hijos</button>
+      </section>`:''}
+      <div class="parent-pay-hub-grid">${cards}</div>
+      ${focusEvidence?'<div class="parent-pay-hub-note">Selecciona <b>Subir comprobante</b> en el jugador al que corresponda, o usa <b>Pago familiar</b> cuando el depósito cubra a varios.</div>':''}
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
 }
 
 function openParentPayNow(playerId=''){
@@ -2145,7 +2187,7 @@ function renderParents(){
   const familyCount=auditRows.filter(r=>r.activeLinks.length>=2).length;
   const playersOptions = players.map(p=>`<option value="${p.id}">${p.id} · ${esc(p.name)} · Tutor: ${esc(p.tutor||'')}</option>`).join('');
   const accountsOptions = parentAccounts.map(a=>`<option value="${a.id}">${esc(a.display_name)} · ${esc(a.login)}</option>`).join('');
-  document.getElementById('content').innerHTML=`<div class="notice success"><b>v2.121:</b> el portal admite varios jugadores por cuenta y conserva el pago familiar. La revisión identifica vínculos faltantes sin mezclar historiales ni comprobantes.</div>
+  document.getElementById('content').innerHTML=`<div class="notice success"><b>v2.122:</b> el portal y el apartado Pagos muestran todos los jugadores ligados y conservan el pago familiar. La revisión identifica vínculos faltantes sin mezclar historiales ni comprobantes.</div>
   <div class="panel family-audit-panel"><div class="panel-head"><div><h3>Diagnóstico de cuentas familiares</h3><p class="sub">${familyCount} cuenta(s) con varios jugadores · ${missingCount} vínculo(s) sugerido(s) pendiente(s)</p></div><button class="btn green" onclick="repairAllFamilyAccounts()">Revisar y reparar todas</button></div><div class="tablewrap"><table><thead><tr><th>Cuenta</th><th>Jugadores ligados</th><th>Coincidencias detectadas</th><th>Faltantes</th><th>Estado</th><th>Acción</th></tr></thead><tbody>${auditRows.map(r=>{const st=familyAuditStatus(r);const linkedNames=r.activeLinks.map(l=>players.find(p=>String(p.id)===String(l.player_id))?.name||l.player_id);return `<tr><td><b>${esc(r.account.display_name||'')}</b><br><small>${esc(r.account.login||'')}</small></td><td>${linkedNames.length?linkedNames.map(esc).join('<br>'):'—'}</td><td>${r.matchedPlayers.length?r.matchedPlayers.map(p=>esc(p.name)).join('<br>'):'—'}</td><td>${r.missingPlayers.length?r.missingPlayers.map(p=>`<span class="family-missing-player">${esc(p.name)}</span>`).join('<br>'):'—'}</td><td><span class="status ${st.cls}">${st.label}</span></td><td><button class="btn secondary" onclick="repairFamilyAccount('${r.account.id}')">Revisar cuenta</button></td></tr>`}).join('')||'<tr><td colspan="6">No hay cuentas creadas.</td></tr>'}</tbody></table></div></div>
   <div class="panel"><div class="panel-head"><h3>Crear cuenta de papá/tutor</h3></div><div class="modal-body"><form id="parentAccountForm" class="form-grid">
     <label class="label">Nombre visible<input id="accName" class="input" required placeholder="Nombre del papá, mamá o tutor"></label>

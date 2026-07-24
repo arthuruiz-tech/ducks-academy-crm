@@ -1,24 +1,19 @@
-DUCKS CRM PROFESIONAL v2.121
+DUCKS CRM PROFESIONAL v2.122
 
 OBJETIVO DE ESTA VERSION
-1. Mostrar desde el inicio todos los hijos/jugadores ligados a una cuenta de papá.
-2. Reparar el caso de Arely (D013) y Emily (D012).
-3. Revisar y reparar desde el administrador otras cuentas con vínculos familiares faltantes.
-4. Conservar íntegramente el pago familiar: un depósito, un comprobante y aplicación individual por jugador.
-5. Evitar relaciones duplicadas papá-jugador.
-6. Mejorar los mensajes de error al enviar comprobantes.
+1. Corregir el acceso al apartado Pagos y comprobantes para que muestre desde el inicio todos los hijos/jugadores ligados a la cuenta.
+2. Mantener íntegramente el pago familiar: un depósito, un comprobante y aplicación individual por jugador.
+3. Permitir elegir claramente entre pagar a un jugador, subir su comprobante o pagar a varios hijos.
+4. Conservar la corrección v2.121 de cuentas familiares y todos los vínculos ya creados.
 
-PASOS OBLIGATORIOS
-1. En Supabase abre SQL Editor.
-2. Ejecuta PASO_14_SQL_PORTAL_FAMILIAR_v2_121.sql.
-3. Confirma que la consulta final muestre Arely y Emily dentro de la misma cuenta.
-4. Publica todos los archivos de esta carpeta en Vercel.
-5. En el CRM entra a Menú administrador > Papás.
-6. Pulsa “Revisar y reparar todas”.
-7. Prueba una cuenta con un jugador y otra con dos o más jugadores.
+INSTALACION
+1. NO es necesario ejecutar un SQL nuevo si PASO_14_SQL_PORTAL_FAMILIAR_v2_121.sql ya terminó correctamente.
+2. Publica todos los archivos de esta carpeta en Vercel.
+3. En los teléfonos, cierra y vuelve a abrir la aplicación. Si conserva la vista anterior, recarga la página o elimina la app de la pantalla de inicio y agrégala nuevamente.
+4. Entra desde Pagos y comprobantes con una cuenta de dos o más jugadores. La primera ventana debe mostrar todos los jugadores ligados y el botón Pago familiar.
 
 PAGO FAMILIAR
-La función se mantiene. El sistema continúa creando una aplicación individual por jugador, usando la misma evidencia y el mismo identificador FAMILY_PAYMENT. El administrador puede revisar y confirmar el grupo familiar desde Pagos.
+No se modificó su funcionamiento. Continúa usando una sola evidencia y crea una aplicación individual por cada jugador seleccionado, vinculada con el mismo identificador FAMILY_PAYMENT.
 
-IMPORTANTE
-La aplicación usa primero ducks_parent_portal_v2121. Si el SQL todavía no se ha ejecutado, utiliza temporalmente ducks_parent_portal_v213 para no bloquear el acceso.
+ARCHIVO SQL INCLUIDO
+El archivo PASO_14_SQL_PORTAL_FAMILIAR_v2_121.sql se conserva únicamente como referencia o para instalaciones que todavía no ejecutaron la actualización anterior.

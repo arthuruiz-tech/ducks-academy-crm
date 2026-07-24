@@ -5431,3 +5431,33 @@ body.ducks-premium-skin{
   .family-audit-panel .panel-head{display:grid;grid-template-columns:1fr;gap:10px}
   .family-audit-panel .panel-head .btn{width:100%}
 }
+
+
+/* v2.122 - Pagos y comprobantes muestran todos los jugadores ligados */
+.parent-pay-hub-overlay{padding:18px!important;align-items:center!important}
+.parent-pay-hub-modal{width:min(1050px,96vw)!important;max-height:94dvh!important;overflow:auto!important}
+.parent-pay-hub-head{position:sticky;top:0;z-index:3;background:#fff;border-bottom:1px solid var(--line)}
+.parent-pay-hub-grid{display:grid;grid-template-columns:repeat(2,minmax(280px,1fr));gap:14px;margin-top:16px}
+.parent-pay-hub-card{border:1px solid #dce8e2;border-radius:20px;padding:16px;background:#fff;box-shadow:0 10px 28px rgba(6,35,28,.07)}
+.parent-pay-hub-player{display:flex;align-items:center;gap:13px}
+.parent-pay-hub-player img{width:72px;height:72px;object-fit:cover;border-radius:17px;background:#eef4f1;border:1px solid #dce8e2}
+.parent-pay-hub-player small,.parent-pay-hub-family small{display:block;color:#60726a;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.05em}
+.parent-pay-hub-player h3,.parent-pay-hub-family h3{margin:3px 0 4px;color:#0b5139}
+.parent-pay-hub-player p,.parent-pay-hub-family p{margin:0;color:#617169;font-size:13px}
+.parent-pay-hub-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}
+.parent-pay-hub-kpis>div{padding:10px;border-radius:13px;background:#f7fbf9;border:1px solid #dce8e2}
+.parent-pay-hub-kpis small{display:block;color:#6b7c74;font-size:10px;font-weight:900;text-transform:uppercase}
+.parent-pay-hub-kpis b{display:block;margin-top:5px;color:#153f32}
+.parent-pay-hub-actions{display:flex;gap:9px;flex-wrap:wrap}
+.parent-pay-hub-actions .btn{flex:1;min-width:150px}
+.parent-pay-hub-family{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:17px;border-radius:19px;background:linear-gradient(135deg,#edf9f3,#fff8ed);border:1px solid #cfe7da}
+.parent-pay-hub-note{margin-top:14px;padding:13px;border-radius:14px;background:#f6faf8;color:#385349;border:1px solid #dce8e2;text-align:center}
+@media(max-width:760px){
+  .parent-pay-hub-overlay{padding:8px!important;align-items:flex-start!important}
+  .parent-pay-hub-modal{width:100%!important;max-height:calc(100dvh - 16px)!important}
+  .parent-pay-hub-grid{grid-template-columns:1fr}
+  .parent-pay-hub-family{flex-direction:column;align-items:stretch;text-align:center}
+  .parent-pay-hub-family .btn{width:100%}
+  .parent-pay-hub-kpis{grid-template-columns:1fr 1fr}
+  .parent-pay-hub-kpis>div:last-child{grid-column:1/-1}
+}
