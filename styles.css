@@ -5409,3 +5409,25 @@ body.ducks-premium-skin{
     width:100%;
   }
 }
+
+
+/* v2.121 - cuentas con varios jugadores, diagnóstico familiar y portal completo */
+.family-account-overview{
+  display:grid;grid-template-columns:minmax(190px,.7fr) minmax(0,2fr);gap:14px;align-items:center;
+  margin:0 0 16px;padding:16px 18px;border-radius:22px;background:linear-gradient(135deg,#052f28,#0a674c);color:#fff;
+  box-shadow:0 16px 32px rgba(5,47,40,.16)
+}
+.family-account-overview small{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.8px;opacity:.78;font-weight:900}
+.family-account-overview strong{display:inline-block;font-size:36px;line-height:1;margin:5px 10px 0 0;color:#c8ff3d}
+.family-account-overview span{font-weight:800}
+.family-account-player-list{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+.family-account-player-list span{padding:8px 11px;border-radius:999px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);font-size:12px}
+.family-audit-panel .panel-head{align-items:flex-start}
+.family-audit-panel .sub{margin:5px 0 0}
+.family-missing-player{display:inline-block;color:#9a4d00;font-weight:900;background:#fff2df;border:1px solid #ffd29d;border-radius:999px;padding:3px 8px;margin:2px 0}
+@media(max-width:760px){
+  .family-account-overview{grid-template-columns:1fr;text-align:center;padding:14px}
+  .family-account-player-list{justify-content:center}
+  .family-audit-panel .panel-head{display:grid;grid-template-columns:1fr;gap:10px}
+  .family-audit-panel .panel-head .btn{width:100%}
+}

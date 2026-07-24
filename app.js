@@ -29,6 +29,7 @@ let parentLinks = [];
 let parentPlayers = [];
 let parentPayments = [];
 let parentDocuments = [];
+let parentPortalRpcVersion = '';
 let documents = [];
 let playerHistory = [];
 let adminNotifications = [];
@@ -231,26 +232,44 @@ function isConfigured(){ return window.DUCKS_SUPABASE_URL && window.DUCKS_SUPABA
 function normalizePhone(v){ const d=String(v||'').replace(/\D/g,''); if(!d)return ''; if(d.startsWith('52')&&d.length===12)return '+'+d; if(d.length===10)return '+52'+d; if(d.length>=11&&d.length<=15)return '+'+d; return String(v||'').trim(); }
 
 function onlyDigits(v){ return String(v||'').replace(/\D/g,''); }
-function cleanName(v){ return String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim(); }
-function playerTutorPhones(p){ return [p.phone, p.tutor_phone_2].map(onlyDigits).filter(Boolean); }
-function playerTutorNames(p){ return [p.tutor, p.tutor_2].map(cleanName).filter(Boolean); }
-function accountMatchesPlayer(acc, p){
-  const accPhone = onlyDigits(acc.phone || acc.login);
-  const accName = cleanName(acc.display_name || acc.login);
-  const phoneMatch = accPhone && playerTutorPhones(p).some(ph => ph.endsWith(accPhone) || accPhone.endsWith(ph));
-  const nameMatch = accName && playerTutorNames(p).some(n => n === accName || n.includes(accName) || accName.includes(n));
-  return phoneMatch || nameMatch;
+function cleanName(v){ return String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim(); }
+function comparablePhone(v){
+  const digits=onlyDigits(v);
+  return digits.length>=10 ? digits.slice(-10) : digits;
 }
+function playerTutorPhones(p){ return [p.phone, p.tutor_phone_2].map(comparablePhone).filter(Boolean); }
+function playerTutorNames(p){ return [p.tutor, p.tutor_2].map(cleanName).filter(Boolean); }
+function accountPlayerMatchDetails(acc,p){
+  const accPhone=comparablePhone(acc?.phone || acc?.login);
+  const accName=cleanName(acc?.display_name || acc?.login);
+  const tutorPhones=playerTutorPhones(p);
+  const tutorNames=playerTutorNames(p);
+  const phoneMatch=!!(accPhone && tutorPhones.some(ph=>ph===accPhone));
+  const exactNameMatch=!!(accName && tutorNames.some(n=>n===accName));
+  const strongPartialNameMatch=!!(accName.length>=8 && tutorNames.some(n=>n.length>=8 && (n.includes(accName) || accName.includes(n))));
+  return {match:phoneMatch||exactNameMatch||strongPartialNameMatch,phoneMatch,exactNameMatch,strongPartialNameMatch};
+}
+function accountMatchesPlayer(acc, p){ return accountPlayerMatchDetails(acc,p).match; }
 async function autoLinkPlayersToAccount(account){
   const matches = players.filter(p => accountMatchesPlayer(account, p));
-  let linked = 0;
+  let linked = 0, reactivated = 0, failed = 0;
   for(const p of matches){
-    const exists = parentLinks.some(l => l.parent_account_id === account.id && l.player_id === p.id);
-    if(exists) continue;
-    const {error} = await sb.from('parent_player_links_v213').insert({parent_account_id:account.id, player_id:p.id, active:true});
-    if(!error) linked++;
+    const existing = parentLinks.find(l => String(l.parent_account_id)===String(account.id) && String(l.player_id)===String(p.id));
+    if(existing){
+      if(existing.active===false){
+        const {error}=await sb.from('parent_player_links_v213').update({active:true}).eq('id',existing.id);
+        if(error) failed++; else {existing.active=true;reactivated++;}
+      }
+      continue;
+    }
+    const {data,error} = await sb.from('parent_player_links_v213').insert({parent_account_id:account.id, player_id:p.id, active:true}).select().single();
+    if(error) failed++;
+    else{
+      linked++;
+      parentLinks.push(data||{parent_account_id:account.id,player_id:p.id,active:true});
+    }
   }
-  return {matches: matches.length, linked};
+  return {matches: matches.length, linked, reactivated, failed};
 }
 
 
@@ -1406,21 +1425,46 @@ async function parentLogin(e){
   }
   toast(lastError || 'Usuario o contraseña incorrectos');
 }
+function portalArray(value){
+  if(Array.isArray(value)) return value;
+  if(value && typeof value==='object') return [value];
+  return [];
+}
+function uniquePortalRows(rows,key='id'){
+  const seen=new Set();
+  return portalArray(rows).filter(row=>{
+    const value=String(row?.[key]??'');
+    if(!value || seen.has(value)) return false;
+    seen.add(value);
+    return true;
+  });
+}
+async function fetchParentPortalPayload(){
+  const attempts=['ducks_parent_portal_v2121','ducks_parent_portal_v213'];
+  let lastError=null;
+  for(const rpcName of attempts){
+    const result=await sb.rpc(rpcName,{p_token:parentToken});
+    if(!result.error){ parentPortalRpcVersion=rpcName; return result; }
+    lastError=result.error;
+    const missing=/could not find|does not exist|schema cache|PGRST202/i.test(String(result.error?.message||''));
+    if(!missing || rpcName===attempts[attempts.length-1]) return result;
+  }
+  return {data:null,error:lastError};
+}
 async function loadParentData(){
   parentPlayers=[]; parentPayments=[]; parentProfile=null;
-  const {data,error}=await sb.rpc('ducks_parent_portal_v213',{p_token:parentToken});
+  const {data,error}=await fetchParentPortalPayload();
   if(error){toast('Error cargando portal: '+error.message); return;}
   if(!data || !data.ok){toast(data?.message || 'Sesión inválida'); parentToken=''; localStorage.removeItem('ducks_parent_token_v213'); renderParentLogin(); return;}
   parentProfile=data.account;
-  parentPlayers=Array.isArray(data.players)?data.players:[];
+  parentPlayers=uniquePortalRows(data.players,'id')
+    .sort((a,b)=>String(a.name||a.id||'').localeCompare(String(b.name||b.id||''),'es',{sensitivity:'base'}));
   const allowedPlayerIds=new Set(parentPlayers.map(p=>String(p.id)));
-  parentPayments=(Array.isArray(data.payments)?data.payments:[])
-    .filter(p=>allowedPlayerIds.has(String(p.player_id)))
+  parentPayments=uniquePortalRows(portalArray(data.payments).filter(p=>allowedPlayerIds.has(String(p.player_id))),'id')
     .sort((a,b)=>String(b.payment_date||b.created_at||'').localeCompare(String(a.payment_date||a.created_at||'')));
   const docs = await sb.rpc('ducks_parent_documents_v218',{p_token:parentToken});
   if(!docs.error && docs.data?.ok){
-    parentDocuments=(Array.isArray(docs.data.documents)?docs.data.documents:[])
-      .filter(d=>allowedPlayerIds.has(String(d.player_id)));
+    parentDocuments=uniquePortalRows(portalArray(docs.data.documents).filter(d=>allowedPlayerIds.has(String(d.player_id))),'id');
   } else { parentDocuments = []; }
 }
 
@@ -1558,6 +1602,8 @@ async function submitFamilyPayment(e){
   e.preventDefault();
   const items=selectedFamilyPaymentItems();
   if(items.length<2){toast('Selecciona por lo menos dos hijos para un pago familiar.');return;}
+  const allowedIds=new Set(parentPlayers.map(p=>String(p.id)));
+  if(items.some(x=>!allowedIds.has(String(x.player_id)))){toast('La selección contiene un jugador no autorizado para esta cuenta. Vuelve a iniciar sesión.');return;}
   if(items.some(x=>!x.amount || x.amount<=0)){toast('Todos los montos seleccionados deben ser mayores a cero.');return;}
   const file=document.getElementById('familyPayEvidence').files[0];
   if(!file){toast('Selecciona el comprobante del pago familiar.');return;}
@@ -1636,6 +1682,7 @@ function renderParentPortal(){
     <main class="academy-main">
       <section class="academy-ribbon private-ribbon"><div class="court-lines"></div><div class="ribbon-content"><img class="ribbon-logo small" src="assets/logo.png"><div class="ribbon-text"><span class="ribbon-kicker">Acceso privado</span><h1>Bienvenido al Portal de Papás</h1><p>${esc(parentProfile?.display_name||parentProfile?.login||'')}</p></div></div></section>
       ${parentPortalActions()}
+      <section class="family-account-overview"><div><small>Jugadores ligados a esta cuenta</small><strong>${parentPlayers.length}</strong><span>${parentPlayers.length===1?'1 jugador disponible':`${parentPlayers.length} jugadores disponibles desde el inicio`}</span></div><div class="family-account-player-list">${parentPlayers.map(p=>`<span>${esc(p.name)}</span>`).join('')}</div></section>
       ${parentPlayers.length>=2?`<section class="family-payment-banner"><div><span>Pago para varios hijos</span><h2>Realiza un solo pago familiar</h2><p>Selecciona a tus hijos, paga el total y carga un solo comprobante. El pago se aplicará individualmente a cada uno.</p></div><button class="btn green" onclick="openFamilyPayment()">💳 Pagar varios hijos</button></section>`:''}
       <section class="parent-card"><div class="parent-title"><img src="assets/logo.png"><div><h1>Mis jugadores</h1><div class="sub">Solo información asignada a tu familia</div></div></div>${parentPlayers.length?`<div class="family-grid">${cards}</div>`:`<div class="notice warning">Tu cuenta aún no tiene jugadores asignados. Contacta a administración.</div>`}</section>
       <section class="bank-card"><div class="bank-head"><div><span class="bank-chip">BBVA MX</span><h2>Datos para depósito o transferencia</h2><p>Copia la cuenta o CLABE, realiza tu pago y después adjunta el comprobante.</p></div><img src="assets/logo.png"></div><div class="bank-grid"><div class="bank-item"><small>Cuenta</small><strong>${BANK_ACCOUNT}</strong><button type="button" class="btn secondary" onclick="copyBank(BANK_ACCOUNT,'Cuenta')">Copiar cuenta</button></div><div class="bank-item"><small>CLABE</small><strong>${BANK_CLABE}</strong><button type="button" class="btn secondary" onclick="copyBank(BANK_CLABE,'CLABE')">Copiar CLABE</button></div><div class="bank-item full"><small>Beneficiario / referencia</small><strong>${BANK_BENEFICIARY}</strong><button type="button" class="btn secondary" onclick="copyBank(BANK_BENEFICIARY,'Beneficiario')">Copiar beneficiario</button></div></div></section>
@@ -1816,22 +1863,29 @@ function openParentPayment(playerId=''){
 async function submitParentPayment(e){
   e.preventDefault();
   const player_id=document.getElementById('parentPayPlayer').value;
-  const player=parentPlayers.find(p=>p.id===player_id);
+  const player=parentPlayers.find(p=>String(p.id)===String(player_id));
   const file=document.getElementById('parentPayEvidence').files[0];
+  const submitBtn=e.submitter||document.querySelector('#parentPayForm button[type="submit"]');
+  if(!player){toast('El jugador seleccionado no está ligado a esta cuenta. Cierra sesión e intenta nuevamente.');return;}
+  if(!file){toast('Selecciona el comprobante antes de enviarlo.');return;}
+  if(submitBtn){submitBtn.disabled=true;submitBtn.textContent='Enviando comprobante...';}
   try{
-    const evidence_url=await uploadFile(file,'evidencias');
+    const evidence_url=await uploadFile(file,`evidencias/${player_id}`);
     const payDate=document.getElementById('parentPayDate').value;
     if(payDate>todayISO()) throw new Error('La fecha de pago no puede ser posterior a la fecha actual de Aguascalientes.');
     const parentNotes=document.getElementById('parentPayNotes').value.trim();
     const row={p_token:parentToken,p_player_id:player_id,p_payment_date:payDate,p_period:period(payDate),p_amount:Number(document.getElementById('parentPayAmount').value||0),p_method:document.getElementById('parentPayMethod').value,p_notes:`${paymentTypeNoteTag('Mensualidad')}${parentNotes?' '+parentNotes:''}`,p_evidence_url:evidence_url,p_evidence_name:file.name};
     const {data,error}=await sb.rpc('ducks_parent_submit_payment_v213',row);
     if(error) throw error;
-    if(!data?.ok) throw new Error(data?.message||'No se pudo enviar');
+    if(!data?.ok) throw new Error(data?.message||`No se pudo registrar el comprobante para ${player.name}`);
     closeModal('parentPayModal');
-    toast('Comprobante enviado. Queda pendiente de confirmación.');
+    toast(`Comprobante de ${player.name} enviado. Queda pendiente de confirmación.`);
     await loadParentData();
     renderParentPortal();
-  }catch(err){toast('Error: '+err.message);}
+  }catch(err){
+    toast('Error: '+(err?.message||'No se pudo enviar el comprobante.'));
+    if(submitBtn){submitBtn.disabled=false;submitBtn.textContent='Enviar comprobante';}
+  }
 }
 
 /* Admin */
@@ -2042,12 +2096,57 @@ function suggestedFamilies(){
   });
   return [...m.values()].filter(f=>f.players.length);
 }
+function activeParentLinks(accountId){
+  return parentLinks.filter(l=>String(l.parent_account_id)===String(accountId) && l.active!==false);
+}
+function familyAccountAuditRows(){
+  return parentAccounts.map(account=>{
+    const activeLinks=activeParentLinks(account.id);
+    const linkedIds=new Set(activeLinks.map(l=>String(l.player_id)));
+    const matchedPlayers=players.filter(p=>accountMatchesPlayer(account,p));
+    const missingPlayers=matchedPlayers.filter(p=>!linkedIds.has(String(p.id)));
+    const orphanLinks=activeLinks.filter(l=>!players.some(p=>String(p.id)===String(l.player_id)));
+    return {account,activeLinks,matchedPlayers,missingPlayers,orphanLinks};
+  });
+}
+function familyAuditStatus(row){
+  if(row.orphanLinks.length) return {label:'Revisar',cls:'Vencido'};
+  if(row.missingPlayers.length) return {label:'Faltan vínculos',cls:'Pendiente'};
+  if(row.activeLinks.length>=2) return {label:'Familia completa',cls:'Pagado'};
+  if(row.activeLinks.length===1) return {label:'1 jugador',cls:'Pendiente'};
+  return {label:'Sin jugadores',cls:'Vencido'};
+}
+async function repairAllFamilyAccounts(){
+  const candidates=familyAccountAuditRows().filter(r=>r.account.active!==false && r.missingPlayers.length);
+  if(!candidates.length){toast('No se detectaron vínculos familiares pendientes.');return;}
+  if(!confirm(`Se repararán vínculos faltantes en ${candidates.length} cuenta(s). ¿Continuar?`)) return;
+  let linked=0,reactivated=0,failed=0;
+  for(const row of candidates){
+    const result=await autoLinkPlayersToAccount(row.account);
+    linked+=result.linked||0; reactivated+=result.reactivated||0; failed+=result.failed||0;
+  }
+  await loadAdminData();
+  page='parents'; renderShell(); renderPage();
+  toast(`Revisión terminada: ${linked} vínculo(s) creado(s), ${reactivated} reactivado(s)${failed?`, ${failed} con error`:''}.`);
+}
+async function repairFamilyAccount(accountId){
+  const account=parentAccounts.find(a=>String(a.id)===String(accountId));
+  if(!account){toast('Cuenta no encontrada.');return;}
+  const result=await autoLinkPlayersToAccount(account);
+  await loadAdminData();
+  page='parents'; renderShell(); renderPage();
+  toast(`Cuenta revisada: ${result.linked} vínculo(s) creado(s), ${result.reactivated} reactivado(s)${result.failed?`, ${result.failed} con error`:''}.`);
+}
 function renderParents(){
   setTitle('Papás / Accesos privados');
   const fams=suggestedFamilies();
+  const auditRows=familyAccountAuditRows();
+  const missingCount=auditRows.reduce((n,r)=>n+r.missingPlayers.length,0);
+  const familyCount=auditRows.filter(r=>r.activeLinks.length>=2).length;
   const playersOptions = players.map(p=>`<option value="${p.id}">${p.id} · ${esc(p.name)} · Tutor: ${esc(p.tutor||'')}</option>`).join('');
   const accountsOptions = parentAccounts.map(a=>`<option value="${a.id}">${esc(a.display_name)} · ${esc(a.login)}</option>`).join('');
-  document.getElementById('content').innerHTML=`<div class="notice success"><b>v2.38:</b> al crear una cuenta se ligan automáticamente los jugadores que coincidan por teléfono o tutor. Si no ves jugadores, entra a la sección Jugadores para validar que carguen correctamente.</div>
+  document.getElementById('content').innerHTML=`<div class="notice success"><b>v2.121:</b> el portal admite varios jugadores por cuenta y conserva el pago familiar. La revisión identifica vínculos faltantes sin mezclar historiales ni comprobantes.</div>
+  <div class="panel family-audit-panel"><div class="panel-head"><div><h3>Diagnóstico de cuentas familiares</h3><p class="sub">${familyCount} cuenta(s) con varios jugadores · ${missingCount} vínculo(s) sugerido(s) pendiente(s)</p></div><button class="btn green" onclick="repairAllFamilyAccounts()">Revisar y reparar todas</button></div><div class="tablewrap"><table><thead><tr><th>Cuenta</th><th>Jugadores ligados</th><th>Coincidencias detectadas</th><th>Faltantes</th><th>Estado</th><th>Acción</th></tr></thead><tbody>${auditRows.map(r=>{const st=familyAuditStatus(r);const linkedNames=r.activeLinks.map(l=>players.find(p=>String(p.id)===String(l.player_id))?.name||l.player_id);return `<tr><td><b>${esc(r.account.display_name||'')}</b><br><small>${esc(r.account.login||'')}</small></td><td>${linkedNames.length?linkedNames.map(esc).join('<br>'):'—'}</td><td>${r.matchedPlayers.length?r.matchedPlayers.map(p=>esc(p.name)).join('<br>'):'—'}</td><td>${r.missingPlayers.length?r.missingPlayers.map(p=>`<span class="family-missing-player">${esc(p.name)}</span>`).join('<br>'):'—'}</td><td><span class="status ${st.cls}">${st.label}</span></td><td><button class="btn secondary" onclick="repairFamilyAccount('${r.account.id}')">Revisar cuenta</button></td></tr>`}).join('')||'<tr><td colspan="6">No hay cuentas creadas.</td></tr>'}</tbody></table></div></div>
   <div class="panel"><div class="panel-head"><h3>Crear cuenta de papá/tutor</h3></div><div class="modal-body"><form id="parentAccountForm" class="form-grid">
     <label class="label">Nombre visible<input id="accName" class="input" required placeholder="Nombre del papá, mamá o tutor"></label>
     <label class="label">Usuario<input id="accLogin" class="input" required placeholder="Correo, teléfono o usuario"></label>
@@ -2093,7 +2192,7 @@ async function saveParentAccount(e){
     if(account){
       const result = await autoLinkPlayersToAccount(account);
       await loadAdminData();
-      msg += `. Jugadores ligados automáticamente: ${result.linked}`;
+      msg += `. Nuevos vínculos: ${result.linked}; reactivados: ${result.reactivated||0}`;
       if(result.matches === 0) msg += '. No se encontraron coincidencias; usa ligar manual si aplica.';
     }
     toast(msg);
@@ -2107,8 +2206,11 @@ async function saveParentAccount(e){
 async function saveParentLink(e){
   e.preventDefault();
   const row={parent_account_id:document.getElementById('linkAccount').value,player_id:document.getElementById('linkPlayer').value,active:true};
-  const {error}=await sb.from('parent_player_links_v213').insert(row);
-  if(error) toast('Error ligando jugador: '+error.message); else {toast('Jugador ligado al papá'); await refresh(); page='parents'; renderPage();}
+  const existing=parentLinks.find(l=>String(l.parent_account_id)===String(row.parent_account_id) && String(l.player_id)===String(row.player_id));
+  const result=existing
+    ? await sb.from('parent_player_links_v213').update({active:true}).eq('id',existing.id)
+    : await sb.from('parent_player_links_v213').insert(row);
+  if(result.error) toast('Error ligando jugador: '+result.error.message); else {toast(existing?'Relación reactivada':'Jugador ligado al papá'); await refresh(); page='parents'; renderPage();}
 }
 
 
