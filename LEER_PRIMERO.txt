@@ -1,19 +1,27 @@
-DUCKS CRM PROFESIONAL v2.122
+DUCKS CRM PROFESIONAL v2.123
 
 OBJETIVO DE ESTA VERSION
-1. Corregir el acceso al apartado Pagos y comprobantes para que muestre desde el inicio todos los hijos/jugadores ligados a la cuenta.
-2. Mantener íntegramente el pago familiar: un depósito, un comprobante y aplicación individual por jugador.
-3. Permitir elegir claramente entre pagar a un jugador, subir su comprobante o pagar a varios hijos.
-4. Conservar la corrección v2.121 de cuentas familiares y todos los vínculos ya creados.
+1. Agregar en Administrador > Dashboard una columna con el día de pago de cada jugador.
+2. Corregir el estado de pago para que un saldo aparezca como Pendiente antes y durante su día límite.
+3. Cambiar el estado a Vencido únicamente a partir del día siguiente al día de pago.
+4. Mantener íntegramente el portal con varios hijos y el pago familiar de la versión v2.122.
+
+REGLA DE ESTADO DE PAGO
+- Antes del día de pago: Pendiente.
+- El mismo día de pago: Pendiente.
+- A partir del día siguiente: Vencido, siempre que exista saldo pendiente.
+- Los adeudos de meses anteriores continúan apareciendo como Vencidos.
+- Para días 29, 30 o 31, el CRM utiliza automáticamente el último día disponible de los meses más cortos.
 
 INSTALACION
-1. NO es necesario ejecutar un SQL nuevo si PASO_14_SQL_PORTAL_FAMILIAR_v2_121.sql ya terminó correctamente.
-2. Publica todos los archivos de esta carpeta en Vercel.
-3. En los teléfonos, cierra y vuelve a abrir la aplicación. Si conserva la vista anterior, recarga la página o elimina la app de la pantalla de inicio y agrégala nuevamente.
-4. Entra desde Pagos y comprobantes con una cuenta de dos o más jugadores. La primera ventana debe mostrar todos los jugadores ligados y el botón Pago familiar.
+1. NO es necesario ejecutar un SQL nuevo.
+2. Publica todos los archivos de esta carpeta en Vercel, reemplazando la versión anterior.
+3. Cierra y vuelve a abrir la aplicación en los teléfonos. Si conserva la versión anterior, recarga la página.
+4. Entra como administrador y revisa Dashboard: aparecerá la columna Día de pago.
+5. Verifica un jugador antes de su fecha, en su fecha y después de su fecha de pago.
 
 PAGO FAMILIAR
 No se modificó su funcionamiento. Continúa usando una sola evidencia y crea una aplicación individual por cada jugador seleccionado, vinculada con el mismo identificador FAMILY_PAYMENT.
 
 ARCHIVO SQL INCLUIDO
-El archivo PASO_14_SQL_PORTAL_FAMILIAR_v2_121.sql se conserva únicamente como referencia o para instalaciones que todavía no ejecutaron la actualización anterior.
+El archivo PASO_14_SQL_PORTAL_FAMILIAR_v2_121.sql se conserva únicamente como referencia. No debe ejecutarse nuevamente para instalar la versión v2.123.

@@ -124,6 +124,20 @@ function dueDatesThrough(firstDue,today,paymentDay){
   }
   return {count,lastDue,nextDue:cursor};
 }
+// Fechas cuyo plazo ya terminó. El propio día de pago todavía se considera pendiente,
+// por lo que solo se incluyen fechas estrictamente anteriores a hoy.
+function dueDatesBefore(firstDue,today,paymentDay){
+  let cursor=firstDue;
+  let count=0;
+  let lastDue=null;
+  while(cursor && compareDateParts(cursor,today)<0 && count<600){
+    count++;
+    lastDue=cursor;
+    const next=shiftYearMonth(cursor.year,cursor.month,1);
+    cursor=dueDateForMonth(next.year,next.month,paymentDay);
+  }
+  return {count,lastDue,nextDue:cursor};
+}
 const REGISTRATION_BILLING_START={year:2026,month:7,day:10};
 const REGISTRATION_BILLING_MARKER='[DUCKS_BILLING_MODE:REGISTRATION]';
 const LEGACY_BILLING_MARKER='[DUCKS_BILLING_MODE:LEGACY]';
@@ -422,6 +436,8 @@ function calcLegacyPlayer(player,payList=payments){
     ? Math.max(0,(today.year-lastDate.year)*12+(today.month-lastDate.month))
     : 0;
   const registrationDate=effectiveRegistrationISO(player);
+  const currentMonthDue=today?dueDateForMonth(today.year,today.month,paymentDay):null;
+  const currentDuePassed=!!(today&&currentMonthDue&&compareDateParts(today,currentMonthDue)>0);
 
   if(!active){
     return {last,months:0,amount:0,status:'Inactivo',credit:0,isOverdue:false,paymentDay,registrationDate,billingMode:'legacy'};
@@ -433,10 +449,15 @@ function calcLegacyPlayer(player,payList=payments){
     const amount=Math.max(0,Math.round(rawBalance*100)/100);
     const credit=Math.max(0,Math.round((-rawBalance)*100)/100);
     const months=amount>0&&fee>0?Math.max(1,Math.ceil(amount/fee)):0;
+    // Un saldo guardado no se marca vencido automáticamente. Se respeta el día de pago:
+    // antes o durante la fecha límite aparece Pendiente; a partir del día siguiente, Vencido.
+    // Si el saldo residual pertenece a un mes anterior, conserva correctamente el vencimiento.
+    const residualDue=lastDate?dueDateForMonth(lastDate.year,lastDate.month,paymentDay):currentMonthDue;
+    const residualDuePassed=!!(savedBalance>0&&today&&residualDue&&compareDateParts(today,residualDue)>0);
     const isOverdue=amount>0&&(
-      savedBalance>0 ||
       elapsedMonths>1 ||
-      (elapsedMonths>=1&&today&&today.day>paymentDay)
+      (elapsedMonths>=1&&currentDuePassed) ||
+      residualDuePassed
     );
     return {
       last,months,amount,
@@ -448,7 +469,7 @@ function calcLegacyPlayer(player,payList=payments){
   let months=!lastDate?1:elapsedMonths;
   months=Math.max(0,months);
   const amount=months*fee;
-  const isOverdue=amount>0&&(months>1||(months===1&&today&&today.day>paymentDay));
+  const isOverdue=amount>0&&(months>1||(months===1&&currentDuePassed));
   return {
     last,months,amount,status:amount>0?(isOverdue?'Vencido':'Pendiente'):'Pagado',
     credit:0,isOverdue,paymentDay,registrationDate,billingMode:'legacy'
@@ -472,6 +493,7 @@ function calcRegistrationPlayer(player,payList=payments){
   // No se reinicia el calendario cuando se registra un pago.
   const firstDue=nextScheduledDateAfter(registration,paymentDay);
   const schedule=firstDue&&today?dueDatesThrough(firstDue,today,paymentDay):{count:0,lastDue:null,nextDue:firstDue};
+  const pastSchedule=firstDue&&today?dueDatesBefore(firstDue,today,paymentDay):{count:0,lastDue:null,nextDue:firstDue};
 
   // Para altas nuevas se usa un estado de cuenta limpio:
   // cargos vencidos/programados menos TODOS los pagos confirmados.
@@ -486,8 +508,10 @@ function calcRegistrationPlayer(player,payList=payments){
   const amount=Math.max(0,Math.round(rawBalance*100)/100);
   const credit=Math.max(0,Math.round((-rawBalance)*100)/100);
   const months=amount>0&&fee>0?Math.max(1,Math.ceil(amount/fee)):0;
-  const isPastLastDue=!!(schedule.lastDue&&today&&compareDateParts(today,schedule.lastDue)>0);
-  const isOverdue=amount>0&&isPastLastDue;
+  // Solo se considera vencida la parte de las mensualidades cuyo día límite ya pasó.
+  // El mismo día de pago sigue apareciendo como Pendiente, incluso si el cargo ya es visible.
+  const pastCharges=pastSchedule.count*fee;
+  const isOverdue=amount>0&&(totalPaid+0.009<pastCharges);
 
   return {
     last,months,amount,
@@ -495,7 +519,7 @@ function calcRegistrationPlayer(player,payList=payments){
     credit,isOverdue,paymentDay,
     registrationDate:datePartsISO(registration),
     balanceAfter:rawBalance,
-    totalPaid,totalCharges,
+    totalPaid,totalCharges,pastCharges,
     firstDue:firstDue?datePartsISO(firstDue):'',
     nextDue:schedule.nextDue?datePartsISO(schedule.nextDue):'',
     billingMode:'registration'
@@ -2071,7 +2095,7 @@ function renderDashboard(){
   const birthdayBanner=birthdays.length?`<div class="notice birthday-notice"><b>🎂 Cumpleaños de hoy:</b> ${birthdays.map(p=>`${esc(p.name)} (${playerAge(p)} años)`).join(', ')}</div>`:'';
   const recentNotices=adminNotifications.filter(n=>!n.read_at).slice(0,3);
   document.getElementById('content').innerHTML=`${iosInstallBanner()}${notificationSetupNotice()}${birthdayBanner}<div class="kpis"><div class="kpi"><small>Jugadores</small><strong>${players.length}</strong></div><div class="kpi green"><small>Activos</small><strong>${active}</strong></div><div class="kpi orange"><small>Con adeudo</small><strong>${debtors.length}</strong></div><div class="kpi red"><small>Vencidos</small><strong>${overdue}</strong></div><div class="kpi orange"><small>Por confirmar</small><strong>${pendingEvidence}</strong></div><div class="kpi green"><small>Solicitudes nuevas</small><strong>${pendingRegistrations}</strong></div><div class="kpi"><small>Avisos nuevos</small><strong>${unread}</strong></div><div class="kpi"><small>Cumpleaños hoy</small><strong>${birthdays.length}</strong></div><div class="kpi red"><small>Adeudo total</small><strong>${money(totalDebt)}</strong></div></div>${recentNotices.length?`<div class="panel compact-notifications"><div class="panel-head"><h3>Avisos recientes</h3><button class="btn secondary" onclick="page='notifications';renderPage()">Ver todos</button></div>${recentNotices.map(n=>`<button class="dashboard-notification" onclick="openNotificationTarget('${n.id}')"><span>${notificationTypeIcon(n.type)}</span><div><b>${esc(n.title)}</b><small>${esc(n.message)}</small></div></button>`).join('')}</div>`:''}
-  <div class="panel"><div class="panel-head"><h3>Jugadores con adeudo</h3></div><div class="tablewrap"><table><thead><tr><th>Foto</th><th>ID</th><th>Jugador</th><th>Núm.</th><th>Tutor</th><th>Último pago</th><th>Meses</th><th>Adeudo</th><th>Estado</th><th>WhatsApp</th></tr></thead><tbody>${debtors.sort((a,b)=>b.c.amount-a.c.amount).map(p=>`<tr><td>${thumb(p.photo_url)}</td><td>${p.id}</td><td><b>${esc(p.name)}</b><br><small>${esc(p.category||'')}</small></td><td><span class="uniform">#${esc(p.uniform_number||'-')}</span></td><td>${esc(p.tutor||'')}</td><td>${esc(p.c.last||'')}</td><td>${p.c.months}</td><td class="amount">${money(p.c.amount)}</td><td><span class="status ${p.c.status}">${p.c.status}</span></td><td>${whatsappButtons(p)}</td></tr>`).join('')||'<tr><td colspan="10">Sin adeudos</td></tr>'}</tbody></table></div></div>`;
+  <div class="panel"><div class="panel-head"><div><h3>Jugadores con adeudo</h3><p class="sub">El estado cambia a Vencido únicamente después de que termina el día de pago de cada jugador.</p></div></div><div class="tablewrap"><table><thead><tr><th>Foto</th><th>ID</th><th>Jugador</th><th>Núm.</th><th>Tutor</th><th>Último pago</th><th>Día de pago</th><th>Meses</th><th>Adeudo</th><th>Estado</th><th>WhatsApp</th></tr></thead><tbody>${debtors.sort((a,b)=>b.c.amount-a.c.amount).map(p=>`<tr><td>${thumb(p.photo_url)}</td><td>${p.id}</td><td><b>${esc(p.name)}</b><br><small>${esc(p.category||'')}</small></td><td><span class="uniform">#${esc(p.uniform_number||'-')}</span></td><td>${esc(p.tutor||'')}</td><td>${esc(p.c.last||'')}</td><td><b>Día ${esc(p.c.paymentDay||p.payment_day||1)}</b></td><td>${p.c.months}</td><td class="amount">${money(p.c.amount)}</td><td><span class="status ${p.c.status}">${p.c.status}</span></td><td>${whatsappButtons(p)}</td></tr>`).join('')||'<tr><td colspan="11">Sin adeudos</td></tr>'}</tbody></table></div></div>`;
 }
 
 function registrationModuleNotice(){return registrationModuleReady?'':`<div class="notice warning"><b>Falta activar solicitudes:</b> ejecuta en Supabase el archivo <b>PASO_13_SQL_CUESTIONARIO_v2_59.sql</b>.</div>`;}
@@ -2187,7 +2211,7 @@ function renderParents(){
   const familyCount=auditRows.filter(r=>r.activeLinks.length>=2).length;
   const playersOptions = players.map(p=>`<option value="${p.id}">${p.id} · ${esc(p.name)} · Tutor: ${esc(p.tutor||'')}</option>`).join('');
   const accountsOptions = parentAccounts.map(a=>`<option value="${a.id}">${esc(a.display_name)} · ${esc(a.login)}</option>`).join('');
-  document.getElementById('content').innerHTML=`<div class="notice success"><b>v2.122:</b> el portal y el apartado Pagos muestran todos los jugadores ligados y conservan el pago familiar. La revisión identifica vínculos faltantes sin mezclar historiales ni comprobantes.</div>
+  document.getElementById('content').innerHTML=`<div class="notice success"><b>v2.123:</b> se conserva el portal familiar y se corrige el estado de pago: Pendiente hasta el día límite y Vencido solamente a partir del día siguiente. El Dashboard ahora muestra el día de pago de cada jugador.</div>
   <div class="panel family-audit-panel"><div class="panel-head"><div><h3>Diagnóstico de cuentas familiares</h3><p class="sub">${familyCount} cuenta(s) con varios jugadores · ${missingCount} vínculo(s) sugerido(s) pendiente(s)</p></div><button class="btn green" onclick="repairAllFamilyAccounts()">Revisar y reparar todas</button></div><div class="tablewrap"><table><thead><tr><th>Cuenta</th><th>Jugadores ligados</th><th>Coincidencias detectadas</th><th>Faltantes</th><th>Estado</th><th>Acción</th></tr></thead><tbody>${auditRows.map(r=>{const st=familyAuditStatus(r);const linkedNames=r.activeLinks.map(l=>players.find(p=>String(p.id)===String(l.player_id))?.name||l.player_id);return `<tr><td><b>${esc(r.account.display_name||'')}</b><br><small>${esc(r.account.login||'')}</small></td><td>${linkedNames.length?linkedNames.map(esc).join('<br>'):'—'}</td><td>${r.matchedPlayers.length?r.matchedPlayers.map(p=>esc(p.name)).join('<br>'):'—'}</td><td>${r.missingPlayers.length?r.missingPlayers.map(p=>`<span class="family-missing-player">${esc(p.name)}</span>`).join('<br>'):'—'}</td><td><span class="status ${st.cls}">${st.label}</span></td><td><button class="btn secondary" onclick="repairFamilyAccount('${r.account.id}')">Revisar cuenta</button></td></tr>`}).join('')||'<tr><td colspan="6">No hay cuentas creadas.</td></tr>'}</tbody></table></div></div>
   <div class="panel"><div class="panel-head"><h3>Crear cuenta de papá/tutor</h3></div><div class="modal-body"><form id="parentAccountForm" class="form-grid">
     <label class="label">Nombre visible<input id="accName" class="input" required placeholder="Nombre del papá, mamá o tutor"></label>
