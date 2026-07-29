@@ -5461,3 +5461,52 @@ body.ducks-premium-skin{
   .parent-pay-hub-kpis{grid-template-columns:1fr 1fr}
   .parent-pay-hub-kpis>div:last-child{grid-column:1/-1}
 }
+
+/* v2.124 · Calendario, avisos y notificaciones para papás */
+.parent-portal-bell{position:relative;min-width:48px;font-size:20px}
+.parent-portal-bell .notification-badge{position:absolute;top:-7px;right:-7px;min-width:22px;height:22px;padding:0 5px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:#e43b34;color:#fff;font-size:12px;font-weight:900;border:2px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,.22)}
+.parent-announcements-preview{max-width:1180px;margin:18px auto;padding:22px;border-radius:24px;background:linear-gradient(145deg,#07182d,#0d2848);color:#fff;box-shadow:0 18px 45px rgba(0,0,0,.18)}
+.parent-announcements-preview-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px}
+.parent-announcements-preview-head small{display:block;text-transform:uppercase;letter-spacing:.11em;color:#86e7bd;font-weight:800}
+.parent-announcements-preview-head h2{margin:3px 0 0;font-size:clamp(22px,4vw,32px)}
+.parent-announcement-list{display:grid;gap:12px}
+.parent-announcement-list.compact{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.parent-announcement-card{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:13px;align-items:start;padding:17px;border-radius:18px;background:#fff;color:#102238;border:1px solid #dfe7ef;box-shadow:0 8px 22px rgba(5,24,45,.08)}
+.parent-announcement-card.unread{border-left:6px solid #14a56f}
+.parent-announcement-card.read{opacity:.88}
+.parent-announcement-card.priority-important{border-top:3px solid #f4a423}
+.parent-announcement-card.priority-urgent{border-top:3px solid #d93a35}
+.parent-announcement-icon{width:46px;height:46px;display:flex;align-items:center;justify-content:center;border-radius:14px;background:#eef7f3;font-size:25px}
+.parent-announcement-content h4{margin:0;font-size:18px;color:#07182d}
+.parent-announcement-content p{margin:7px 0;line-height:1.5}
+.parent-announcement-content small{color:#65758a}
+.parent-announcement-title{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.parent-announcement-title span{white-space:nowrap;border-radius:999px;padding:4px 9px;background:#eef3f7;color:#34495e;font-size:11px;font-weight:900;text-transform:uppercase}
+.parent-announcement-date{font-weight:850;color:#087652!important}
+.parent-announcement-actions{display:flex;align-self:center}
+.parent-notification-permission{margin-bottom:16px;flex-wrap:wrap}
+.parent-announcements-modal{width:min(950px,94vw)}
+.announcement-admin-list{display:grid;gap:14px;padding:18px}
+.announcement-admin-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;padding:18px;border-radius:18px;background:#fff;border:1px solid #dfe7ef;border-left:6px solid #7c8c9d}
+.announcement-admin-card.priority-important{border-left-color:#f4a423}
+.announcement-admin-card.priority-urgent{border-left-color:#d93a35}
+.announcement-admin-card.inactive{opacity:.58;filter:grayscale(.35)}
+.announcement-admin-title{display:flex;gap:12px;align-items:center}
+.announcement-admin-title>span{font-size:30px}
+.announcement-admin-title h4{margin:0;color:#07182d;font-size:19px}
+.announcement-admin-title small{color:#6d7d8d}
+.announcement-admin-main>p{line-height:1.5;margin:9px 0}
+.announcement-admin-main>small{color:#6d7d8d}
+.announcement-admin-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+@media(max-width:760px){
+  .parent-announcement-card{grid-template-columns:44px minmax(0,1fr)}
+  .parent-announcement-actions{grid-column:1/-1;justify-content:flex-end}
+  .parent-announcement-title{display:block}
+  .parent-announcement-title span{display:inline-block;margin-top:6px}
+  .announcement-admin-card{grid-template-columns:1fr}
+  .announcement-admin-actions{justify-content:flex-start}
+  .parent-announcements-preview{margin:12px;padding:16px;border-radius:19px}
+  .parent-announcements-preview-head{align-items:flex-start}
+  .academy-menu .header-actions{gap:5px}
+  .parent-portal-bell{padding:9px 11px}
+}

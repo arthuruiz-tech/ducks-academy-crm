@@ -1,6 +1,6 @@
 
 async function forceFreshAssetsOnce(){
-  const key = 'ducks_cache_fix_v2_70_done';
+  const key = 'ducks_cache_fix_v2_124_done';
   if(localStorage.getItem(key)==='yes') return;
   try{
     if('caches' in window){
@@ -14,7 +14,7 @@ async function forceFreshAssetsOnce(){
 }
 forceFreshAssetsOnce();
 
-// Ducks CRM profesional v2.66 - botones alineados y reglamento en una sola página
+// Ducks CRM profesional v2.124 - calendario, avisos y notificaciones para papás
 const app = document.getElementById('app');
 let sb = null;
 let session = null;
@@ -37,6 +37,11 @@ let registrationApplications = [];
 let registrationModuleReady = false;
 let notificationsReady = false;
 let notificationChannel = null;
+let portalAnnouncements = [];
+let parentAnnouncements = [];
+let parentAnnouncementsReady = false;
+let parentAnnouncementChannel = null;
+let parentAnnouncementPoll = null;
 let q = '';
 
 const BANK_ACCOUNT = '157 889 8256';
@@ -669,6 +674,275 @@ function exportFullJSON(){
 }
 
 
+
+function announcementIcon(kind){
+  return String(kind||'notice').toLowerCase()==='event' ? '📅' : '📣';
+}
+function announcementPriorityLabel(priority){
+  const value=String(priority||'normal').toLowerCase();
+  if(value==='urgent') return 'Urgente';
+  if(value==='important') return 'Importante';
+  return 'Informativo';
+}
+function announcementPriorityClass(priority){
+  const value=String(priority||'normal').toLowerCase();
+  return value==='urgent'?'urgent':value==='important'?'important':'normal';
+}
+function announcementVisibleNow(a){
+  if(a?.active===false) return false;
+  const now=Date.now();
+  const publish=a?.publish_at?new Date(a.publish_at).getTime():0;
+  const expires=a?.expires_at?new Date(a.expires_at).getTime():0;
+  if(Number.isFinite(publish)&&publish>now) return false;
+  if(Number.isFinite(expires)&&expires>0&&expires<now) return false;
+  return true;
+}
+function announcementDateLine(a){
+  const parts=[];
+  if(a?.event_date) parts.push(formatDateDMY(a.event_date));
+  if(a?.event_time) parts.push(String(a.event_time).slice(0,5));
+  if(a?.location) parts.push(a.location);
+  return parts.filter(Boolean).join(' · ');
+}
+async function loadPortalAnnouncementsAdmin(){
+  if(!sb){portalAnnouncements=[];return false;}
+  const {data,error}=await sb.from('portal_announcements_v124').select('*').order('created_at',{ascending:false}).limit(500);
+  if(error){portalAnnouncements=[];return false;}
+  portalAnnouncements=data||[];
+  return true;
+}
+async function loadParentAnnouncements(){
+  parentAnnouncements=[]; parentAnnouncementsReady=false;
+  if(!sb||!parentToken) return;
+  try{
+    const {data,error}=await sb.rpc('ducks_parent_announcements_v124',{p_token:parentToken});
+    if(error) throw error;
+    if(!data?.ok) throw new Error(data?.message||'No se pudieron cargar los avisos.');
+    parentAnnouncements=portalArray(data.announcements).filter(announcementVisibleNow);
+    parentAnnouncementsReady=true;
+    updateParentAnnouncementBadge();
+    await showPendingParentSystemNotifications();
+  }catch(err){
+    parentAnnouncements=[]; parentAnnouncementsReady=false;
+    console.warn('Calendario y avisos no disponibles:',err?.message||err);
+  }
+}
+function parentUnreadAnnouncements(){
+  return parentAnnouncements.filter(a=>!a.read_at);
+}
+function updateParentAnnouncementBadge(){
+  const count=parentUnreadAnnouncements().length;
+  document.querySelectorAll('[data-parent-announcement-badge]').forEach(el=>{
+    el.textContent=String(count);
+    el.classList.toggle('hidden',count===0);
+  });
+}
+function parentAnnouncementSeenKey(){
+  return `ducks_parent_announcement_seen_v124_${parentProfile?.id||parentProfile?.login||'family'}`;
+}
+function parentAnnouncementSeenIds(){
+  try{return new Set(JSON.parse(localStorage.getItem(parentAnnouncementSeenKey())||'[]'));}
+  catch{return new Set();}
+}
+function rememberParentAnnouncementSeen(id){
+  const seen=parentAnnouncementSeenIds(); seen.add(String(id));
+  localStorage.setItem(parentAnnouncementSeenKey(),JSON.stringify([...seen].slice(-300)));
+}
+async function showParentSystemNotification(a){
+  if(!a||!('Notification' in window)||Notification.permission!=='granted') return;
+  const seen=parentAnnouncementSeenIds();
+  if(seen.has(String(a.id))) return;
+  const options={
+    body:a.message||'', icon:officialLogoUrl(), badge:officialLogoUrl(),
+    tag:`ducks-parent-${a.id}`, renotify:false,
+    data:{url:location.href,announcement_id:a.id}
+  };
+  try{
+    const reg=await navigator.serviceWorker?.ready;
+    if(reg) await reg.showNotification(`${announcementIcon(a.kind)} ${a.title||'Ducks Academy'}`,options);
+    else new Notification(a.title||'Ducks Academy',options);
+    rememberParentAnnouncementSeen(a.id);
+  }catch(err){console.warn('No se pudo mostrar la notificación',err);}
+}
+async function showPendingParentSystemNotifications(){
+  if(!('Notification' in window)||Notification.permission!=='granted') return;
+  for(const a of parentUnreadAnnouncements().slice(0,10).reverse()) await showParentSystemNotification(a);
+}
+function urlBase64ToUint8Array(base64String){
+  const padding='='.repeat((4-base64String.length%4)%4);
+  const base64=(base64String+padding).replace(/-/g,'+').replace(/_/g,'/');
+  const rawData=atob(base64);
+  return Uint8Array.from([...rawData].map(ch=>ch.charCodeAt(0)));
+}
+async function saveParentPushSubscription(subscription){
+  if(!subscription||!parentToken) return false;
+  const {data,error}=await sb.rpc('ducks_parent_save_push_subscription_v124',{
+    p_token:parentToken,
+    p_subscription:subscription.toJSON(),
+    p_user_agent:navigator.userAgent||''
+  });
+  if(error||!data?.ok){console.warn('No se guardó la suscripción push',error?.message||data?.message);return false;}
+  return true;
+}
+async function requestParentNotificationPermission(){
+  if(!('Notification' in window)){toast('Este dispositivo no admite notificaciones web. Los avisos seguirán visibles en la campanita.');return;}
+  const permission=await Notification.requestPermission();
+  if(permission!=='granted'){
+    toast(permission==='denied'?'Las notificaciones están bloqueadas. Habilítalas en los permisos del sitio.':'No se activaron las notificaciones.');
+    return;
+  }
+  let backgroundReady=false;
+  try{
+    const vapid=String(window.DUCKS_VAPID_PUBLIC_KEY||'').trim();
+    const reg=await navigator.serviceWorker?.ready;
+    if(vapid&&reg?.pushManager){
+      let subscription=await reg.pushManager.getSubscription();
+      if(!subscription) subscription=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(vapid)});
+      backgroundReady=await saveParentPushSubscription(subscription);
+    }
+  }catch(err){console.warn('Push en segundo plano no disponible',err);}
+  await showPendingParentSystemNotifications();
+  toast(backgroundReady?'Notificaciones activadas, incluso con la app cerrada.':'Notificaciones activadas. Los avisos aparecerán al usar la aplicación; falta configurar el envío en segundo plano.');
+}
+function setupParentAnnouncementRealtime(){
+  if(!sb||!parentToken||parentAnnouncementChannel) return;
+  parentAnnouncementChannel=sb.channel('ducks-parent-announcements-v124')
+    .on('postgres_changes',{event:'*',schema:'public',table:'portal_announcements_v124'},async()=>{
+      const previous=new Set(parentAnnouncements.map(a=>String(a.id)));
+      await loadParentAnnouncements();
+      const incoming=parentAnnouncements.find(a=>!previous.has(String(a.id)));
+      updateParentAnnouncementBadge();
+      if(incoming){toast(`${announcementIcon(incoming.kind)} ${incoming.title}`);await showParentSystemNotification(incoming);}
+    }).subscribe();
+  clearInterval(parentAnnouncementPoll);
+  parentAnnouncementPoll=setInterval(async()=>{
+    if(mode!=='parentPortal'||!parentToken) return;
+    const previousUnread=parentUnreadAnnouncements().length;
+    await loadParentAnnouncements();
+    if(parentUnreadAnnouncements().length>previousUnread) toast('🔔 Tienes un nuevo aviso de Ducks.');
+  },60000);
+}
+async function stopParentAnnouncementRealtime(){
+  clearInterval(parentAnnouncementPoll); parentAnnouncementPoll=null;
+  if(parentAnnouncementChannel&&sb){await sb.removeChannel(parentAnnouncementChannel).catch(()=>{});}
+  parentAnnouncementChannel=null;
+}
+async function markParentAnnouncementRead(id,rerender=true){
+  if(!parentToken) return;
+  const {data,error}=await sb.rpc('ducks_parent_mark_announcement_read_v124',{p_token:parentToken,p_announcement_id:id});
+  if(error||!data?.ok){toast('No se pudo marcar el aviso como leído.');return;}
+  const row=parentAnnouncements.find(a=>String(a.id)===String(id));
+  if(row) row.read_at=new Date().toISOString();
+  updateParentAnnouncementBadge();
+  if(rerender) openParentAnnouncements(true);
+}
+async function markAllParentAnnouncementsRead(){
+  const unread=parentUnreadAnnouncements();
+  for(const a of unread) await markParentAnnouncementRead(a.id,false);
+  openParentAnnouncements(true);
+  toast('Avisos marcados como leídos.');
+}
+function parentAnnouncementCards(limit=0){
+  let list=[...parentAnnouncements].sort((a,b)=>{
+    const da=String(a.event_date||a.publish_at||a.created_at||'');
+    const db=String(b.event_date||b.publish_at||b.created_at||'');
+    return db.localeCompare(da);
+  });
+  if(limit) list=list.slice(0,limit);
+  if(!list.length) return '<div class="notice success">No hay avisos ni eventos publicados por el momento.</div>';
+  return list.map(a=>`<article class="parent-announcement-card ${a.read_at?'read':'unread'} priority-${announcementPriorityClass(a.priority)}">
+    <div class="parent-announcement-icon">${announcementIcon(a.kind)}</div>
+    <div class="parent-announcement-content"><div class="parent-announcement-title"><h4>${esc(a.title)}</h4><span>${announcementPriorityLabel(a.priority)}</span></div>
+      ${announcementDateLine(a)?`<p class="parent-announcement-date">${esc(announcementDateLine(a))}</p>`:''}
+      <p>${esc(a.message)}</p><small>Publicado: ${esc(formatAcademyDateTime(a.publish_at||a.created_at))}</small></div>
+    <div class="parent-announcement-actions">${a.read_at?'':'<button class="btn green" onclick="markParentAnnouncementRead(\''+a.id+'\')">Marcar leído</button>'}</div>
+  </article>`).join('');
+}
+function openParentAnnouncements(refreshOnly=false){
+  let modal=document.getElementById('parentAnnouncementsModal');
+  if(modal) modal.remove();
+  modal=document.createElement('div'); modal.className='modalbg open'; modal.id='parentAnnouncementsModal';
+  modal.innerHTML=`<div class="modal wide-modal parent-announcements-modal"><div class="modal-head"><div><h3>🔔 Calendario y avisos</h3><small>${parentUnreadAnnouncements().length} aviso(s) nuevo(s)</small></div><button class="btn secondary" onclick="closeModal('parentAnnouncementsModal')">Cerrar</button></div><div class="modal-body">
+    ${parentAnnouncementsReady?'':'<div class="notice warning"><b>Módulo pendiente:</b> el administrador debe ejecutar el SQL de Calendario y avisos v2.124.</div>'}
+    <div class="actions parent-notification-permission"><button class="btn green" onclick="requestParentNotificationPermission()">🔔 Activar notificaciones del dispositivo</button>${parentUnreadAnnouncements().length?'<button class="btn secondary" onclick="markAllParentAnnouncementsRead()">Marcar todos como leídos</button>':''}</div>
+    <div class="parent-announcement-list">${parentAnnouncementCards()}</div>
+  </div></div>`;
+  document.body.appendChild(modal);
+}
+function parentAnnouncementsPreview(){
+  const active=parentAnnouncements.slice(0,3);
+  return `<section class="parent-announcements-preview"><div class="parent-announcements-preview-head"><div><small>Información de la academia</small><h2>Calendario y avisos</h2></div><button class="btn secondary" onclick="openParentAnnouncements()">Ver todos ${parentUnreadAnnouncements().length?`(${parentUnreadAnnouncements().length})`:''}</button></div><div class="parent-announcement-list compact">${parentAnnouncementCards(3)}</div></section>`;
+}
+async function savePortalAnnouncement(e){
+  e.preventDefault();
+  const id=document.getElementById('announcementId').value.trim();
+  const row={
+    kind:document.getElementById('announcementKind').value,
+    title:document.getElementById('announcementTitle').value.trim(),
+    message:document.getElementById('announcementMessage').value.trim(),
+    event_date:document.getElementById('announcementEventDate').value||null,
+    event_time:document.getElementById('announcementEventTime').value||null,
+    location:document.getElementById('announcementLocation').value.trim()||null,
+    priority:document.getElementById('announcementPriority').value,
+    publish_at:document.getElementById('announcementPublishAt').value?new Date(document.getElementById('announcementPublishAt').value).toISOString():new Date().toISOString(),
+    expires_at:document.getElementById('announcementExpiresAt').value?new Date(document.getElementById('announcementExpiresAt').value).toISOString():null,
+    active:true, updated_at:new Date().toISOString()
+  };
+  if(row.title.length<3||row.message.length<3){toast('Captura título y mensaje.');return;}
+  const result=id?await sb.from('portal_announcements_v124').update(row).eq('id',id).select().single():await sb.from('portal_announcements_v124').insert(row).select().single();
+  if(result.error){toast('No se pudo guardar: '+result.error.message);return;}
+  const saved=result.data;
+  try{
+    if(saved?.id&&String(window.DUCKS_ENABLE_BACKGROUND_PUSH||'').toLowerCase()==='true'){
+      await sb.functions.invoke('send-parent-push',{body:{announcement_id:saved.id}});
+    }
+  }catch(err){console.warn('El aviso se guardó, pero no se envió push en segundo plano.',err);}
+  toast(id?'Aviso actualizado.':'Aviso publicado para los papás.');
+  await loadPortalAnnouncementsAdmin(); renderCalendarAdmin();
+}
+function editPortalAnnouncement(id){
+  const a=portalAnnouncements.find(x=>String(x.id)===String(id)); if(!a)return;
+  renderCalendarAdmin(a);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+async function togglePortalAnnouncement(id){
+  const a=portalAnnouncements.find(x=>String(x.id)===String(id)); if(!a)return;
+  const {error}=await sb.from('portal_announcements_v124').update({active:!a.active,updated_at:new Date().toISOString()}).eq('id',id);
+  if(error){toast(error.message);return;} await loadPortalAnnouncementsAdmin(); renderCalendarAdmin();
+}
+async function deletePortalAnnouncement(id){
+  if(!confirm('¿Eliminar definitivamente este aviso o evento?')) return;
+  const {error}=await sb.from('portal_announcements_v124').delete().eq('id',id);
+  if(error){toast(error.message);return;} await loadPortalAnnouncementsAdmin(); renderCalendarAdmin(); toast('Aviso eliminado.');
+}
+function localDateTimeInput(value){
+  if(!value) return '';
+  const d=new Date(value); if(Number.isNaN(d.getTime())) return '';
+  const z=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`;
+}
+function renderCalendarAdmin(editing=null){
+  setTitle('Calendario y avisos');
+  const a=editing||{};
+  const activeCount=portalAnnouncements.filter(announcementVisibleNow).length;
+  document.getElementById('content').innerHTML=`<div class="notice success"><b>Comunicación con papás:</b> publica entrenamientos, partidos, cambios de horario, pagos, reuniones o avisos generales. Se mostrarán en la campanita y en el Portal de Papás.</div>
+  <div class="panel"><div class="panel-head"><div><h3>${editing?'Modificar publicación':'Nueva publicación'}</h3><p class="sub">${activeCount} publicación(es) activa(s)</p></div>${editing?'<button class="btn secondary" onclick="renderCalendarAdmin()">Cancelar edición</button>':''}</div><div class="modal-body"><form id="announcementForm" class="form-grid">
+    <input id="announcementId" type="hidden" value="${esc(a.id||'')}">
+    <label class="label">Tipo<select id="announcementKind" class="select"><option value="notice" ${a.kind!=='event'?'selected':''}>Aviso</option><option value="event" ${a.kind==='event'?'selected':''}>Evento / calendario</option></select></label>
+    <label class="label">Prioridad<select id="announcementPriority" class="select"><option value="normal" ${a.priority==='normal'||!a.priority?'selected':''}>Informativo</option><option value="important" ${a.priority==='important'?'selected':''}>Importante</option><option value="urgent" ${a.priority==='urgent'?'selected':''}>Urgente</option></select></label>
+    <label class="label full">Título<input id="announcementTitle" class="input" required maxlength="140" value="${esc(a.title||'')}" placeholder="Ej. Juego del sábado / Cambio de horario"></label>
+    <label class="label full">Información para los papás<textarea id="announcementMessage" class="input" required maxlength="2500" rows="4" placeholder="Escribe toda la información que podrán consultar...">${esc(a.message||'')}</textarea></label>
+    <label class="label">Fecha del evento<input id="announcementEventDate" class="input" type="date" value="${esc(a.event_date||'')}"></label>
+    <label class="label">Hora<input id="announcementEventTime" class="input" type="time" value="${esc(String(a.event_time||'').slice(0,5))}"></label>
+    <label class="label full">Lugar / sede<input id="announcementLocation" class="input" maxlength="240" value="${esc(a.location||'')}" placeholder="Opcional"></label>
+    <label class="label">Publicar desde<input id="announcementPublishAt" class="input" type="datetime-local" value="${esc(localDateTimeInput(a.publish_at)||localDateTimeInput(new Date()))}"></label>
+    <label class="label">Ocultar después de<input id="announcementExpiresAt" class="input" type="datetime-local" value="${esc(localDateTimeInput(a.expires_at))}"><small>Opcional.</small></label>
+    <div class="full actions"><button class="btn green">${editing?'Guardar cambios':'Publicar aviso'}</button></div>
+  </form></div></div>
+  <div class="panel"><div class="panel-head"><div><h3>Publicaciones</h3><p class="sub">Historial de avisos y eventos visibles para las familias.</p></div></div><div class="announcement-admin-list">${portalAnnouncements.map(x=>`<article class="announcement-admin-card priority-${announcementPriorityClass(x.priority)} ${x.active?'':'inactive'}"><div class="announcement-admin-main"><div class="announcement-admin-title"><span>${announcementIcon(x.kind)}</span><div><h4>${esc(x.title)}</h4><small>${announcementPriorityLabel(x.priority)} · ${x.active?'Activa':'Inactiva'}</small></div></div>${announcementDateLine(x)?`<p class="parent-announcement-date">${esc(announcementDateLine(x))}</p>`:''}<p>${esc(x.message)}</p><small>Publicación: ${esc(formatAcademyDateTime(x.publish_at||x.created_at))}${x.expires_at?` · Expira: ${esc(formatAcademyDateTime(x.expires_at))}`:''}</small></div><div class="announcement-admin-actions"><button class="btn secondary" onclick="editPortalAnnouncement('${x.id}')">Modificar</button><button class="btn secondary" onclick="togglePortalAnnouncement('${x.id}')">${x.active?'Ocultar':'Activar'}</button><button class="btn red" onclick="deletePortalAnnouncement('${x.id}')">Eliminar</button></div></article>`).join('')||'<div class="notice">Aún no hay publicaciones.</div>'}</div></div>`;
+  document.getElementById('announcementForm').onsubmit=savePortalAnnouncement;
+}
+
 function unreadNotificationCount(){
   return adminNotifications.filter(n=>!n.read_at).length;
 }
@@ -768,7 +1042,7 @@ async function markNotificationRead(id){
   if(error){toast('No se pudo marcar el aviso: '+error.message);return;}
   row.read_at=readAt;
   updateNotificationBadges();
-  if(page==='notifications') renderNotifications();
+  if(page==='notifications') renderNotifications(); if(page==='calendar') renderCalendarAdmin();
 }
 async function markAllNotificationsRead(){
   const unread=adminNotifications.filter(n=>!n.read_at);
@@ -1408,8 +1682,9 @@ async function parentChangeOwnPassword(){
   const row=Array.isArray(data)?data[0]:data;
   toast(row?.ok?'Contraseña actualizada correctamente':(row?.message||'No se pudo actualizar'));
 }
-function parentExitToHome(){
-  parentToken=''; parentProfile=null; parentPlayers=[]; parentPayments=[]; parentDocuments=[];
+async function parentExitToHome(){
+  await stopParentAnnouncementRealtime();
+  parentToken=''; parentProfile=null; parentPlayers=[]; parentPayments=[]; parentDocuments=[]; parentAnnouncements=[];
   localStorage.removeItem('ducks_parent_token_v213');
   renderPublicHome();
 }
@@ -1489,6 +1764,8 @@ async function loadParentData(){
   if(!docs.error && docs.data?.ok){
     parentDocuments=uniquePortalRows(portalArray(docs.data.documents).filter(d=>allowedPlayerIds.has(String(d.player_id))),'id');
   } else { parentDocuments = []; }
+  await loadParentAnnouncements();
+  setupParentAnnouncementRealtime();
 }
 
 async function parentChangeOwnPassword(){
@@ -1504,8 +1781,9 @@ async function parentChangeOwnPassword(){
   const row=Array.isArray(data)?data[0]:data;
   toast(row?.ok?'Contraseña actualizada correctamente':(row?.message||'No se pudo actualizar'));
 }
-function parentExitToHome(){
-  parentToken=''; parentProfile=null; parentPlayers=[]; parentPayments=[]; parentDocuments=[];
+async function parentExitToHome(){
+  await stopParentAnnouncementRealtime();
+  parentToken=''; parentProfile=null; parentPlayers=[]; parentPayments=[]; parentDocuments=[]; parentAnnouncements=[];
   localStorage.removeItem('ducks_parent_token_v213');
   renderPublicHome();
 }
@@ -1699,20 +1977,22 @@ function renderParentPortal(){
   app.innerHTML=`${publicQuickMenu()}<div class="public-site with-global-menu">
     <header class="academy-menu"><div class="academy-menu-inner">
       <a class="academy-brand" href="#" onclick="renderParentPortal()"><img src="assets/logo.png"><span>Portal de Papás</span></a>
-      <nav class="academy-links"><button onclick="renderParentPortal()">Mis hijos</button>${parentPlayers.length>=2?'<button class="primary-menu-btn" onclick="openFamilyPayment()">Pago familiar</button>':''}<button onclick="openParentPaymentsHub('evidence')">Pagos y comprobantes</button></nav>
-      <div class="header-actions"><button class="btn secondary academy-admin" onclick="parentLogout()">Cerrar sesión</button></div>
+      <nav class="academy-links"><button onclick="renderParentPortal()">Mis hijos</button>${parentPlayers.length>=2?'<button class="primary-menu-btn" onclick="openFamilyPayment()">Pago familiar</button>':''}<button onclick="openParentPaymentsHub('evidence')">Pagos y comprobantes</button><button onclick="openParentAnnouncements()">Calendario</button></nav>
+      <div class="header-actions"><button class="btn secondary parent-portal-bell" onclick="openParentAnnouncements()" aria-label="Calendario y avisos">🔔 <span class="notification-badge hidden" data-parent-announcement-badge>0</span></button><button class="btn secondary academy-admin" onclick="parentLogout()">Cerrar sesión</button></div>
     </div></header>
     <main class="academy-main">
       <section class="academy-ribbon private-ribbon"><div class="court-lines"></div><div class="ribbon-content"><img class="ribbon-logo small" src="assets/logo.png"><div class="ribbon-text"><span class="ribbon-kicker">Acceso privado</span><h1>Bienvenido al Portal de Papás</h1><p>${esc(parentProfile?.display_name||parentProfile?.login||'')}</p></div></div></section>
       ${parentPortalActions()}
+      ${parentAnnouncementsPreview()}
       <section class="family-account-overview"><div><small>Jugadores ligados a esta cuenta</small><strong>${parentPlayers.length}</strong><span>${parentPlayers.length===1?'1 jugador disponible':`${parentPlayers.length} jugadores disponibles desde el inicio`}</span></div><div class="family-account-player-list">${parentPlayers.map(p=>`<span>${esc(p.name)}</span>`).join('')}</div></section>
       ${parentPlayers.length>=2?`<section class="family-payment-banner"><div><span>Pago para varios hijos</span><h2>Realiza un solo pago familiar</h2><p>Selecciona a tus hijos, paga el total y carga un solo comprobante. El pago se aplicará individualmente a cada uno.</p></div><button class="btn green" onclick="openFamilyPayment()">💳 Pagar varios hijos</button></section>`:''}
       <section class="parent-card"><div class="parent-title"><img src="assets/logo.png"><div><h1>Mis jugadores</h1><div class="sub">Solo información asignada a tu familia</div></div></div>${parentPlayers.length?`<div class="family-grid">${cards}</div>`:`<div class="notice warning">Tu cuenta aún no tiene jugadores asignados. Contacta a administración.</div>`}</section>
       <section class="bank-card"><div class="bank-head"><div><span class="bank-chip">BBVA MX</span><h2>Datos para depósito o transferencia</h2><p>Copia la cuenta o CLABE, realiza tu pago y después adjunta el comprobante.</p></div><img src="assets/logo.png"></div><div class="bank-grid"><div class="bank-item"><small>Cuenta</small><strong>${BANK_ACCOUNT}</strong><button type="button" class="btn secondary" onclick="copyBank(BANK_ACCOUNT,'Cuenta')">Copiar cuenta</button></div><div class="bank-item"><small>CLABE</small><strong>${BANK_CLABE}</strong><button type="button" class="btn secondary" onclick="copyBank(BANK_CLABE,'CLABE')">Copiar CLABE</button></div><div class="bank-item full"><small>Beneficiario / referencia</small><strong>${BANK_BENEFICIARY}</strong><button type="button" class="btn secondary" onclick="copyBank(BANK_BENEFICIARY,'Beneficiario')">Copiar beneficiario</button></div></div></section>
     </main>
   </div>`;
+  updateParentAnnouncementBadge();
 }
-function parentLogout(){ parentToken=''; parentProfile=null; parentPlayers=[]; parentPayments=[]; parentDocuments=[]; localStorage.removeItem('ducks_parent_token_v213'); renderPublicHome(); }
+async function parentLogout(){ await stopParentAnnouncementRealtime(); parentToken=''; parentProfile=null; parentPlayers=[]; parentPayments=[]; parentDocuments=[]; parentAnnouncements=[]; localStorage.removeItem('ducks_parent_token_v213'); renderPublicHome(); }
 
 function renderParentDocuments(playerId){
   const docs = parentDocuments.filter(d=>d.player_id===playerId);
@@ -1990,13 +2270,15 @@ async function loadAdminData(){
   await persistRegistrationBillingMarkers();
   await loadRegistrationApplications();
   await loadAdminNotifications();
+  await loadPortalAnnouncementsAdmin();
   setupNotificationRealtime();
 }
 async function refresh(){ if(mode==='admin'){await loadAdminData(); renderShell(); renderPage();} }
 function adminMenuLabel(value){
   const labels={
     dashboard:'Dashboard',
-    notifications:'Avisos',
+    notifications:'Avisos internos',
+    calendar:'Calendario y avisos',
     registrations:'Solicitudes',
     players:'Jugadores',
     parents:'Papás',
@@ -2014,7 +2296,8 @@ function adminMenuLabel(value){
 function renderShell(){
   const adminOptions = [
     ['dashboard','📊 Dashboard'],
-    ['notifications','🔔 Avisos'],
+    ['notifications','🔔 Avisos internos'],
+    ['calendar','📅 Calendario y avisos'],
     ['registrations','📝 Solicitudes'],
     ['players','🏀 Jugadores'],
     ['parents','👨‍👩‍👧 Papás'],
@@ -2086,15 +2369,15 @@ function setTitle(t){
   if(current) current.textContent=adminMenuLabel(page);
   document.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===page));
 }
-function renderPage(){ if(mode==='admin') rememberScreen('admin:'+page); if(page==='dashboard') renderDashboard(); if(page==='notifications') renderNotifications(); if(page==='registrations') renderRegistrations(); if(page==='players') renderPlayers(); if(page==='parents') renderParents(); if(page==='payments') renderPayments(); if(page==='evidence') renderEvidence(); if(page==='whatsapp') renderWhatsApp(); if(page==='documents') renderDocuments(); if(page==='history') renderPlayerHistory(); if(page==='backups') renderBackups(); if(page==='settings') renderSettings(); }
+function renderPage(){ if(mode==='admin') rememberScreen('admin:'+page); if(page==='dashboard') renderDashboard(); if(page==='notifications') renderNotifications(); if(page==='calendar') renderCalendarAdmin(); if(page==='registrations') renderRegistrations(); if(page==='players') renderPlayers(); if(page==='parents') renderParents(); if(page==='payments') renderPayments(); if(page==='evidence') renderEvidence(); if(page==='whatsapp') renderWhatsApp(); if(page==='documents') renderDocuments(); if(page==='history') renderPlayerHistory(); if(page==='backups') renderBackups(); if(page==='settings') renderSettings(); }
 function filteredPlayers(){ const s=q.toLowerCase().trim(); return players.filter(p=>!s || [p.id,p.name,p.tutor,p.phone,p.category,p.birth_date,p.registration_date,p.payment_day,p.uniform_number].join(' ').toLowerCase().includes(s)); }
 
 function renderDashboard(){
   setTitle('Dashboard ejecutivo');
-  const rows=players.map(p=>({...p,c:calc(p)})); const active=rows.filter(p=>p.status==='Activo').length; const debtors=rows.filter(p=>p.c.amount>0); const overdue=rows.filter(p=>p.c.status==='Vencido').length; const pendingEvidence=payments.filter(p=>p.confirmation_status==='Pendiente de confirmación').length; const totalDebt=debtors.reduce((a,p)=>a+p.c.amount,0); const birthdays=birthdayPlayersToday(); const unread=unreadNotificationCount(); const pendingRegistrations=registrationApplications.filter(r=>r.status==='Pendiente').length;
+  const rows=players.map(p=>({...p,c:calc(p)})); const active=rows.filter(p=>p.status==='Activo').length; const debtors=rows.filter(p=>p.c.amount>0); const overdue=rows.filter(p=>p.c.status==='Vencido').length; const pendingEvidence=payments.filter(p=>p.confirmation_status==='Pendiente de confirmación').length; const totalDebt=debtors.reduce((a,p)=>a+p.c.amount,0); const birthdays=birthdayPlayersToday(); const unread=unreadNotificationCount(); const pendingRegistrations=registrationApplications.filter(r=>r.status==='Pendiente').length; const activeParentAnnouncements=portalAnnouncements.filter(announcementVisibleNow).length;
   const birthdayBanner=birthdays.length?`<div class="notice birthday-notice"><b>🎂 Cumpleaños de hoy:</b> ${birthdays.map(p=>`${esc(p.name)} (${playerAge(p)} años)`).join(', ')}</div>`:'';
   const recentNotices=adminNotifications.filter(n=>!n.read_at).slice(0,3);
-  document.getElementById('content').innerHTML=`${iosInstallBanner()}${notificationSetupNotice()}${birthdayBanner}<div class="kpis"><div class="kpi"><small>Jugadores</small><strong>${players.length}</strong></div><div class="kpi green"><small>Activos</small><strong>${active}</strong></div><div class="kpi orange"><small>Con adeudo</small><strong>${debtors.length}</strong></div><div class="kpi red"><small>Vencidos</small><strong>${overdue}</strong></div><div class="kpi orange"><small>Por confirmar</small><strong>${pendingEvidence}</strong></div><div class="kpi green"><small>Solicitudes nuevas</small><strong>${pendingRegistrations}</strong></div><div class="kpi"><small>Avisos nuevos</small><strong>${unread}</strong></div><div class="kpi"><small>Cumpleaños hoy</small><strong>${birthdays.length}</strong></div><div class="kpi red"><small>Adeudo total</small><strong>${money(totalDebt)}</strong></div></div>${recentNotices.length?`<div class="panel compact-notifications"><div class="panel-head"><h3>Avisos recientes</h3><button class="btn secondary" onclick="page='notifications';renderPage()">Ver todos</button></div>${recentNotices.map(n=>`<button class="dashboard-notification" onclick="openNotificationTarget('${n.id}')"><span>${notificationTypeIcon(n.type)}</span><div><b>${esc(n.title)}</b><small>${esc(n.message)}</small></div></button>`).join('')}</div>`:''}
+  document.getElementById('content').innerHTML=`${iosInstallBanner()}${notificationSetupNotice()}${birthdayBanner}<div class="kpis"><div class="kpi"><small>Jugadores</small><strong>${players.length}</strong></div><div class="kpi green"><small>Activos</small><strong>${active}</strong></div><div class="kpi orange"><small>Con adeudo</small><strong>${debtors.length}</strong></div><div class="kpi red"><small>Vencidos</small><strong>${overdue}</strong></div><div class="kpi orange"><small>Por confirmar</small><strong>${pendingEvidence}</strong></div><div class="kpi green"><small>Solicitudes nuevas</small><strong>${pendingRegistrations}</strong></div><div class="kpi"><small>Avisos internos</small><strong>${unread}</strong></div><div class="kpi green"><small>Avisos para papás</small><strong>${activeParentAnnouncements}</strong></div><div class="kpi"><small>Cumpleaños hoy</small><strong>${birthdays.length}</strong></div><div class="kpi red"><small>Adeudo total</small><strong>${money(totalDebt)}</strong></div></div>${recentNotices.length?`<div class="panel compact-notifications"><div class="panel-head"><h3>Avisos recientes</h3><button class="btn secondary" onclick="page='notifications';renderPage()">Ver todos</button></div>${recentNotices.map(n=>`<button class="dashboard-notification" onclick="openNotificationTarget('${n.id}')"><span>${notificationTypeIcon(n.type)}</span><div><b>${esc(n.title)}</b><small>${esc(n.message)}</small></div></button>`).join('')}</div>`:''}
   <div class="panel"><div class="panel-head"><div><h3>Jugadores con adeudo</h3><p class="sub">El estado cambia a Vencido únicamente después de que termina el día de pago de cada jugador.</p></div></div><div class="tablewrap"><table><thead><tr><th>Foto</th><th>ID</th><th>Jugador</th><th>Núm.</th><th>Tutor</th><th>Último pago</th><th>Día de pago</th><th>Meses</th><th>Adeudo</th><th>Estado</th><th>WhatsApp</th></tr></thead><tbody>${debtors.sort((a,b)=>b.c.amount-a.c.amount).map(p=>`<tr><td>${thumb(p.photo_url)}</td><td>${p.id}</td><td><b>${esc(p.name)}</b><br><small>${esc(p.category||'')}</small></td><td><span class="uniform">#${esc(p.uniform_number||'-')}</span></td><td>${esc(p.tutor||'')}</td><td>${esc(p.c.last||'')}</td><td><b>Día ${esc(p.c.paymentDay||p.payment_day||1)}</b></td><td>${p.c.months}</td><td class="amount">${money(p.c.amount)}</td><td><span class="status ${p.c.status}">${p.c.status}</span></td><td>${whatsappButtons(p)}</td></tr>`).join('')||'<tr><td colspan="11">Sin adeudos</td></tr>'}</tbody></table></div></div>`;
 }
 
@@ -2211,7 +2494,7 @@ function renderParents(){
   const familyCount=auditRows.filter(r=>r.activeLinks.length>=2).length;
   const playersOptions = players.map(p=>`<option value="${p.id}">${p.id} · ${esc(p.name)} · Tutor: ${esc(p.tutor||'')}</option>`).join('');
   const accountsOptions = parentAccounts.map(a=>`<option value="${a.id}">${esc(a.display_name)} · ${esc(a.login)}</option>`).join('');
-  document.getElementById('content').innerHTML=`<div class="notice success"><b>v2.123:</b> se conserva el portal familiar y se corrige el estado de pago: Pendiente hasta el día límite y Vencido solamente a partir del día siguiente. El Dashboard ahora muestra el día de pago de cada jugador.</div>
+  document.getElementById('content').innerHTML=`<div class="notice success"><b>v2.124:</b> se conservan las cuentas de papás, la modificación y restablecimiento de contraseñas, el portal familiar, el pago familiar y la lógica corregida de fechas de pago.</div>
   <div class="panel family-audit-panel"><div class="panel-head"><div><h3>Diagnóstico de cuentas familiares</h3><p class="sub">${familyCount} cuenta(s) con varios jugadores · ${missingCount} vínculo(s) sugerido(s) pendiente(s)</p></div><button class="btn green" onclick="repairAllFamilyAccounts()">Revisar y reparar todas</button></div><div class="tablewrap"><table><thead><tr><th>Cuenta</th><th>Jugadores ligados</th><th>Coincidencias detectadas</th><th>Faltantes</th><th>Estado</th><th>Acción</th></tr></thead><tbody>${auditRows.map(r=>{const st=familyAuditStatus(r);const linkedNames=r.activeLinks.map(l=>players.find(p=>String(p.id)===String(l.player_id))?.name||l.player_id);return `<tr><td><b>${esc(r.account.display_name||'')}</b><br><small>${esc(r.account.login||'')}</small></td><td>${linkedNames.length?linkedNames.map(esc).join('<br>'):'—'}</td><td>${r.matchedPlayers.length?r.matchedPlayers.map(p=>esc(p.name)).join('<br>'):'—'}</td><td>${r.missingPlayers.length?r.missingPlayers.map(p=>`<span class="family-missing-player">${esc(p.name)}</span>`).join('<br>'):'—'}</td><td><span class="status ${st.cls}">${st.label}</span></td><td><button class="btn secondary" onclick="repairFamilyAccount('${r.account.id}')">Revisar cuenta</button></td></tr>`}).join('')||'<tr><td colspan="6">No hay cuentas creadas.</td></tr>'}</tbody></table></div></div>
   <div class="panel"><div class="panel-head"><h3>Crear cuenta de papá/tutor</h3></div><div class="modal-body"><form id="parentAccountForm" class="form-grid">
     <label class="label">Nombre visible<input id="accName" class="input" required placeholder="Nombre del papá, mamá o tutor"></label>
@@ -3649,3 +3932,7 @@ window.copyDefaultPaymentData=copyDefaultPaymentData;
 window.requestAdminNotificationPermission=requestAdminNotificationPermission; window.openRegistrationDetail=openRegistrationDetail; window.openRegistrationConvert=openRegistrationConvert; window.updateRegistrationStatus=updateRegistrationStatus; window.markNotificationRead=markNotificationRead; window.markAllNotificationsRead=markAllNotificationsRead; window.openNotificationTarget=openNotificationTarget;
 
 window.openPlayerHistory=openPlayerHistory; window.openHistoryDetail=openHistoryDetail; window.exportPlayerHistoryCSV=exportPlayerHistoryCSV; window.searchCashReceiptPlayer=searchCashReceiptPlayer; window.selectCashReceiptPlayer=selectCashReceiptPlayer; window.renderCashReceiptPlayerResults=renderCashReceiptPlayerResults;
+
+
+window.openParentAnnouncements=openParentAnnouncements; window.requestParentNotificationPermission=requestParentNotificationPermission; window.markParentAnnouncementRead=markParentAnnouncementRead; window.markAllParentAnnouncementsRead=markAllParentAnnouncementsRead;
+window.renderCalendarAdmin=renderCalendarAdmin; window.savePortalAnnouncement=savePortalAnnouncement; window.editPortalAnnouncement=editPortalAnnouncement; window.togglePortalAnnouncement=togglePortalAnnouncement; window.deletePortalAnnouncement=deletePortalAnnouncement;

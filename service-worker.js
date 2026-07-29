@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ducks-academy-v2-123';
+const CACHE_NAME = 'ducks-academy-v2-124';
 
 self.addEventListener('install', event => {
   self.skipWaiting();
@@ -38,6 +38,23 @@ self.addEventListener('fetch', event => {
       return res;
     }).catch(() => caches.match(req).then(cached => cached || caches.match('./index.html')))
   );
+});
+
+
+self.addEventListener('push', event => {
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; }
+  catch { data = { title: 'Ducks Basketball Academy', body: event.data ? event.data.text() : '' }; }
+  const title = data.title || 'Ducks Basketball Academy';
+  const options = {
+    body: data.body || data.message || 'Tienes un nuevo aviso de la academia.',
+    icon: data.icon || './assets/pwa-icon-192.png',
+    badge: data.badge || './assets/pwa-icon-192.png',
+    tag: data.tag || `ducks-${Date.now()}`,
+    data: { url: data.url || './', announcement_id: data.announcement_id || '' },
+    renotify: false
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
 });
 
 self.addEventListener('notificationclick', event => {
